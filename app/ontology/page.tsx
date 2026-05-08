@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
 import { updateOntologyAxiomStatus } from '@/app/actions/ontology'
 import {
@@ -204,6 +205,25 @@ export default function OntologyPage() {
           labels as the sidebar) and feeds your <strong style={{ color: 'rgba(255,255,255,0.85)' }}>if→then rules</strong> into the model so
           answers stay on your worldview—not a generic chatbot.
         </p>
+        <Link
+          href="/ontology/fluency"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            border: '1px solid rgba(134,239,172,0.45)',
+            borderRadius: '999px',
+            background: 'rgba(134,239,172,0.12)',
+            color: '#bbf7d0',
+            padding: '0.65rem 0.95rem',
+            textDecoration: 'none',
+            fontSize: '0.9rem',
+            fontWeight: 700,
+            marginBottom: '1.25rem',
+          }}
+        >
+          Open fluency tracker
+        </Link>
 
         <div
           style={{

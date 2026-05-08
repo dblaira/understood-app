@@ -359,6 +359,32 @@ export function DesktopSidebar({
                     <span>Ontology</span>
                   </button>
                 </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => router.push('/ontology/fluency')}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.75rem',
+                      width: '100%',
+                      padding: '0.65rem 1.5rem',
+                      background: 'rgba(134, 239, 172, 0.1)',
+                      border: 'none',
+                      borderLeft: '3px solid rgba(134, 239, 172, 0.7)',
+                      color: '#bbf7d0',
+                      fontSize: '1.05rem',
+                      fontWeight: 500,
+                      fontFamily: "var(--font-bodoni-moda), Georgia, 'Times New Roman', serif",
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    <span style={{ fontSize: '1.1rem' }}>✓</span>
+                    <span>Fluency Tracker</span>
+                  </button>
+                </li>
               </ul>
             </div>
 
@@ -602,6 +628,27 @@ export function DesktopSidebar({
               }}
             >
               ◇
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push('/ontology/fluency')}
+              title="Fluency Tracker"
+              style={{
+                width: '44px',
+                height: '44px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: 'rgba(134, 239, 172, 0.12)',
+                border: 'none',
+                borderRadius: '8px',
+                color: '#bbf7d0',
+                fontSize: '1.2rem',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              ✓
             </button>
 
             {/* Collapsed entry type buttons: Stories, Notes, Actions */}

@@ -307,6 +307,29 @@ export function MobileMenu({
           >
             Ontology
           </button>
+          <button
+            onClick={() => {
+              router.push('/ontology/fluency')
+              onClose()
+            }}
+            style={{
+              display: 'block',
+              width: '100%',
+              padding: '0.875rem 1.5rem',
+              background: 'rgba(134, 239, 172, 0.12)',
+              border: '1px solid rgba(134, 239, 172, 0.35)',
+              borderRadius: '4px',
+              color: '#bbf7d0',
+              fontSize: '0.85rem',
+              fontWeight: 600,
+              letterSpacing: '0.1rem',
+              textTransform: 'uppercase',
+              cursor: 'pointer',
+              marginBottom: '0.75rem',
+            }}
+          >
+            Fluency Tracker
+          </button>
           {/* Settings button */}
           <button
             onClick={() => {

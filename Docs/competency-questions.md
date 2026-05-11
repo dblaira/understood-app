@@ -424,6 +424,40 @@ When the assistant answers a user, it is constrained by confirmed personal axiom
 
 An item about Adam's priorities improving productivity can become a personal candidate. An item about fixing the Understood autosave bug remains a note or product candidate. An item about Understood capturing context and Adam feeling more confident should be split into separate claims.
 
+## CQ-017: Claim Splitting Before Axiom Review
+
+**Question:** Does this item contain multiple distinct claims that should be split before ontology review?
+
+**Why it matters:** Bundled entries can poison the ontology if they are turned into one muddy axiom. Before asking "what axiom is this?", the system should ask whether the record is even one claim.
+
+**Required data:**
+
+- Source entry id
+- Original raw text
+- Candidate claim text
+- Suggested domains
+- Provenance
+
+**Expected behavior:**
+
+- `single_claim` -> continue normal review.
+- `multiple_claims` -> split into separate candidate claims before evidence or axiom review.
+- `unclear` -> keep as note until human review.
+
+Each split candidate should preserve:
+
+- source entry id
+- original raw text
+- claim text
+- suggested domains
+- `provenance = entry_extracted`
+- `requiresHumanReview = true`
+- `status = candidate`
+
+**Acceptance check:**
+
+A focused entry about priorities improving productivity remains one claim. A bundled business note about pricing, patenting, and debugging splits into separate candidate claims. A vague reflective note stays a note until human review.
+
 ## First Build Priority
 
 Start with these five competency questions because they map directly to the current V1 product and existing tests:

@@ -12,6 +12,7 @@ import {
 import { buildOntologyPromptSection } from '../lib/ontology/build-prompt-section'
 import { suggestCandidateAxiomFromEntry } from '../lib/ontology/candidate-axioms'
 import { classifyOntologyBoundary } from '../lib/ontology/boundary'
+import { splitEntryIntoClaims } from '../lib/ontology/claim-splitting'
 import {
   buildAxiomReviewUpdate,
   canReviewAxiomScope,
@@ -372,6 +373,101 @@ describe('product vs personal ontology boundary', () => {
         reason: 'Item contains both personal-pattern and product/system material.',
       }
     )
+  })
+})
+
+describe('claim splitting before axiom review', () => {
+  it('keeps a single focused personal pattern as one claim', () => {
+    assert.deepEqual(
+      splitEntryIntoClaims({
+        sourceEntryId: 'entry-1',
+        rawText: 'When I use ranked priorities, my productivity and satisfaction improve.',
+        suggestedDomains: ['Ambition', 'Work', 'Affect'],
+      }),
+      {
+        classification: 'single_claim',
+        recommendedMove: 'continue_normal_review',
+        claims: [
+          {
+            sourceEntryId: 'entry-1',
+            originalRawText: 'When I use ranked priorities, my productivity and satisfaction improve.',
+            claimText: 'When I use ranked priorities, my productivity and satisfaction improve.',
+            suggestedDomains: ['Ambition', 'Work', 'Affect'],
+            provenance: 'entry_extracted',
+            requiresHumanReview: true,
+            status: 'candidate',
+          },
+        ],
+        reason: 'Entry appears to contain one focused claim.',
+      }
+    )
+  })
+
+  it('splits bundled business and product notes before review', () => {
+    const result = splitEntryIntoClaims({
+      sourceEntryId: 'entry-2',
+      rawText: 'Pricing should focus on value created. Patent the Understood process before outside testers. Debugging with AI agents is coding and needs its own workflow.',
+      suggestedDomains: ['Work', 'Ambition', 'Learning'],
+    })
+
+    assert.equal(result.classification, 'multiple_claims')
+    assert.equal(result.recommendedMove, 'split_before_review')
+    assert.deepEqual(
+      result.claims.map((claim) => claim.claimText),
+      [
+        'Pricing should focus on value created.',
+        'Patent the Understood process before outside testers.',
+        'Debugging with AI agents is coding and needs its own workflow.',
+      ]
+    )
+    assert.ok(result.claims.every((claim) => claim.status === 'candidate'))
+    assert.ok(result.claims.every((claim) => claim.provenance === 'entry_extracted'))
+    assert.ok(result.claims.every((claim) => claim.requiresHumanReview))
+  })
+
+  it('splits mixed personal and product notes into separate claims', () => {
+    const result = splitEntryIntoClaims({
+      sourceEntryId: 'entry-3',
+      rawText: 'Understood captures context at night. I feel more confident reviewing my patterns later.',
+      suggestedDomains: ['Work', 'Insight', 'Affect'],
+    })
+
+    assert.equal(result.classification, 'multiple_claims')
+    assert.equal(result.recommendedMove, 'split_before_review')
+    assert.deepEqual(
+      result.claims.map((claim) => claim.claimText),
+      [
+        'Understood captures context at night.',
+        'I feel more confident reviewing my patterns later.',
+      ]
+    )
+  })
+
+  it('keeps vague reflective notes unclear until human review', () => {
+    assert.deepEqual(
+      splitEntryIntoClaims({
+        sourceEntryId: 'entry-4',
+        rawText: 'Something about today felt important.',
+        suggestedDomains: ['Insight'],
+      }),
+      {
+        classification: 'unclear',
+        recommendedMove: 'keep_as_note_until_human_review',
+        claims: [],
+        reason: 'Entry is too vague to split into testable claims.',
+      }
+    )
+  })
+
+  it('does not turn split claims into confirmed axioms automatically', () => {
+    const result = splitEntryIntoClaims({
+      sourceEntryId: 'entry-5',
+      rawText: 'Testing should focus on critical paths. Visual regression is probably overkill right now.',
+      suggestedDomains: ['Work', 'Learning'],
+    })
+
+    assert.ok(result.claims.length > 0)
+    assert.ok(result.claims.every((claim) => claim.status === 'candidate'))
   })
 })
 

@@ -90,6 +90,7 @@ Any change to these must pass through explicit review policy or human action.
 | CQ-010 | Provenance and source trust | `lib/ontology/provenance.ts`, `lib/ontology/review-queue.ts` |
 | CQ-011 | Axiom retirement | `lib/ontology/axiom-review.ts`, `app/ontology/page.tsx` |
 | CQ-016 | Product vs personal ontology boundary | `lib/ontology/boundary.ts` |
+| CQ-017 | Claim splitting before axiom review | `lib/ontology/claim-splitting.ts` |
 | Semantic export | RDF/Turtle projection for future semantic-web checks | `lib/ontology/rdf-export.ts` |
 | Semantic validation | SHACL shape requirements for exported axioms | `lib/ontology/shacl-shapes.ts` |
 | Semantic questions | SPARQL templates for competency checks | `lib/ontology/sparql-queries.ts` |
@@ -124,6 +125,20 @@ Use this boundary to avoid converting product/project notes into personal axioms
 personal ontology = Adam, life, behavior, preferences, relationships, attention, energy, judgment
 product ontology = Understood, app architecture, users, workflows, bugs, features, strategy
 ```
+
+## Claim Splitting Boundary
+
+Before candidate axiom creation, ask whether the entry contains one claim or many:
+
+```text
+single_claim -> continue normal review
+multiple_claims -> split before evidence or axiom review
+unclear -> keep as note until human review
+```
+
+Split claims must preserve source entry id, original raw text, claim text, suggested domains, `entry_extracted` provenance, `requiresHumanReview = true`, and `status = candidate`.
+
+Use this boundary to avoid turning bundled entries into muddy axioms.
 
 ## Semantic Export Layer
 
@@ -202,6 +217,7 @@ These labels help the user judge trust. They do not automatically change confide
 entry
 -> life domains
 -> product/personal boundary
+-> claim splitting boundary
 -> evidence match or candidate axiom
 -> visible evidence direction
 -> visible provenance

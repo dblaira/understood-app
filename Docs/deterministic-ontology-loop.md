@@ -136,6 +136,19 @@ The first SPARQL templates are question checks, not a runtime query engine:
 - CQ-009: contradiction evidence
 - CQ-010: provenance source per axiom
 
+## Semantic Blueprint
+
+This table ties product behavior, RDF vocabulary, SHACL validation, and SPARQL competency checks into one contract.
+
+| CQ | App helper | RDF term | SHACL requirement | SPARQL query |
+| --- | --- | --- | --- | --- |
+| CQ-005 prompt eligibility | `buildOntologyPromptSection()` | `understood:status`, `understood:scope`, `understood:confidence` | `understood:confidence` is required and typed as `xsd:decimal` | `buildPromptEligibleAxiomsQuery()` |
+| CQ-006 graph projection | `projectAxiomsToKnowledgeGraph()` | `understood:antecedent`, `understood:relationshipType`, `understood:consequent` | `understood:antecedent`, `understood:relationshipType`, and `understood:consequent` are required | `buildGraphProjectionQuery()` |
+| CQ-009 contradiction detection | `summarizeAxiomEvidence()` | `understood:contradiction` | future contradiction shape; currently represented in provenance/evidence UI | `buildContradictionEvidenceQuery()` |
+| CQ-010 provenance and source trust | `normalizeProvenanceSource()` | `understood:provenanceSource` | `understood:provenanceSource` is required | `buildProvenanceSourceQuery()` |
+
+The semantic layer should stay downstream of the app helpers. RDF terms, SHACL requirements, and SPARQL templates check the deterministic loop; they do not replace it as the source of truth.
+
 ## Review Queue Boundary
 
 The review queue is a human judgment surface. It may show:

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
 import { updateOntologyAxiomStatus } from '@/app/actions/ontology'
+import { evaluateAxiomRetirementReadiness, type AxiomRetirementReadiness } from '@/lib/ontology/axiom-review'
 import { summarizeAxiomEvidence, type AxiomEvidenceSummary } from '@/lib/ontology/evidence'
 import { normalizeProvenanceSource, type ProvenanceSourceDescriptor } from '@/lib/ontology/provenance'
 import { buildOntologyReviewQueue, getAxiomProvenanceLabel } from '@/lib/ontology/review-queue'
@@ -492,6 +493,20 @@ export default function OntologyPage() {
                         <EvidenceDirectionSummary summary={summarizeAxiomEvidence(axiom)} />
                         {axiom.status === 'confirmed' && axiom.scope === 'personal' && (
                           <div style={{ marginTop: '0.9rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                            <RetirementReadinessNotice
+                              readiness={evaluateAxiomRetirementReadiness(
+                                {
+                                  status: axiom.status,
+                                  confidence: axiom.confidence,
+                                  confirmedAt: axiom.confirmedAt?.toISOString() ?? null,
+                                  retiredAt: axiom.retiredAt?.toISOString() ?? null,
+                                  evidenceEntryIds: axiom.evidenceEntryIds,
+                                  evidenceCount: axiom.evidenceCount,
+                                  provenance: axiom.provenance,
+                                },
+                                new Date().toISOString()
+                              )}
+                            />
                             <button
                               type="button"
                               disabled={isReviewing}
@@ -557,6 +572,30 @@ export default function OntologyPage() {
           </>
         )}
       </div>
+    </div>
+  )
+}
+
+function RetirementReadinessNotice({ readiness }: { readiness: AxiomRetirementReadiness }) {
+  if (!readiness.shouldReviewForRetirement) return null
+
+  return (
+    <div
+      style={{
+        flexBasis: '100%',
+        border: '1px solid rgba(253,230,138,0.35)',
+        background: 'rgba(253,230,138,0.08)',
+        color: '#fde68a',
+        borderRadius: '10px',
+        padding: '0.65rem 0.75rem',
+        fontSize: '0.76rem',
+        lineHeight: 1.45,
+      }}
+    >
+      <strong>Review for retirement:</strong> {readiness.reason}
+      <span style={{ display: 'block', color: 'rgba(255,255,255,0.45)', marginTop: '0.25rem' }}>
+        Signals: {readiness.signals.map((signal) => signal.replace(/_/g, ' ')).join(', ')}. Status stays confirmed until you retire it.
+      </span>
     </div>
   )
 }

@@ -11,7 +11,12 @@ import {
 } from '../types/ontology'
 import { buildOntologyPromptSection } from '../lib/ontology/build-prompt-section'
 import { suggestCandidateAxiomFromEntry } from '../lib/ontology/candidate-axioms'
-import { buildAxiomReviewUpdate, canReviewAxiomScope, evaluateAxiomReviewReadiness } from '../lib/ontology/axiom-review'
+import {
+  buildAxiomReviewUpdate,
+  canReviewAxiomScope,
+  evaluateAxiomRetirementReadiness,
+  evaluateAxiomReviewReadiness,
+} from '../lib/ontology/axiom-review'
 import { buildAxiomEvidenceUpdate, summarizeAxiomEvidence } from '../lib/ontology/evidence'
 import { projectAxiomsToKnowledgeGraph } from '../lib/ontology/knowledge-graph'
 import { buildOntologyReviewQueue, getAxiomProvenanceLabel } from '../lib/ontology/review-queue'
@@ -405,6 +410,78 @@ describe('axiom review transitions', () => {
     assert.equal(canReviewAxiomScope('personal'), true)
     assert.equal(canReviewAxiomScope('starter_hypothesis'), false)
     assert.equal(canReviewAxiomScope('demo'), false)
+  })
+
+  it('surfaces stale confirmed axioms for retirement review without auto-retiring', () => {
+    const readiness = evaluateAxiomRetirementReadiness(
+      {
+        status: 'confirmed',
+        confidence: 0.6,
+        confirmedAt: '2026-01-01T12:00:00.000Z',
+        retiredAt: null,
+        evidenceEntryIds: ['entry-1'],
+        evidenceCount: 1,
+        provenance: {
+          evidenceLedger: [
+            {
+              entryId: 'entry-1',
+              direction: 'supports',
+              rationale: 'Old supporting evidence',
+              source: 'test',
+              recordedAt: '2026-01-05T12:00:00.000Z',
+            },
+          ],
+        },
+      },
+      '2026-05-10T12:00:00.000Z'
+    )
+
+    assert.deepEqual(readiness, {
+      shouldReviewForRetirement: true,
+      signals: ['stale_confirmed_axiom', 'stale_evidence'],
+      daysSinceConfirmation: 129,
+      daysSinceLatestEvidence: 125,
+      recommendation: 'review_for_retirement',
+      reason: 'Confirmed axiom is stale or lacks recent supporting evidence',
+      nextStatus: 'confirmed',
+      confidence: 0.6,
+    })
+  })
+
+  it('does not suggest retirement review for fresh confirmed axioms', () => {
+    const readiness = evaluateAxiomRetirementReadiness(
+      {
+        status: 'confirmed',
+        confidence: 0.7,
+        confirmedAt: '2026-05-01T12:00:00.000Z',
+        retiredAt: null,
+        evidenceEntryIds: ['entry-1'],
+        evidenceCount: 1,
+        provenance: {
+          evidenceLedger: [
+            {
+              entryId: 'entry-1',
+              direction: 'supports',
+              rationale: 'Recent supporting evidence',
+              source: 'test',
+              recordedAt: '2026-05-09T12:00:00.000Z',
+            },
+          ],
+        },
+      },
+      '2026-05-10T12:00:00.000Z'
+    )
+
+    assert.deepEqual(readiness, {
+      shouldReviewForRetirement: false,
+      signals: [],
+      daysSinceConfirmation: 9,
+      daysSinceLatestEvidence: 1,
+      recommendation: 'keep_confirmed',
+      reason: 'Confirmed axiom has no retirement review signals',
+      nextStatus: 'confirmed',
+      confidence: 0.7,
+    })
   })
 })
 

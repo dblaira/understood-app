@@ -8,10 +8,25 @@ export type OntologyAxiomPromptRow = {
   scope?: OntologyAxiomScope | string | null
 }
 
+export interface OntologyPromptSectionOptions {
+  confidenceGate?: number
+}
+
 /** Appended to infer-entry (and similar) system/user prompts. */
-export function buildOntologyPromptSection(axioms: OntologyAxiomPromptRow[]): string {
+export function buildOntologyPromptSection(
+  axioms: OntologyAxiomPromptRow[],
+  options: OntologyPromptSectionOptions = {}
+): string {
+  const confidenceGate = options.confidenceGate ?? 0.5
   const activeAxioms = axioms.filter((axiom) => {
-    return axiom.status === 'confirmed' && axiom.scope === 'personal'
+    const confidence = normalizeConfidence(axiom.confidence)
+    return (
+      axiom.status === 'confirmed' &&
+      axiom.scope === 'personal' &&
+      axiom.antecedent.trim().length > 0 &&
+      axiom.consequent.trim().length > 0 &&
+      confidence >= confidenceGate
+    )
   })
 
   if (!activeAxioms.length) return ''
@@ -34,4 +49,9 @@ Also set **life_domains** to zero or more values from this closed set (exact spe
 ${domainList}
 Only include domains clearly supported by the entry text; otherwise use [].
 `
+}
+
+function normalizeConfidence(raw: number | string): number {
+  const confidence = typeof raw === 'number' ? raw : Number(raw)
+  return Number.isFinite(confidence) ? confidence : 0
 }

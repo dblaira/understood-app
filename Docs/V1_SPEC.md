@@ -74,6 +74,8 @@ Paywalled routes: everything under `(app)/`.
 
 Derives from [database-migrations-ontology.sql](../database-migrations-ontology.sql). Starts fresh — no migration from the private lab.
 
+Ontology requirements are grounded in [competency questions](competency-questions.md). These questions define what the ontology must be able to answer before new schema, graph, or agent behavior is added.
+
 ### 3.1 Tables
 
 ```

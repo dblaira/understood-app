@@ -4,6 +4,7 @@ export const STANDARD_PROVENANCE_SOURCES = [
   'entry_extracted',
   'human_confirmed',
   'imported_metric',
+  'observed_other',
   'demo_seed',
   'starter_hypothesis',
 ] as const
@@ -16,6 +17,7 @@ export type ProvenanceReviewRole =
   | 'derived_from_record'
   | 'reviewed'
   | 'external_data'
+  | 'observed_external'
   | 'reference_only'
   | 'unknown'
 
@@ -56,6 +58,12 @@ const SOURCE_DESCRIPTORS: Record<ProvenanceSource, ProvenanceSourceDescriptor> =
     label: 'Imported metric',
     description: 'This came from an external measurement source.',
     reviewRole: 'external_data',
+  },
+  observed_other: {
+    source: 'observed_other',
+    label: 'Observed other',
+    description: 'A pattern, behavior, decision, or claim observed in another person, team, customer, product, or external actor.',
+    reviewRole: 'observed_external',
   },
   demo_seed: {
     source: 'demo_seed',

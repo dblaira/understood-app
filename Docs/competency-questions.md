@@ -272,7 +272,7 @@ If an axiom says `If evening caffeine, then sleep quality decreases`, but an ent
 
 **Acceptance check:**
 
-An onboarding axiom can show `sources = ['self_declared']`, while a model-generated candidate can show provenance identifying the extraction process.
+An onboarding axiom can show `sources = ['self_declared']`, while a model-generated candidate can show provenance identifying the extraction process. A pattern observed in another person, team, customer, product, or external actor can use `observed_other` without changing confidence, status, or scope.
 
 ## CQ-011: Axiom Retirement
 

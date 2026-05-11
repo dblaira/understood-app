@@ -711,6 +711,7 @@ describe('ontology provenance normalization', () => {
         'entry_extracted',
         'human_confirmed',
         'imported_metric',
+        'observed_other',
         'demo_seed',
         'starter_hypothesis',
       ].map((source) => getProvenanceSourceDescriptor(source)),
@@ -746,6 +747,12 @@ describe('ontology provenance normalization', () => {
           reviewRole: 'external_data',
         },
         {
+          source: 'observed_other',
+          label: 'Observed other',
+          description: 'A pattern, behavior, decision, or claim observed in another person, team, customer, product, or external actor.',
+          reviewRole: 'observed_external',
+        },
+        {
           source: 'demo_seed',
           label: 'Demo seed',
           description: 'Demo or benchmark material; not inherited as a personal belief.',
@@ -764,11 +771,34 @@ describe('ontology provenance normalization', () => {
   it('keeps provenance descriptive without changing confidence', () => {
     const axiom = {
       confidence: 0.42,
+      status: 'candidate',
+      scope: 'personal',
       provenance: { source: 'imported_metric' },
     }
 
     assert.equal(normalizeProvenanceSource(axiom.provenance).source, 'imported_metric')
     assert.equal(axiom.confidence, 0.42)
+    assert.equal(axiom.status, 'candidate')
+    assert.equal(axiom.scope, 'personal')
+  })
+
+  it('normalizes observed_other without making the claim personal or confirmed', () => {
+    const axiom = {
+      confidence: 0.51,
+      status: 'candidate',
+      scope: 'personal',
+      provenance: { source: 'observed_other' },
+    }
+
+    assert.deepEqual(normalizeProvenanceSource(axiom.provenance), {
+      source: 'observed_other',
+      label: 'Observed other',
+      description: 'A pattern, behavior, decision, or claim observed in another person, team, customer, product, or external actor.',
+      reviewRole: 'observed_external',
+    })
+    assert.equal(axiom.confidence, 0.51)
+    assert.equal(axiom.status, 'candidate')
+    assert.equal(axiom.scope, 'personal')
   })
 })
 

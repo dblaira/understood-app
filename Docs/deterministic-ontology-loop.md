@@ -206,10 +206,13 @@ The normalized provenance sources are:
 - `entry_extracted`
 - `human_confirmed`
 - `imported_metric`
+- `observed_other`
 - `demo_seed`
 - `starter_hypothesis`
 
 These labels help the user judge trust. They do not automatically change confidence.
+
+`observed_other` means a pattern, behavior, decision, or claim observed in another person, team, customer, product, or external actor. It is descriptive only: it does not change status, confidence, scope, prompt eligibility, or graph eligibility.
 
 ## Current Deterministic Loop
 

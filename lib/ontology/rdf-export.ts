@@ -41,6 +41,7 @@ function axiomTurtle(axiom: RdfExportableAxiom): string {
 
   return [
     `${iri('axiom', axiom.id)} a understood:Axiom ;`,
+    `  understood:axiomId "${escapeTurtleString(axiom.id)}" ;`,
     `  understood:antecedent ${conceptIri(axiom.antecedent)} ;`,
     `  understood:antecedentLabel "${escapeTurtleString(axiom.antecedent)}" ;`,
     `  understood:consequent ${conceptIri(axiom.consequent)} ;`,

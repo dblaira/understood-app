@@ -20,6 +20,7 @@ import {
 import { buildAxiomEvidenceUpdate, summarizeAxiomEvidence } from '../lib/ontology/evidence'
 import { projectAxiomsToKnowledgeGraph } from '../lib/ontology/knowledge-graph'
 import { exportAxiomsToTurtle } from '../lib/ontology/rdf-export'
+import { buildOntologyShaclShapes } from '../lib/ontology/shacl-shapes'
 import { buildOntologyReviewQueue, getAxiomProvenanceLabel } from '../lib/ontology/review-queue'
 import { getProvenanceSourceDescriptor, normalizeProvenanceSource } from '../lib/ontology/provenance'
 
@@ -756,5 +757,22 @@ describe('RDF export', () => {
 
     assert.match(turtle, /understood:antecedentLabel "Learning \\"flow\\"" ;/)
     assert.match(turtle, /understood:consequentLabel "Higher affect\\\\energy" ;/)
+  })
+})
+
+describe('SHACL shapes', () => {
+  it('defines required fields for exported ontology axioms', () => {
+    const shapes = buildOntologyShaclShapes()
+
+    assert.match(shapes, /@prefix sh: <http:\/\/www\.w3\.org\/ns\/shacl#> \./)
+    assert.match(shapes, /understood:AxiomShape a sh:NodeShape ;/)
+    assert.match(shapes, /sh:targetClass understood:Axiom ;/)
+    assert.match(shapes, /sh:path understood:axiomId ;\n\s+sh:minCount 1 ;/)
+    assert.match(shapes, /sh:path understood:antecedent ;\n\s+sh:minCount 1 ;/)
+    assert.match(shapes, /sh:path understood:consequent ;\n\s+sh:minCount 1 ;/)
+    assert.match(shapes, /sh:path understood:relationshipType ;\n\s+sh:minCount 1 ;/)
+    assert.match(shapes, /sh:path understood:confidence ;\n\s+sh:minCount 1 ;\n\s+sh:datatype xsd:decimal ;/)
+    assert.match(shapes, /sh:path understood:evidenceCount ;\n\s+sh:minCount 1 ;\n\s+sh:datatype xsd:integer ;/)
+    assert.match(shapes, /sh:path understood:provenanceSource ;\n\s+sh:minCount 1 ;/)
   })
 })

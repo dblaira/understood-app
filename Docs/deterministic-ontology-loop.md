@@ -89,7 +89,8 @@ Any change to these must pass through explicit review policy or human action.
 | CQ-009 | Contradiction detection | `lib/ontology/evidence.ts`, `app/ontology/page.tsx` |
 | CQ-010 | Provenance and source trust | `lib/ontology/provenance.ts`, `lib/ontology/review-queue.ts` |
 | CQ-011 | Axiom retirement | `lib/ontology/axiom-review.ts`, `app/ontology/page.tsx` |
-| Semantic export | RDF/Turtle projection for future SHACL/SPARQL checks | `lib/ontology/rdf-export.ts` |
+| Semantic export | RDF/Turtle projection for future semantic-web checks | `lib/ontology/rdf-export.ts` |
+| Semantic validation | SHACL shape requirements for exported axioms | `lib/ontology/shacl-shapes.ts` |
 
 ## Prompt And Graph Gates
 
@@ -111,11 +112,21 @@ The RDF layer is a downstream export/check layer, not a replacement for the prod
 ```text
 confirmed personal axioms
 -> RDF/Turtle triples
--> future SHACL validation
+-> SHACL validation
 -> future SPARQL competency checks
 ```
 
 The export must use the same governance boundary as prompt and graph projection. Candidate, rejected, retired, demo, and starter material should not become RDF truth.
+
+The first SHACL shape requires exported `understood:Axiom` nodes to include:
+
+- `understood:axiomId`
+- `understood:antecedent`
+- `understood:consequent`
+- `understood:relationshipType`
+- `understood:confidence`
+- `understood:evidenceCount`
+- `understood:provenanceSource`
 
 ## Review Queue Boundary
 
@@ -158,6 +169,7 @@ entry
 -> prompt eligibility gate
 -> graph projection gate
 -> RDF/Turtle export gate
+-> SHACL shape check
 -> retirement readiness signal
 -> human retire/keep confirmed
 ```

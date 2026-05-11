@@ -6,13 +6,16 @@ import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
 import { updateOntologyAxiomStatus } from '@/app/actions/ontology'
 import { evaluateAxiomRetirementReadiness, type AxiomRetirementReadiness } from '@/lib/ontology/axiom-review'
+import { splitEntryIntoClaims, type ClaimSplitResult } from '@/lib/ontology/claim-splitting'
 import { summarizeAxiomEvidence, type AxiomEvidenceSummary } from '@/lib/ontology/evidence'
 import { normalizeProvenanceSource, type ProvenanceSourceDescriptor } from '@/lib/ontology/provenance'
 import { buildOntologyReviewQueue, getAxiomProvenanceLabel } from '@/lib/ontology/review-queue'
 import {
+  parseLifeDomains,
   parseOntologyAxiomScope,
   parseOntologyAxiomStatus,
   type InferredInsight,
+  type LifeDomain,
   type OntologyAxiom,
   type OntologyAxiomStatus,
   type OntologyRelationshipType,
@@ -46,6 +49,27 @@ type InsightRow = {
   created_at: string
   week_start: string
 }
+
+type EntryRow = {
+  id: string
+  headline: string
+  content: string
+  entry_type?: string | null
+  life_domains?: unknown
+  created_at: string
+}
+
+interface SplitReviewEntry {
+  id: string
+  headline: string
+  entryType: string
+  createdAt: Date
+  rawText: string
+  domains: LifeDomain[]
+  split: ClaimSplitResult
+}
+
+type ClaimDecision = 'unreviewed' | 'keep_note' | 'candidate_review' | 'ignore'
 
 function mapAxiom(row: AxiomRow): OntologyAxiom {
   const c = typeof row.confidence === 'number' ? row.confidence : Number(row.confidence)
@@ -85,6 +109,8 @@ export default function OntologyPage() {
   const router = useRouter()
   const [axioms, setAxioms] = useState<OntologyAxiom[]>([])
   const [insights, setInsights] = useState<InferredInsight[]>([])
+  const [splitEntries, setSplitEntries] = useState<SplitReviewEntry[]>([])
+  const [claimDecisions, setClaimDecisions] = useState<Record<string, ClaimDecision>>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [reviewError, setReviewError] = useState<string | null>(null)
@@ -110,6 +136,12 @@ export default function OntologyPage() {
           .order('created_at', { ascending: false })
           .limit(10)
 
+        const { data: entryData, error: entryErr } = await supabase
+          .from('entries')
+          .select('id, headline, content, entry_type, life_domains, created_at')
+          .order('created_at', { ascending: false })
+          .limit(30)
+
         if (cancelled) return
 
         if (axiomErr) {
@@ -124,6 +156,12 @@ export default function OntologyPage() {
         }
         if (!insightErr) {
           setInsights((insightData as InsightRow[] | null)?.map(mapInsight) ?? [])
+        }
+        if (entryErr && !axiomErr && !insightErr) {
+          setError(entryErr.message)
+        }
+        if (!entryErr) {
+          setSplitEntries((entryData as EntryRow[] | null)?.map(mapSplitReviewEntry).filter((entry) => entry.split.classification === 'multiple_claims') ?? [])
         }
       } catch (e) {
         if (!cancelled) {
@@ -163,6 +201,13 @@ export default function OntologyPage() {
         )
       )
     })
+  }
+
+  function handleClaimDecision(entryId: string, claimIndex: number, decision: ClaimDecision) {
+    setClaimDecisions((current) => ({
+      ...current,
+      [claimDecisionKey(entryId, claimIndex)]: decision,
+    }))
   }
 
   return (
@@ -415,6 +460,84 @@ export default function OntologyPage() {
               )}
             </section>
 
+            <section
+              style={{
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.08)',
+                borderRadius: '12px',
+                padding: '1.5rem',
+                marginBottom: '2rem',
+              }}
+            >
+              <h2 style={{ fontSize: '1.25rem', marginBottom: '0.35rem', fontWeight: 600 }}>Split-claim review</h2>
+              <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.82rem', marginBottom: '1.25rem', lineHeight: 1.45 }}>
+                Recent bundled entries are split into proposed claims before ontology review. These buttons are local triage only: no axiom is created, confirmed, or given confidence here.
+              </p>
+              {splitEntries.length === 0 ? (
+                <p style={{ color: 'rgba(255,255,255,0.45)', margin: 0 }}>No recent multi-claim entries found.</p>
+              ) : (
+                <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  {splitEntries.slice(0, 5).map((entry) => (
+                    <li
+                      key={entry.id}
+                      style={{
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        borderRadius: '10px',
+                        padding: '1rem',
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', alignItems: 'flex-start' }}>
+                        <div>
+                          <h3 style={{ fontSize: '1rem', fontWeight: 600, margin: 0 }}>{entry.headline}</h3>
+                          <p style={{ color: 'rgba(255,255,255,0.35)', margin: '0.35rem 0 0', fontSize: '0.74rem' }}>
+                            {entry.entryType} · {entry.domains.length ? entry.domains.join(', ') : 'No domains yet'} · {entry.createdAt.toLocaleDateString()}
+                          </p>
+                        </div>
+                        <span style={{ color: '#fde68a', fontSize: '0.72rem', whiteSpace: 'nowrap', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                          {entry.split.claims.length} claims
+                        </span>
+                      </div>
+                      <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.8rem', lineHeight: 1.45, marginTop: '0.75rem' }}>
+                        {entry.rawText.slice(0, 220)}{entry.rawText.length > 220 ? '...' : ''}
+                      </p>
+                      <ol style={{ margin: '0.9rem 0 0', paddingLeft: '1.1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                        {entry.split.claims.map((claim, index) => {
+                          const decision = claimDecisions[claimDecisionKey(entry.id, index)] ?? 'unreviewed'
+                          return (
+                            <li key={`${entry.id}-${index}`} style={{ color: 'rgba(255,255,255,0.72)', paddingLeft: '0.25rem' }}>
+                              <p style={{ margin: '0 0 0.45rem', color: 'rgba(255,255,255,0.78)', fontSize: '0.86rem', lineHeight: 1.45 }}>
+                                {claim.claimText}
+                              </p>
+                              <div style={{ display: 'flex', gap: '0.45rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                                <ClaimDecisionButton
+                                  active={decision === 'keep_note'}
+                                  label="Keep as note"
+                                  onClick={() => handleClaimDecision(entry.id, index, 'keep_note')}
+                                />
+                                <ClaimDecisionButton
+                                  active={decision === 'candidate_review'}
+                                  label="Candidate review"
+                                  onClick={() => handleClaimDecision(entry.id, index, 'candidate_review')}
+                                />
+                                <ClaimDecisionButton
+                                  active={decision === 'ignore'}
+                                  label="Ignore"
+                                  onClick={() => handleClaimDecision(entry.id, index, 'ignore')}
+                                />
+                                <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.72rem' }}>
+                                  {decision === 'unreviewed' ? 'Unreviewed' : decision.replace(/_/g, ' ')}
+                                </span>
+                              </div>
+                            </li>
+                          )
+                        })}
+                      </ol>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+
             <div
               style={{
                 display: 'grid',
@@ -573,6 +696,68 @@ export default function OntologyPage() {
         )}
       </div>
     </div>
+  )
+}
+
+function mapSplitReviewEntry(row: EntryRow): SplitReviewEntry {
+  const rawText = stripHtml(row.content)
+  const domains = parseLifeDomains(row.life_domains)
+
+  return {
+    id: row.id,
+    headline: row.headline,
+    entryType: row.entry_type ?? 'story',
+    createdAt: new Date(row.created_at),
+    rawText,
+    domains,
+    split: splitEntryIntoClaims({
+      sourceEntryId: row.id,
+      rawText,
+      suggestedDomains: domains,
+    }),
+  }
+}
+
+function stripHtml(value: string): string {
+  return value
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function claimDecisionKey(entryId: string, claimIndex: number): string {
+  return `${entryId}:${claimIndex}`
+}
+
+function ClaimDecisionButton({
+  active,
+  label,
+  onClick,
+}: {
+  active: boolean
+  label: string
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        border: active ? '1px solid rgba(134,239,172,0.55)' : '1px solid rgba(255,255,255,0.15)',
+        background: active ? 'rgba(134,239,172,0.12)' : 'rgba(255,255,255,0.04)',
+        color: active ? '#bbf7d0' : 'rgba(255,255,255,0.65)',
+        borderRadius: '999px',
+        padding: '0.3rem 0.6rem',
+        fontSize: '0.72rem',
+        cursor: 'pointer',
+      }}
+    >
+      {label}
+    </button>
   )
 }
 

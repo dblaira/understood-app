@@ -1,0 +1,59 @@
+@prefix understood: <https://understood.app/ontology#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<https://understood.app/ontology/concept/morning-exercise> a understood:Concept ;
+  understood:label "Morning exercise" .
+
+<https://understood.app/ontology/concept/higher-affect> a understood:Concept ;
+  understood:label "Higher affect" .
+
+<https://understood.app/ontology/concept/demo-learning> a understood:Concept ;
+  understood:label "Demo learning" .
+
+<https://understood.app/ontology/concept/demo-affect> a understood:Concept ;
+  understood:label "Demo affect" .
+
+<https://understood.app/ontology/concept/unreviewed-sleep> a understood:Concept ;
+  understood:label "Unreviewed sleep" .
+
+<https://understood.app/ontology/concept/possible-work-change> a understood:Concept ;
+  understood:label "Possible work change" .
+
+<https://understood.app/ontology/axiom/axiom-confirmed-personal> a understood:Axiom ;
+  understood:axiomId "axiom-confirmed-personal" ;
+  understood:antecedent <https://understood.app/ontology/concept/morning-exercise> ;
+  understood:antecedentLabel "Morning exercise" ;
+  understood:consequent <https://understood.app/ontology/concept/higher-affect> ;
+  understood:consequentLabel "Higher affect" ;
+  understood:relationshipType "supports" ;
+  understood:confidence "0.72"^^xsd:decimal ;
+  understood:evidenceCount 5 ;
+  understood:status "confirmed" ;
+  understood:scope "personal" ;
+  understood:provenanceSource "human_confirmed" .
+
+<https://understood.app/ontology/axiom/axiom-demo-seed> a understood:Axiom ;
+  understood:axiomId "axiom-demo-seed" ;
+  understood:antecedent <https://understood.app/ontology/concept/demo-learning> ;
+  understood:antecedentLabel "Demo learning" ;
+  understood:consequent <https://understood.app/ontology/concept/demo-affect> ;
+  understood:consequentLabel "Demo affect" ;
+  understood:relationshipType "predicts" ;
+  understood:confidence "0.95"^^xsd:decimal ;
+  understood:evidenceCount 99 ;
+  understood:status "confirmed" ;
+  understood:scope "demo" ;
+  understood:provenanceSource "demo_seed" .
+
+<https://understood.app/ontology/axiom/axiom-candidate> a understood:Axiom ;
+  understood:axiomId "axiom-candidate" ;
+  understood:antecedent <https://understood.app/ontology/concept/unreviewed-sleep> ;
+  understood:antecedentLabel "Unreviewed sleep" ;
+  understood:consequent <https://understood.app/ontology/concept/possible-work-change> ;
+  understood:consequentLabel "Possible work change" ;
+  understood:relationshipType "predicts" ;
+  understood:confidence "0.52"^^xsd:decimal ;
+  understood:evidenceCount 1 ;
+  understood:status "candidate" ;
+  understood:scope "personal" ;
+  understood:provenanceSource "ai_proposed" .

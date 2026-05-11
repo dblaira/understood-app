@@ -8,7 +8,7 @@ import { updateOntologyAxiomStatus } from '@/app/actions/ontology'
 import { evaluateAxiomRetirementReadiness, type AxiomRetirementReadiness } from '@/lib/ontology/axiom-review'
 import { splitEntryIntoClaims, type ClaimSplitResult } from '@/lib/ontology/claim-splitting'
 import { summarizeAxiomEvidence, type AxiomEvidenceSummary } from '@/lib/ontology/evidence'
-import { normalizeProvenanceSource, type ProvenanceSourceDescriptor } from '@/lib/ontology/provenance'
+import { getProvenanceSourceDescriptor, normalizeProvenanceSource, type ProvenanceSourceDescriptor } from '@/lib/ontology/provenance'
 import { buildOntologyReviewQueue, getAxiomProvenanceLabel } from '@/lib/ontology/review-queue'
 import {
   parseLifeDomains,
@@ -70,6 +70,7 @@ interface SplitReviewEntry {
 }
 
 type ClaimDecision = 'unreviewed' | 'keep_note' | 'candidate_review' | 'ignore'
+type LowSignalDecision = 'normal' | 'low_signal'
 
 function mapAxiom(row: AxiomRow): OntologyAxiom {
   const c = typeof row.confidence === 'number' ? row.confidence : Number(row.confidence)
@@ -111,6 +112,8 @@ export default function OntologyPage() {
   const [insights, setInsights] = useState<InferredInsight[]>([])
   const [splitEntries, setSplitEntries] = useState<SplitReviewEntry[]>([])
   const [claimDecisions, setClaimDecisions] = useState<Record<string, ClaimDecision>>({})
+  const [claimTexts, setClaimTexts] = useState<Record<string, string>>({})
+  const [lowSignalClaims, setLowSignalClaims] = useState<Record<string, LowSignalDecision>>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [reviewError, setReviewError] = useState<string | null>(null)
@@ -208,6 +211,23 @@ export default function OntologyPage() {
       ...current,
       [claimDecisionKey(entryId, claimIndex)]: decision,
     }))
+  }
+
+  function handleClaimTextChange(entryId: string, claimIndex: number, value: string) {
+    setClaimTexts((current) => ({
+      ...current,
+      [claimDecisionKey(entryId, claimIndex)]: value,
+    }))
+  }
+
+  function handleLowSignalToggle(entryId: string, claimIndex: number) {
+    setLowSignalClaims((current) => {
+      const key = claimDecisionKey(entryId, claimIndex)
+      return {
+        ...current,
+        [key]: current[key] === 'low_signal' ? 'normal' : 'low_signal',
+      }
+    })
   }
 
   return (
@@ -471,7 +491,7 @@ export default function OntologyPage() {
             >
               <h2 style={{ fontSize: '1.25rem', marginBottom: '0.35rem', fontWeight: 600 }}>Split-claim review</h2>
               <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.82rem', marginBottom: '1.25rem', lineHeight: 1.45 }}>
-                Recent bundled entries are split into proposed claims before ontology review. These buttons are local triage only: no axiom is created, confirmed, or given confidence here.
+                Recent bundled entries are split into proposed claims before ontology review. Local triage only. Nothing is saved yet: no axiom is created, confirmed, or given confidence here.
               </p>
               {splitEntries.length === 0 ? (
                 <p style={{ color: 'rgba(255,255,255,0.45)', margin: 0 }}>No recent multi-claim entries found.</p>
@@ -490,7 +510,7 @@ export default function OntologyPage() {
                         <div>
                           <h3 style={{ fontSize: '1rem', fontWeight: 600, margin: 0 }}>{entry.headline}</h3>
                           <p style={{ color: 'rgba(255,255,255,0.35)', margin: '0.35rem 0 0', fontSize: '0.74rem' }}>
-                            {entry.entryType} · {entry.domains.length ? entry.domains.join(', ') : 'No domains yet'} · {entry.createdAt.toLocaleDateString()}
+                            {entry.entryType} · {entry.domains.length ? entry.domains.join(', ') : 'No domains detected yet'} · {entry.createdAt.toLocaleDateString()}
                           </p>
                         </div>
                         <span style={{ color: '#fde68a', fontSize: '0.72rem', whiteSpace: 'nowrap', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
@@ -502,30 +522,82 @@ export default function OntologyPage() {
                       </p>
                       <ol style={{ margin: '0.9rem 0 0', paddingLeft: '1.1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                         {entry.split.claims.map((claim, index) => {
-                          const decision = claimDecisions[claimDecisionKey(entry.id, index)] ?? 'unreviewed'
+                          const key = claimDecisionKey(entry.id, index)
+                          const decision = claimDecisions[key] ?? 'unreviewed'
+                          const lowSignalDecision = lowSignalClaims[key] ?? 'normal'
+                          const editableClaimText = claimTexts[key] ?? claim.claimText
+                          const provenanceDescriptor = getProvenanceSourceDescriptor(claim.provenance)
                           return (
-                            <li key={`${entry.id}-${index}`} style={{ color: 'rgba(255,255,255,0.72)', paddingLeft: '0.25rem' }}>
-                              <p style={{ margin: '0 0 0.45rem', color: 'rgba(255,255,255,0.78)', fontSize: '0.86rem', lineHeight: 1.45 }}>
-                                {claim.claimText}
-                              </p>
+                            <li
+                              key={`${entry.id}-${index}`}
+                              style={{
+                                color: 'rgba(255,255,255,0.72)',
+                                paddingLeft: '0.25rem',
+                                opacity: lowSignalDecision === 'low_signal' ? 0.72 : 1,
+                              }}
+                            >
+                              <label style={{ display: 'block', color: 'rgba(255,255,255,0.38)', fontSize: '0.7rem', marginBottom: '0.3rem' }}>
+                                Editable claim text
+                              </label>
+                              <textarea
+                                value={editableClaimText}
+                                onChange={(event) => handleClaimTextChange(entry.id, index, event.target.value)}
+                                rows={2}
+                                style={{
+                                  width: '100%',
+                                  background: 'rgba(255,255,255,0.04)',
+                                  border: '1px solid rgba(255,255,255,0.12)',
+                                  borderRadius: '8px',
+                                  color: 'rgba(255,255,255,0.82)',
+                                  font: 'inherit',
+                                  fontSize: '0.86rem',
+                                  lineHeight: 1.45,
+                                  padding: '0.55rem 0.65rem',
+                                  resize: 'vertical',
+                                  outline: 'none',
+                                }}
+                              />
+                              <div style={{ display: 'flex', gap: '0.45rem', flexWrap: 'wrap', alignItems: 'center', margin: '0.45rem 0' }}>
+                                <span
+                                  title={provenanceDescriptor.description}
+                                  style={{
+                                    border: '1px solid rgba(147,197,253,0.28)',
+                                    background: 'rgba(147,197,253,0.08)',
+                                    color: '#bfdbfe',
+                                    borderRadius: '999px',
+                                    padding: '0.22rem 0.5rem',
+                                    fontSize: '0.68rem',
+                                  }}
+                                >
+                                  {provenanceDescriptor.label}
+                                </span>
+                                <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.7rem' }}>
+                                  {claim.suggestedDomains.length ? claim.suggestedDomains.join(', ') : 'No claim domains detected yet'}
+                                </span>
+                              </div>
                               <div style={{ display: 'flex', gap: '0.45rem', flexWrap: 'wrap', alignItems: 'center' }}>
                                 <ClaimDecisionButton
                                   active={decision === 'keep_note'}
-                                  label="Keep as note"
+                                  label="Keep claim as note"
                                   onClick={() => handleClaimDecision(entry.id, index, 'keep_note')}
                                 />
                                 <ClaimDecisionButton
                                   active={decision === 'candidate_review'}
-                                  label="Candidate review"
+                                  label="Mark for candidate review"
                                   onClick={() => handleClaimDecision(entry.id, index, 'candidate_review')}
                                 />
                                 <ClaimDecisionButton
                                   active={decision === 'ignore'}
-                                  label="Ignore"
+                                  label="Ignore claim"
                                   onClick={() => handleClaimDecision(entry.id, index, 'ignore')}
                                 />
+                                <ClaimDecisionButton
+                                  active={lowSignalDecision === 'low_signal'}
+                                  label="Low-signal fragment"
+                                  onClick={() => handleLowSignalToggle(entry.id, index)}
+                                />
                                 <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.72rem' }}>
-                                  {decision === 'unreviewed' ? 'Unreviewed' : decision.replace(/_/g, ' ')}
+                                  {formatClaimDecision(decision, lowSignalDecision)}
                                 </span>
                               </div>
                             </li>
@@ -731,6 +803,19 @@ function stripHtml(value: string): string {
 
 function claimDecisionKey(entryId: string, claimIndex: number): string {
   return `${entryId}:${claimIndex}`
+}
+
+function formatClaimDecision(decision: ClaimDecision, lowSignalDecision: LowSignalDecision): string {
+  const base =
+    decision === 'unreviewed'
+      ? 'Unreviewed'
+      : decision === 'keep_note'
+        ? 'Keep claim as note'
+        : decision === 'candidate_review'
+          ? 'Marked for candidate review'
+          : 'Ignored claim'
+
+  return lowSignalDecision === 'low_signal' ? `${base} · low-signal` : base
 }
 
 function ClaimDecisionButton({

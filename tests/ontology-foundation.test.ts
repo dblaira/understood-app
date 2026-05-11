@@ -21,6 +21,12 @@ import { buildAxiomEvidenceUpdate, summarizeAxiomEvidence } from '../lib/ontolog
 import { projectAxiomsToKnowledgeGraph } from '../lib/ontology/knowledge-graph'
 import { exportAxiomsToTurtle } from '../lib/ontology/rdf-export'
 import { buildOntologyShaclShapes } from '../lib/ontology/shacl-shapes'
+import {
+  buildContradictionEvidenceQuery,
+  buildGraphProjectionQuery,
+  buildPromptEligibleAxiomsQuery,
+  buildProvenanceSourceQuery,
+} from '../lib/ontology/sparql-queries'
 import { buildOntologyReviewQueue, getAxiomProvenanceLabel } from '../lib/ontology/review-queue'
 import { getProvenanceSourceDescriptor, normalizeProvenanceSource } from '../lib/ontology/provenance'
 
@@ -774,5 +780,42 @@ describe('SHACL shapes', () => {
     assert.match(shapes, /sh:path understood:confidence ;\n\s+sh:minCount 1 ;\n\s+sh:datatype xsd:decimal ;/)
     assert.match(shapes, /sh:path understood:evidenceCount ;\n\s+sh:minCount 1 ;\n\s+sh:datatype xsd:integer ;/)
     assert.match(shapes, /sh:path understood:provenanceSource ;\n\s+sh:minCount 1 ;/)
+  })
+})
+
+describe('SPARQL query templates', () => {
+  it('maps CQ-005 to prompt-eligible confirmed personal axioms', () => {
+    const query = buildPromptEligibleAxiomsQuery()
+
+    assert.match(query, /# CQ-005: Assistant Prompt Eligibility/)
+    assert.match(query, /SELECT \?axiom \?antecedent \?consequent \?confidence/)
+    assert.match(query, /understood:status "confirmed"/)
+    assert.match(query, /understood:scope "personal"/)
+    assert.match(query, /FILTER\(\?confidence >= 0.5\)/)
+  })
+
+  it('maps CQ-006 to graph projection edges', () => {
+    const query = buildGraphProjectionQuery()
+
+    assert.match(query, /# CQ-006: Knowledge Graph Projection/)
+    assert.match(query, /SELECT \?axiom \?antecedent \?relationshipType \?consequent \?confidence/)
+    assert.match(query, /understood:antecedent \?antecedent/)
+    assert.match(query, /understood:consequent \?consequent/)
+  })
+
+  it('maps CQ-009 to contradiction evidence checks', () => {
+    const query = buildContradictionEvidenceQuery()
+
+    assert.match(query, /# CQ-009: Contradiction Detection/)
+    assert.match(query, /SELECT \?axiom \?contradiction/)
+    assert.match(query, /understood:contradiction \?contradiction/)
+  })
+
+  it('maps CQ-010 to provenance source inspection', () => {
+    const query = buildProvenanceSourceQuery()
+
+    assert.match(query, /# CQ-010: Provenance and Source Trust/)
+    assert.match(query, /SELECT \?axiom \?provenanceSource/)
+    assert.match(query, /understood:provenanceSource \?provenanceSource/)
   })
 })

@@ -91,6 +91,7 @@ Any change to these must pass through explicit review policy or human action.
 | CQ-011 | Axiom retirement | `lib/ontology/axiom-review.ts`, `app/ontology/page.tsx` |
 | Semantic export | RDF/Turtle projection for future semantic-web checks | `lib/ontology/rdf-export.ts` |
 | Semantic validation | SHACL shape requirements for exported axioms | `lib/ontology/shacl-shapes.ts` |
+| Semantic questions | SPARQL templates for competency checks | `lib/ontology/sparql-queries.ts` |
 
 ## Prompt And Graph Gates
 
@@ -127,6 +128,13 @@ The first SHACL shape requires exported `understood:Axiom` nodes to include:
 - `understood:confidence`
 - `understood:evidenceCount`
 - `understood:provenanceSource`
+
+The first SPARQL templates are question checks, not a runtime query engine:
+
+- CQ-005: prompt-eligible axioms
+- CQ-006: graph projection edges
+- CQ-009: contradiction evidence
+- CQ-010: provenance source per axiom
 
 ## Review Queue Boundary
 
@@ -170,6 +178,7 @@ entry
 -> graph projection gate
 -> RDF/Turtle export gate
 -> SHACL shape check
+-> SPARQL competency query templates
 -> retirement readiness signal
 -> human retire/keep confirmed
 ```

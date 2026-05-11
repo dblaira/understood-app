@@ -89,6 +89,7 @@ Any change to these must pass through explicit review policy or human action.
 | CQ-009 | Contradiction detection | `lib/ontology/evidence.ts`, `app/ontology/page.tsx` |
 | CQ-010 | Provenance and source trust | `lib/ontology/provenance.ts`, `lib/ontology/review-queue.ts` |
 | CQ-011 | Axiom retirement | `lib/ontology/axiom-review.ts`, `app/ontology/page.tsx` |
+| CQ-016 | Product vs personal ontology boundary | `lib/ontology/boundary.ts` |
 | Semantic export | RDF/Turtle projection for future semantic-web checks | `lib/ontology/rdf-export.ts` |
 | Semantic validation | SHACL shape requirements for exported axioms | `lib/ontology/shacl-shapes.ts` |
 | Semantic questions | SPARQL templates for competency checks | `lib/ontology/sparql-queries.ts` |
@@ -105,6 +106,24 @@ antecedent and consequent are present
 ```
 
 Everything else is review material, history, reference material, or training data.
+
+## Product vs Personal Boundary
+
+Before candidate axiom creation, classify what kind of world the record is about:
+
+```text
+personal_pattern -> eligible for personal candidate axiom
+product_system -> remain note or product ontology candidate
+both -> split into separate personal and product claims
+unclear -> keep as note until clear
+```
+
+Use this boundary to avoid converting product/project notes into personal axioms.
+
+```text
+personal ontology = Adam, life, behavior, preferences, relationships, attention, energy, judgment
+product ontology = Understood, app architecture, users, workflows, bugs, features, strategy
+```
 
 ## Semantic Export Layer
 
@@ -182,6 +201,7 @@ These labels help the user judge trust. They do not automatically change confide
 ```text
 entry
 -> life domains
+-> product/personal boundary
 -> evidence match or candidate axiom
 -> visible evidence direction
 -> visible provenance

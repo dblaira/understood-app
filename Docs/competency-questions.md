@@ -399,6 +399,31 @@ Given a mind map about AI agents and deterministic ontology, the system can prod
 
 When the assistant answers a user, it is constrained by confirmed personal axioms but not by demo axioms, candidate axioms, or unsupported inferred insights.
 
+## CQ-016: Product vs Personal Ontology Boundary
+
+**Question:** Is this item about the user's personal patterns, the product/system, or both?
+
+**Why it matters:** Calibration showed that product notes and project work can be over-converted into personal axioms. The ontology needs to know what kind of world a record is about before it creates candidate axioms.
+
+**Required data:**
+
+- Entry content
+- Entry type
+- Life domains
+- Candidate axiom proposal
+- Existing ontology scope
+
+**Expected behavior:**
+
+- `personal_pattern` -> eligible for personal candidate axiom.
+- `product_system` -> remain note or become product ontology candidate.
+- `both` -> split into separate personal and product claims.
+- `unclear` -> keep as note until the boundary is clear.
+
+**Acceptance check:**
+
+An item about Adam's priorities improving productivity can become a personal candidate. An item about fixing the Understood autosave bug remains a note or product candidate. An item about Understood capturing context and Adam feeling more confident should be split into separate claims.
+
 ## First Build Priority
 
 Start with these five competency questions because they map directly to the current V1 product and existing tests:

@@ -11,6 +11,7 @@ import {
 } from '../types/ontology'
 import { buildOntologyPromptSection } from '../lib/ontology/build-prompt-section'
 import { suggestCandidateAxiomFromEntry } from '../lib/ontology/candidate-axioms'
+import { classifyOntologyBoundary } from '../lib/ontology/boundary'
 import {
   buildAxiomReviewUpdate,
   canReviewAxiomScope,
@@ -327,6 +328,50 @@ describe('candidate axiom discovery', () => {
       ignored: true,
       reason: 'Pattern is too vague to test',
     })
+  })
+})
+
+describe('product vs personal ontology boundary', () => {
+  it('routes personal patterns to personal candidate eligibility', () => {
+    assert.deepEqual(
+      classifyOntologyBoundary(
+        'When I use ranked priorities, my productivity and satisfaction improve.'
+      ),
+      {
+        boundary: 'personal_pattern',
+        recommendedMove: 'eligible_for_personal_candidate',
+        shouldSplitClaims: false,
+        reason: 'Item describes Adam, life, behavior, preferences, relationships, attention, energy, or judgment.',
+      }
+    )
+  })
+
+  it('routes product/system material away from personal axioms', () => {
+    assert.deepEqual(
+      classifyOntologyBoundary(
+        'Test the save function and fix the Understood app autosave bug.'
+      ),
+      {
+        boundary: 'product_system',
+        recommendedMove: 'remain_note_or_product_candidate',
+        shouldSplitClaims: false,
+        reason: 'Item describes Understood, app architecture, users, workflows, bugs, features, or strategy.',
+      }
+    )
+  })
+
+  it('splits mixed personal and product material into separate claims', () => {
+    assert.deepEqual(
+      classifyOntologyBoundary(
+        'When Understood captures context at night, I feel more confident reviewing my patterns later.'
+      ),
+      {
+        boundary: 'both',
+        recommendedMove: 'split_into_personal_and_product_claims',
+        shouldSplitClaims: true,
+        reason: 'Item contains both personal-pattern and product/system material.',
+      }
+    )
   })
 })
 

@@ -26,6 +26,20 @@ export interface EvidenceTrackableAxiom {
   provenance: Record<string, unknown>
 }
 
+export interface EvidenceSummarizableAxiom extends EvidenceTrackableAxiom {
+  confidence: number
+}
+
+export interface AxiomEvidenceSummary {
+  supports: number
+  weakens: number
+  contradicts: number
+  totalDirectionalEvidence: number
+  hasContradictions: boolean
+  latestContradiction: string | null
+  confidence: number
+}
+
 export interface AxiomEvidenceUpdate {
   evidenceEntryIds: string[]
   evidenceCount: number
@@ -65,6 +79,24 @@ export function buildAxiomEvidenceUpdate(
       ...current.provenance,
       evidenceLedger,
     },
+  }
+}
+
+export function summarizeAxiomEvidence(axiom: EvidenceSummarizableAxiom): AxiomEvidenceSummary {
+  const evidenceLedger = parseEvidenceLedger(axiom.provenance.evidenceLedger)
+  const supports = evidenceLedger.filter((entry) => entry.direction === 'supports').length
+  const weakens = evidenceLedger.filter((entry) => entry.direction === 'weakens').length
+  const contradictions = evidenceLedger.filter((entry) => entry.direction === 'contradicts')
+  const latestContradiction = contradictions.at(-1)?.rationale ?? null
+
+  return {
+    supports,
+    weakens,
+    contradicts: contradictions.length,
+    totalDirectionalEvidence: evidenceLedger.length,
+    hasContradictions: contradictions.length > 0,
+    latestContradiction,
+    confidence: axiom.confidence,
   }
 }
 

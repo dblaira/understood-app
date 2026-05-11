@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
 import { updateOntologyAxiomStatus } from '@/app/actions/ontology'
+import { summarizeAxiomEvidence, type AxiomEvidenceSummary } from '@/lib/ontology/evidence'
 import { buildOntologyReviewQueue, getAxiomProvenanceLabel } from '@/lib/ontology/review-queue'
 import {
   parseOntologyAxiomScope,
@@ -367,6 +368,7 @@ export default function OntologyPage() {
                           Provenance: {getAxiomProvenanceLabel(axiom.provenance)}
                         </p>
                       </div>
+                      <EvidenceDirectionSummary summary={summarizeAxiomEvidence(axiom)} />
                       <div style={{ marginTop: '0.9rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                         <button
                           type="button"
@@ -484,6 +486,7 @@ export default function OntologyPage() {
                             </p>
                           )}
                         </div>
+                        <EvidenceDirectionSummary summary={summarizeAxiomEvidence(axiom)} />
                         {axiom.status === 'confirmed' && axiom.scope === 'personal' && (
                           <div style={{ marginTop: '0.9rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                             <button
@@ -552,5 +555,56 @@ export default function OntologyPage() {
         )}
       </div>
     </div>
+  )
+}
+
+function EvidenceDirectionSummary({ summary }: { summary: AxiomEvidenceSummary }) {
+  if (summary.totalDirectionalEvidence === 0) return null
+
+  return (
+    <div
+      style={{
+        marginTop: '0.85rem',
+        display: 'flex',
+        gap: '0.45rem',
+        flexWrap: 'wrap',
+        alignItems: 'center',
+      }}
+    >
+      <EvidenceBadge label="Supports" count={summary.supports} color="#86efac" />
+      <EvidenceBadge label="Weakens" count={summary.weakens} color="#fde68a" />
+      <EvidenceBadge label="Contradicts" count={summary.contradicts} color="#fca5a5" />
+      {summary.hasContradictions && summary.latestContradiction && (
+        <span style={{ color: '#fca5a5', fontSize: '0.74rem', lineHeight: 1.4 }}>
+          Latest contradiction: {summary.latestContradiction}
+        </span>
+      )}
+    </div>
+  )
+}
+
+function EvidenceBadge({
+  label,
+  count,
+  color,
+}: {
+  label: string
+  count: number
+  color: string
+}) {
+  return (
+    <span
+      style={{
+        border: `1px solid ${color}55`,
+        background: `${color}18`,
+        color,
+        borderRadius: '999px',
+        padding: '0.25rem 0.55rem',
+        fontSize: '0.72rem',
+        whiteSpace: 'nowrap',
+      }}
+    >
+      {label}: {count}
+    </span>
   )
 }

@@ -12,7 +12,7 @@ import {
 import { buildOntologyPromptSection } from '../lib/ontology/build-prompt-section'
 import { suggestCandidateAxiomFromEntry } from '../lib/ontology/candidate-axioms'
 import { buildAxiomReviewUpdate, canReviewAxiomScope, evaluateAxiomReviewReadiness } from '../lib/ontology/axiom-review'
-import { buildAxiomEvidenceUpdate } from '../lib/ontology/evidence'
+import { buildAxiomEvidenceUpdate, summarizeAxiomEvidence } from '../lib/ontology/evidence'
 import { projectAxiomsToKnowledgeGraph } from '../lib/ontology/knowledge-graph'
 import { buildOntologyReviewQueue, getAxiomProvenanceLabel } from '../lib/ontology/review-queue'
 
@@ -169,6 +169,50 @@ describe('axiom evidence matching', () => {
     )
 
     assert.deepEqual(update, { ignored: true })
+  })
+
+  it('summarizes visible evidence directions without mutating confidence', () => {
+    const axiom = {
+      confidence: 0.64,
+      evidenceEntryIds: ['entry-1', 'entry-2', 'entry-3'],
+      evidenceCount: 3,
+      provenance: {
+        evidenceLedger: [
+          {
+            entryId: 'entry-1',
+            direction: 'supports',
+            rationale: 'Morning exercise preceded better focus',
+            source: 'test',
+            recordedAt: '2026-05-10T12:00:00.000Z',
+          },
+          {
+            entryId: 'entry-2',
+            direction: 'weakens',
+            rationale: 'Exercise helped less when sleep was low',
+            source: 'test',
+            recordedAt: '2026-05-10T12:05:00.000Z',
+          },
+          {
+            entryId: 'entry-3',
+            direction: 'contradicts',
+            rationale: 'Exercise did not improve affect that day',
+            source: 'test',
+            recordedAt: '2026-05-10T12:10:00.000Z',
+          },
+        ],
+      },
+    }
+
+    assert.deepEqual(summarizeAxiomEvidence(axiom), {
+      supports: 1,
+      weakens: 1,
+      contradicts: 1,
+      totalDirectionalEvidence: 3,
+      hasContradictions: true,
+      latestContradiction: 'Exercise did not improve affect that day',
+      confidence: 0.64,
+    })
+    assert.equal(axiom.confidence, 0.64)
   })
 })
 

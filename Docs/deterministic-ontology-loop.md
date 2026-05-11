@@ -89,6 +89,7 @@ Any change to these must pass through explicit review policy or human action.
 | CQ-009 | Contradiction detection | `lib/ontology/evidence.ts`, `app/ontology/page.tsx` |
 | CQ-010 | Provenance and source trust | `lib/ontology/provenance.ts`, `lib/ontology/review-queue.ts` |
 | CQ-011 | Axiom retirement | `lib/ontology/axiom-review.ts`, `app/ontology/page.tsx` |
+| Semantic export | RDF/Turtle projection for future SHACL/SPARQL checks | `lib/ontology/rdf-export.ts` |
 
 ## Prompt And Graph Gates
 
@@ -102,6 +103,19 @@ antecedent and consequent are present
 ```
 
 Everything else is review material, history, reference material, or training data.
+
+## Semantic Export Layer
+
+The RDF layer is a downstream export/check layer, not a replacement for the product database.
+
+```text
+confirmed personal axioms
+-> RDF/Turtle triples
+-> future SHACL validation
+-> future SPARQL competency checks
+```
+
+The export must use the same governance boundary as prompt and graph projection. Candidate, rejected, retired, demo, and starter material should not become RDF truth.
 
 ## Review Queue Boundary
 
@@ -143,6 +157,7 @@ entry
 -> human confirm/reject/leave candidate
 -> prompt eligibility gate
 -> graph projection gate
+-> RDF/Turtle export gate
 -> retirement readiness signal
 -> human retire/keep confirmed
 ```

@@ -19,6 +19,7 @@ import {
 } from '../lib/ontology/axiom-review'
 import { buildAxiomEvidenceUpdate, summarizeAxiomEvidence } from '../lib/ontology/evidence'
 import { projectAxiomsToKnowledgeGraph } from '../lib/ontology/knowledge-graph'
+import { exportAxiomsToTurtle } from '../lib/ontology/rdf-export'
 import { buildOntologyReviewQueue, getAxiomProvenanceLabel } from '../lib/ontology/review-queue'
 import { getProvenanceSourceDescriptor, normalizeProvenanceSource } from '../lib/ontology/provenance'
 
@@ -681,5 +682,79 @@ describe('knowledge graph projection', () => {
         provenance: { source: 'test' },
       },
     ])
+  })
+})
+
+describe('RDF export', () => {
+  it('exports only confirmed personal axioms to Turtle triples', () => {
+    const turtle = exportAxiomsToTurtle([
+      {
+        id: 'axiom-1',
+        antecedent: 'High Learning',
+        consequent: 'Higher Affect',
+        confidence: 0.67,
+        status: 'confirmed',
+        scope: 'personal',
+        relationshipType: 'predicts',
+        evidenceEntryIds: ['entry-1', 'entry-2'],
+        evidenceCount: 2,
+        provenance: { source: 'human_confirmed' },
+      },
+      {
+        id: 'axiom-2',
+        antecedent: 'Demo Pattern',
+        consequent: 'Should not export',
+        confidence: 0.99,
+        status: 'confirmed',
+        scope: 'demo',
+        relationshipType: 'predicts',
+        evidenceEntryIds: [],
+        evidenceCount: 0,
+        provenance: {},
+      },
+      {
+        id: 'axiom-3',
+        antecedent: 'Candidate Pattern',
+        consequent: 'Should not export',
+        confidence: 0.5,
+        status: 'candidate',
+        scope: 'personal',
+        relationshipType: 'predicts',
+        evidenceEntryIds: [],
+        evidenceCount: 0,
+        provenance: {},
+      },
+    ])
+
+    assert.match(turtle, /@prefix understood: <https:\/\/understood\.app\/ontology#> \./)
+    assert.match(turtle, /<https:\/\/understood\.app\/ontology\/axiom\/axiom-1> a understood:Axiom ;/)
+    assert.match(turtle, /understood:antecedent <https:\/\/understood\.app\/ontology\/concept\/high-learning> ;/)
+    assert.match(turtle, /understood:consequent <https:\/\/understood\.app\/ontology\/concept\/higher-affect> ;/)
+    assert.match(turtle, /understood:relationshipType "predicts" ;/)
+    assert.match(turtle, /understood:confidence "0.67"\^\^xsd:decimal ;/)
+    assert.match(turtle, /understood:evidenceCount 2 ;/)
+    assert.match(turtle, /understood:provenanceSource "human_confirmed" \./)
+    assert.doesNotMatch(turtle, /Demo Pattern/)
+    assert.doesNotMatch(turtle, /Candidate Pattern/)
+  })
+
+  it('escapes Turtle string literals', () => {
+    const turtle = exportAxiomsToTurtle([
+      {
+        id: 'axiom-quotes',
+        antecedent: 'Learning "flow"',
+        consequent: 'Higher affect\\energy',
+        confidence: 0.75,
+        status: 'confirmed',
+        scope: 'personal',
+        relationshipType: 'supports',
+        evidenceEntryIds: [],
+        evidenceCount: 0,
+        provenance: {},
+      },
+    ])
+
+    assert.match(turtle, /understood:antecedentLabel "Learning \\"flow\\"" ;/)
+    assert.match(turtle, /understood:consequentLabel "Higher affect\\\\energy" ;/)
   })
 })

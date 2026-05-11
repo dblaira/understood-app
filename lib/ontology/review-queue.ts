@@ -1,4 +1,5 @@
 import type { OntologyAxiomScope, OntologyAxiomStatus } from '@/types/ontology'
+import { normalizeProvenanceSource } from '@/lib/ontology/provenance'
 
 export interface ReviewQueueAxiom {
   id: string
@@ -33,13 +34,13 @@ export function buildOntologyReviewQueue<TAxiom extends ReviewQueueAxiom>(
 }
 
 export function getAxiomProvenanceLabel(provenance: Record<string, unknown>): string {
-  const source = typeof provenance.source === 'string' ? provenance.source : null
-  if (!source) return 'No provenance recorded'
+  const descriptor = normalizeProvenanceSource(provenance)
+  if (descriptor.source === 'unknown') return 'No provenance recorded'
 
-  if (source === 'ai_proposed') {
+  if (descriptor.source === 'ai_proposed') {
     const label = typeof provenance.entryId === 'string'
       ? `AI proposed from entry ${provenance.entryId}`
-      : 'AI proposed'
+      : descriptor.label
     const parts = [label]
     if (typeof provenance.competencyQuestion === 'string') {
       parts.push(provenance.competencyQuestion)
@@ -50,11 +51,7 @@ export function getAxiomProvenanceLabel(provenance: Record<string, unknown>): st
     return parts.join(' · ')
   }
 
-  const label = source
-    .split('_')
-    .filter(Boolean)
-    .join(' ')
-  return `${label[0]?.toUpperCase() ?? ''}${label.slice(1)}`
+  return descriptor.label
 }
 
 function compareReviewPriority<TAxiom extends ReviewQueueAxiom>(a: TAxiom, b: TAxiom): number {

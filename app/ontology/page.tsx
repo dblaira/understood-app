@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
 import { updateOntologyAxiomStatus } from '@/app/actions/ontology'
 import { summarizeAxiomEvidence, type AxiomEvidenceSummary } from '@/lib/ontology/evidence'
+import { normalizeProvenanceSource, type ProvenanceSourceDescriptor } from '@/lib/ontology/provenance'
 import { buildOntologyReviewQueue, getAxiomProvenanceLabel } from '@/lib/ontology/review-queue'
 import {
   parseOntologyAxiomScope,
@@ -348,6 +349,7 @@ export default function OntologyPage() {
                           </span>
                         </div>
                       </div>
+                      <ProvenanceSourceBadge descriptor={normalizeProvenanceSource(axiom.provenance)} />
                       <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.85rem', marginTop: '0.5rem', marginBottom: 0 }}>
                         {axiom.description}
                       </p>
@@ -464,6 +466,7 @@ export default function OntologyPage() {
                             </span>
                           </div>
                         </div>
+                        <ProvenanceSourceBadge descriptor={normalizeProvenanceSource(axiom.provenance)} />
                         <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.85rem', marginTop: '0.5rem', marginBottom: 0 }}>
                           {axiom.description}
                         </p>
@@ -581,6 +584,50 @@ function EvidenceDirectionSummary({ summary }: { summary: AxiomEvidenceSummary }
       )}
     </div>
   )
+}
+
+function ProvenanceSourceBadge({ descriptor }: { descriptor: ProvenanceSourceDescriptor }) {
+  const color = provenanceRoleColor(descriptor.reviewRole)
+
+  return (
+    <div
+      style={{
+        marginTop: '0.65rem',
+        display: 'flex',
+        gap: '0.5rem',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+      }}
+    >
+      <span
+        title={descriptor.description}
+        style={{
+          border: `1px solid ${color}55`,
+          background: `${color}18`,
+          color,
+          borderRadius: '999px',
+          padding: '0.25rem 0.55rem',
+          fontSize: '0.72rem',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {descriptor.label}
+      </span>
+      <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.72rem', lineHeight: 1.35 }}>
+        {descriptor.description}
+      </span>
+    </div>
+  )
+}
+
+function provenanceRoleColor(role: ProvenanceSourceDescriptor['reviewRole']): string {
+  if (role === 'reviewed') return '#86efac'
+  if (role === 'ai_generated') return '#fde68a'
+  if (role === 'external_data') return '#93c5fd'
+  if (role === 'reference_only') return 'rgba(255,255,255,0.5)'
+  if (role === 'user_originated') return '#f0abfc'
+  if (role === 'derived_from_record') return '#c4b5fd'
+  return 'rgba(255,255,255,0.45)'
 }
 
 function EvidenceBadge({

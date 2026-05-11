@@ -15,6 +15,7 @@ import { buildAxiomReviewUpdate, canReviewAxiomScope, evaluateAxiomReviewReadine
 import { buildAxiomEvidenceUpdate, summarizeAxiomEvidence } from '../lib/ontology/evidence'
 import { projectAxiomsToKnowledgeGraph } from '../lib/ontology/knowledge-graph'
 import { buildOntologyReviewQueue, getAxiomProvenanceLabel } from '../lib/ontology/review-queue'
+import { getProvenanceSourceDescriptor, normalizeProvenanceSource } from '../lib/ontology/provenance'
 
 describe('standard ontology vocabulary', () => {
   it('keeps neutral product vocabulary separate from Adam example axioms', () => {
@@ -472,6 +473,76 @@ describe('ontology review queue', () => {
 
     assert.equal(getAxiomProvenanceLabel({ source: 'self_declared' }), 'Self declared')
     assert.equal(getAxiomProvenanceLabel({}), 'No provenance recorded')
+  })
+})
+
+describe('ontology provenance normalization', () => {
+  it('normalizes source trust labels for the review surface', () => {
+    assert.deepEqual(
+      [
+        'self_declared',
+        'ai_proposed',
+        'entry_extracted',
+        'human_confirmed',
+        'imported_metric',
+        'demo_seed',
+        'starter_hypothesis',
+      ].map((source) => getProvenanceSourceDescriptor(source)),
+      [
+        {
+          source: 'self_declared',
+          label: 'Self declared',
+          description: 'The user explicitly entered this belief or rule.',
+          reviewRole: 'user_originated',
+        },
+        {
+          source: 'ai_proposed',
+          label: 'AI proposed',
+          description: 'AI suggested this candidate; human review is required before it can govern reasoning.',
+          reviewRole: 'ai_generated',
+        },
+        {
+          source: 'entry_extracted',
+          label: 'Entry extracted',
+          description: 'This came from one or more captured entries.',
+          reviewRole: 'derived_from_record',
+        },
+        {
+          source: 'human_confirmed',
+          label: 'Human confirmed',
+          description: 'The user reviewed and confirmed this ontology material.',
+          reviewRole: 'reviewed',
+        },
+        {
+          source: 'imported_metric',
+          label: 'Imported metric',
+          description: 'This came from an external measurement source.',
+          reviewRole: 'external_data',
+        },
+        {
+          source: 'demo_seed',
+          label: 'Demo seed',
+          description: 'Demo or benchmark material; not inherited as a personal belief.',
+          reviewRole: 'reference_only',
+        },
+        {
+          source: 'starter_hypothesis',
+          label: 'Starter hypothesis',
+          description: 'Global starter material that must be tested before governing personal reasoning.',
+          reviewRole: 'reference_only',
+        },
+      ]
+    )
+  })
+
+  it('keeps provenance descriptive without changing confidence', () => {
+    const axiom = {
+      confidence: 0.42,
+      provenance: { source: 'imported_metric' },
+    }
+
+    assert.equal(normalizeProvenanceSource(axiom.provenance).source, 'imported_metric')
+    assert.equal(axiom.confidence, 0.42)
   })
 })
 

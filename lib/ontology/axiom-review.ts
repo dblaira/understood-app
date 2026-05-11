@@ -1,6 +1,7 @@
 import {
   STANDARD_AXIOM_REVIEW_POLICY,
   type OntologyAxiomReviewPolicy,
+  type OntologyAxiomScope,
   type OntologyAxiomStatus,
 } from '@/types/ontology'
 
@@ -32,6 +33,10 @@ export interface AxiomReviewReadiness {
   recommendation: 'confirm' | 'reject' | 'keep_candidate'
   isReviewReady: boolean
   reason: string
+}
+
+export function canReviewAxiomScope(scope: OntologyAxiomScope): boolean {
+  return scope === 'personal'
 }
 
 export function evaluateAxiomReviewReadiness(

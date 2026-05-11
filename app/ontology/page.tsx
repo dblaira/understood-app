@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
 import { updateOntologyAxiomStatus } from '@/app/actions/ontology'
+import { buildOntologyReviewQueue, getAxiomProvenanceLabel } from '@/lib/ontology/review-queue'
 import {
   parseOntologyAxiomScope,
   parseOntologyAxiomStatus,
@@ -86,6 +87,7 @@ export default function OntologyPage() {
   const [reviewError, setReviewError] = useState<string | null>(null)
   const [showHowItWorks, setShowHowItWorks] = useState(true)
   const [isReviewing, startReviewTransition] = useTransition()
+  const reviewQueue = buildOntologyReviewQueue(axioms)
 
   useEffect(() => {
     let cancelled = false
@@ -306,52 +308,39 @@ export default function OntologyPage() {
         )}
 
         {!loading && (
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr',
-              gap: '2rem',
-            }}
-            className="ontology-grid"
-          >
-            <style jsx>{`
-              @media (min-width: 900px) {
-                .ontology-grid {
-                  grid-template-columns: 1fr 1fr !important;
-                }
-              }
-            `}</style>
-
+          <>
             <section
               style={{
                 background: 'rgba(255,255,255,0.04)',
                 border: '1px solid rgba(255,255,255,0.08)',
                 borderRadius: '12px',
                 padding: '1.5rem',
+                marginBottom: '2rem',
               }}
             >
-              <h2 style={{ fontSize: '1.25rem', marginBottom: '0.35rem', fontWeight: 600 }}>Axiom review</h2>
+              <h2 style={{ fontSize: '1.25rem', marginBottom: '0.35rem', fontWeight: 600 }}>Candidate review queue</h2>
               <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.82rem', marginBottom: '1.25rem', lineHeight: 1.45 }}>
-                Candidate truths become authoritative only after you confirm them. Demo rows are proof material, not inherited beliefs.
+                AI can propose growth, but only your confirmed personal axioms govern prompts and the graph.
               </p>
-              {axioms.length === 0 ? (
-                <p style={{ color: 'rgba(255,255,255,0.45)' }}>No rules in the database yet.</p>
+              {reviewQueue.pendingCount === 0 ? (
+                <p style={{ color: 'rgba(255,255,255,0.45)', margin: 0 }}>No candidate axioms waiting for review.</p>
               ) : (
                 <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  {axioms.map((axiom) => (
+                  {reviewQueue.pendingCandidates.map((axiom) => (
                     <li
                       key={axiom.id}
                       style={{
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        borderRadius: '8px',
+                        border: '1px solid rgba(134,239,172,0.22)',
+                        borderRadius: '10px',
                         padding: '1rem',
+                        background: 'rgba(134,239,172,0.06)',
                       }}
                     >
                       <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', alignItems: 'flex-start' }}>
                         <h3 style={{ fontSize: '1rem', fontWeight: 600, margin: 0 }}>{axiom.name}</h3>
                         <div style={{ display: 'flex', gap: '0.45rem', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                          <span style={{ color: axiom.status === 'confirmed' ? '#4ade80' : 'rgba(255,255,255,0.5)', fontSize: '0.72rem', whiteSpace: 'nowrap', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                            {axiom.status}
+                          <span style={{ color: '#fde68a', fontSize: '0.72rem', whiteSpace: 'nowrap', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                            review
                           </span>
                           <span style={{ color: '#4ade80', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>
                             {(axiom.confidence * 100).toFixed(0)}%
@@ -374,73 +363,152 @@ export default function OntologyPage() {
                           Scope: {axiom.scope.replace('_', ' ')} · Relation: {axiom.relationshipType.replace(/_/g, ' ')} · Evidence:{' '}
                           {axiom.evidenceCount || axiom.evidenceEntryIds.length || 'not counted yet'}
                         </p>
-                        {Object.keys(axiom.provenance).length > 0 && (
-                          <p style={{ color: 'rgba(255,255,255,0.35)', margin: 0, fontSize: '0.74rem', lineHeight: 1.45 }}>
-                            Provenance: {Object.entries(axiom.provenance).map(([key, value]) => `${key}: ${String(value)}`).join(' · ')}
-                          </p>
-                        )}
+                        <p style={{ color: 'rgba(255,255,255,0.35)', margin: 0, fontSize: '0.74rem', lineHeight: 1.45 }}>
+                          Provenance: {getAxiomProvenanceLabel(axiom.provenance)}
+                        </p>
                       </div>
-                      {axiom.status === 'candidate' && axiom.scope === 'personal' && (
-                        <div style={{ marginTop: '0.9rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                          <button
-                            type="button"
-                            disabled={isReviewing}
-                            onClick={() => handleReviewAxiom(axiom.id, 'confirmed')}
-                            style={{
-                              border: '1px solid rgba(74,222,128,0.45)',
-                              background: 'rgba(74,222,128,0.12)',
-                              color: '#86efac',
-                              borderRadius: '999px',
-                              padding: '0.4rem 0.75rem',
-                              fontSize: '0.75rem',
-                              cursor: isReviewing ? 'not-allowed' : 'pointer',
-                            }}
-                          >
-                            Confirm axiom
-                          </button>
-                          <button
-                            type="button"
-                            disabled={isReviewing}
-                            onClick={() => handleReviewAxiom(axiom.id, 'rejected')}
-                            style={{
-                              border: '1px solid rgba(248,113,113,0.45)',
-                              background: 'rgba(248,113,113,0.1)',
-                              color: '#fca5a5',
-                              borderRadius: '999px',
-                              padding: '0.4rem 0.75rem',
-                              fontSize: '0.75rem',
-                              cursor: isReviewing ? 'not-allowed' : 'pointer',
-                            }}
-                          >
-                            Reject
-                          </button>
-                        </div>
-                      )}
-                      {axiom.status === 'confirmed' && axiom.scope === 'personal' && (
-                        <div style={{ marginTop: '0.9rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                          <button
-                            type="button"
-                            disabled={isReviewing}
-                            onClick={() => handleReviewAxiom(axiom.id, 'retired')}
-                            style={{
-                              border: '1px solid rgba(255,255,255,0.18)',
-                              background: 'rgba(255,255,255,0.05)',
-                              color: 'rgba(255,255,255,0.65)',
-                              borderRadius: '999px',
-                              padding: '0.4rem 0.75rem',
-                              fontSize: '0.75rem',
-                              cursor: isReviewing ? 'not-allowed' : 'pointer',
-                            }}
-                          >
-                            Retire axiom
-                          </button>
-                        </div>
-                      )}
+                      <div style={{ marginTop: '0.9rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                        <button
+                          type="button"
+                          disabled={isReviewing}
+                          onClick={() => handleReviewAxiom(axiom.id, 'confirmed')}
+                          style={{
+                            border: '1px solid rgba(74,222,128,0.45)',
+                            background: 'rgba(74,222,128,0.12)',
+                            color: '#86efac',
+                            borderRadius: '999px',
+                            padding: '0.4rem 0.75rem',
+                            fontSize: '0.75rem',
+                            cursor: isReviewing ? 'not-allowed' : 'pointer',
+                          }}
+                        >
+                          Confirm
+                        </button>
+                        <button
+                          type="button"
+                          disabled={isReviewing}
+                          onClick={() => handleReviewAxiom(axiom.id, 'rejected')}
+                          style={{
+                            border: '1px solid rgba(248,113,113,0.45)',
+                            background: 'rgba(248,113,113,0.1)',
+                            color: '#fca5a5',
+                            borderRadius: '999px',
+                            padding: '0.4rem 0.75rem',
+                            fontSize: '0.75rem',
+                            cursor: isReviewing ? 'not-allowed' : 'pointer',
+                          }}
+                        >
+                          Reject
+                        </button>
+                        <span style={{ alignSelf: 'center', color: 'rgba(255,255,255,0.35)', fontSize: '0.75rem' }}>
+                          Leave candidate by taking no action.
+                        </span>
+                      </div>
                     </li>
                   ))}
                 </ul>
               )}
             </section>
+
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr',
+                gap: '2rem',
+              }}
+              className="ontology-grid"
+            >
+              <style jsx>{`
+                @media (min-width: 900px) {
+                  .ontology-grid {
+                    grid-template-columns: 1fr 1fr !important;
+                  }
+                }
+              `}</style>
+
+              <section
+                style={{
+                  background: 'rgba(255,255,255,0.04)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  borderRadius: '12px',
+                  padding: '1.5rem',
+                }}
+              >
+                <h2 style={{ fontSize: '1.25rem', marginBottom: '0.35rem', fontWeight: 600 }}>Other ontology material</h2>
+                <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.82rem', marginBottom: '1.25rem', lineHeight: 1.45 }}>
+                  Confirmed rules can govern prompts and graphs. Rejected, retired, demo, and starter rows remain visible history.
+                </p>
+                {reviewQueue.reviewedAxioms.length === 0 ? (
+                  <p style={{ color: 'rgba(255,255,255,0.45)' }}>No other ontology material in the database yet.</p>
+                ) : (
+                  <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    {reviewQueue.reviewedAxioms.map((axiom) => (
+                      <li
+                        key={axiom.id}
+                        style={{
+                          border: '1px solid rgba(255,255,255,0.1)',
+                          borderRadius: '8px',
+                          padding: '1rem',
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', alignItems: 'flex-start' }}>
+                          <h3 style={{ fontSize: '1rem', fontWeight: 600, margin: 0 }}>{axiom.name}</h3>
+                          <div style={{ display: 'flex', gap: '0.45rem', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                            <span style={{ color: axiom.status === 'confirmed' ? '#4ade80' : 'rgba(255,255,255,0.5)', fontSize: '0.72rem', whiteSpace: 'nowrap', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                              {axiom.status}
+                            </span>
+                            <span style={{ color: '#4ade80', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>
+                              {(axiom.confidence * 100).toFixed(0)}%
+                            </span>
+                          </div>
+                        </div>
+                        <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.85rem', marginTop: '0.5rem', marginBottom: 0 }}>
+                          {axiom.description}
+                        </p>
+                        <div style={{ marginTop: '0.75rem', fontSize: '0.8rem', lineHeight: 1.5 }}>
+                          <p style={{ color: 'rgba(255,255,255,0.45)', margin: '0 0 0.25rem' }}>
+                            <strong style={{ color: 'rgba(255,255,255,0.65)' }}>If</strong> {axiom.antecedent}
+                          </p>
+                          <p style={{ color: 'rgba(255,255,255,0.45)', margin: 0 }}>
+                            <strong style={{ color: 'rgba(255,255,255,0.65)' }}>Then</strong> {axiom.consequent}
+                          </p>
+                        </div>
+                        <div style={{ marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                          <p style={{ color: 'rgba(255,255,255,0.35)', margin: 0, fontSize: '0.74rem', lineHeight: 1.45 }}>
+                            Scope: {axiom.scope.replace('_', ' ')} · Relation: {axiom.relationshipType.replace(/_/g, ' ')} · Evidence:{' '}
+                            {axiom.evidenceCount || axiom.evidenceEntryIds.length || 'not counted yet'}
+                          </p>
+                          {Object.keys(axiom.provenance).length > 0 && (
+                            <p style={{ color: 'rgba(255,255,255,0.35)', margin: 0, fontSize: '0.74rem', lineHeight: 1.45 }}>
+                              Provenance: {getAxiomProvenanceLabel(axiom.provenance)}
+                            </p>
+                          )}
+                        </div>
+                        {axiom.status === 'confirmed' && axiom.scope === 'personal' && (
+                          <div style={{ marginTop: '0.9rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                            <button
+                              type="button"
+                              disabled={isReviewing}
+                              onClick={() => handleReviewAxiom(axiom.id, 'retired')}
+                              style={{
+                                border: '1px solid rgba(255,255,255,0.18)',
+                                background: 'rgba(255,255,255,0.05)',
+                                color: 'rgba(255,255,255,0.65)',
+                                borderRadius: '999px',
+                                padding: '0.4rem 0.75rem',
+                                fontSize: '0.75rem',
+                                cursor: isReviewing ? 'not-allowed' : 'pointer',
+                              }}
+                            >
+                              Retire axiom
+                            </button>
+                          </div>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </section>
 
             <section
               style={{
@@ -480,6 +548,7 @@ export default function OntologyPage() {
               )}
             </section>
           </div>
+          </>
         )}
       </div>
     </div>

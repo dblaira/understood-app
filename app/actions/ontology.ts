@@ -2,8 +2,8 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
-import { buildAxiomReviewUpdate } from '@/lib/ontology/axiom-review'
-import { parseOntologyAxiomStatus, type OntologyAxiomStatus } from '@/types/ontology'
+import { buildAxiomReviewUpdate, canReviewAxiomScope } from '@/lib/ontology/axiom-review'
+import { parseOntologyAxiomScope, parseOntologyAxiomStatus, type OntologyAxiomStatus } from '@/types/ontology'
 
 const REVIEWABLE_STATUSES = new Set<OntologyAxiomStatus>(['confirmed', 'rejected', 'retired'])
 
@@ -25,13 +25,17 @@ export async function updateOntologyAxiomStatus(axiomId: string, rawStatus: Onto
 
   const { data: currentAxiom, error: fetchError } = await supabase
     .from('ontology_axioms')
-    .select('id, status, confirmed_at, rejected_at, retired_at')
+    .select('id, status, scope, confirmed_at, rejected_at, retired_at')
     .eq('id', axiomId)
     .eq('user_id', user.id)
     .single()
 
   if (fetchError) {
     return { error: fetchError.message }
+  }
+
+  if (!canReviewAxiomScope(parseOntologyAxiomScope(currentAxiom.scope))) {
+    return { error: 'Only personal axioms can be reviewed' }
   }
 
   const update = buildAxiomReviewUpdate(

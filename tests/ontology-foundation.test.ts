@@ -11,9 +11,10 @@ import {
 } from '../types/ontology'
 import { buildOntologyPromptSection } from '../lib/ontology/build-prompt-section'
 import { suggestCandidateAxiomFromEntry } from '../lib/ontology/candidate-axioms'
-import { buildAxiomReviewUpdate, evaluateAxiomReviewReadiness } from '../lib/ontology/axiom-review'
+import { buildAxiomReviewUpdate, canReviewAxiomScope, evaluateAxiomReviewReadiness } from '../lib/ontology/axiom-review'
 import { buildAxiomEvidenceUpdate } from '../lib/ontology/evidence'
 import { projectAxiomsToKnowledgeGraph } from '../lib/ontology/knowledge-graph'
+import { buildOntologyReviewQueue, getAxiomProvenanceLabel } from '../lib/ontology/review-queue'
 
 describe('standard ontology vocabulary', () => {
   it('keeps neutral product vocabulary separate from Adam example axioms', () => {
@@ -353,6 +354,80 @@ describe('axiom review transitions', () => {
     )
 
     assert.deepEqual(update, { error: 'Cannot move axiom from rejected to confirmed' })
+  })
+
+  it('only permits human review transitions for personal axioms', () => {
+    assert.equal(canReviewAxiomScope('personal'), true)
+    assert.equal(canReviewAxiomScope('starter_hypothesis'), false)
+    assert.equal(canReviewAxiomScope('demo'), false)
+  })
+})
+
+describe('ontology review queue', () => {
+  it('separates personal candidates for review and orders them by evidence then confidence', () => {
+    const queue = buildOntologyReviewQueue([
+      {
+        id: 'candidate-low',
+        status: 'candidate',
+        scope: 'personal',
+        confidence: 0.9,
+        evidenceCount: 1,
+        evidenceEntryIds: ['entry-1'],
+        provenance: { source: 'ai_proposed' },
+      },
+      {
+        id: 'confirmed',
+        status: 'confirmed',
+        scope: 'personal',
+        confidence: 0.8,
+        evidenceCount: 3,
+        evidenceEntryIds: ['entry-1', 'entry-2', 'entry-3'],
+        provenance: { source: 'human_reviewed' },
+      },
+      {
+        id: 'candidate-high',
+        status: 'candidate',
+        scope: 'personal',
+        confidence: 0.7,
+        evidenceCount: 4,
+        evidenceEntryIds: ['entry-1', 'entry-2', 'entry-3', 'entry-4'],
+        provenance: { source: 'ai_proposed' },
+      },
+      {
+        id: 'demo-candidate',
+        status: 'candidate',
+        scope: 'demo',
+        confidence: 0.99,
+        evidenceCount: 99,
+        evidenceEntryIds: [],
+        provenance: {},
+      },
+    ])
+
+    assert.deepEqual(
+      queue.pendingCandidates.map((axiom) => axiom.id),
+      ['candidate-high', 'candidate-low']
+    )
+    assert.deepEqual(
+      queue.reviewedAxioms.map((axiom) => axiom.id),
+      ['confirmed', 'demo-candidate']
+    )
+    assert.equal(queue.pendingCount, 2)
+  })
+
+  it('turns provenance into a readable review label', () => {
+    assert.equal(
+      getAxiomProvenanceLabel({
+        source: 'ai_proposed',
+        entryId: 'entry-1',
+        competencyQuestion: 'CQ-002',
+        requiresHumanReview: true,
+      }),
+      'AI proposed from entry entry-1 · CQ-002 · human review required'
+    )
+
+    assert.equal(getAxiomProvenanceLabel({ source: 'self_declared' }), 'Self declared')
+    assert.equal(getAxiomProvenanceLabel({}), 'No provenance recorded')
   })
 })
 

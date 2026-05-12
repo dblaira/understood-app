@@ -171,7 +171,7 @@ What they proved:
 | Product ontology lane | Product/system principles need somewhere to live. | Not built. |
 | External public ontology import | Needed for larger trusted architecture. | Not built. |
 | Live SHACL/SPARQL execution | Semantic files exist, but are not running as checks. | Not built. |
-| Assistant explanation UX | Search assistant receives confirmed axioms and read-only Connections with separate labels, but does not yet show users which ones it used. | Partly built. |
+| Assistant explanation UX | Search assistant receives confirmed axioms and read-only Connections with separate labels and returns memory-context counts. | Partly built. |
 
 ## Current Source of Truth
 

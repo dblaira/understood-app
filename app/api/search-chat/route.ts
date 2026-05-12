@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { buildOntologyPromptSection } from '@/lib/ontology/build-prompt-section'
-import { buildConnectionPrinciplesPromptSection } from '@/lib/ontology/connections-intake'
+import { buildConnectionPrinciplesPromptSection, getConnectionPromptPrinciples } from '@/lib/ontology/connections-intake'
 
 interface ChatMessage {
   role: 'user' | 'assistant'
@@ -68,6 +68,7 @@ export async function POST(request: NextRequest) {
     }
 
     let ontologyMemorySection = ''
+    let confirmedAxiomCount = 0
     try {
       const { data: axiomRows, error: axiomError } = await supabase
         .from('ontology_axioms')
@@ -78,12 +79,14 @@ export async function POST(request: NextRequest) {
 
       if (!axiomError && axiomRows?.length) {
         ontologyMemorySection = buildOntologyPromptSection(axiomRows)
+        confirmedAxiomCount = axiomRows.length
       }
     } catch {
       // Ontology table may not exist in older environments.
     }
 
     const connectionPrinciplesSection = buildConnectionPrinciplesPromptSection()
+    const connectionPrincipleCount = getConnectionPromptPrinciples().length
 
     // Build a compact index of entries for the AI
     const entryIndex = entries.map((e, i) => {
@@ -200,6 +203,11 @@ ${entryIndex}
     return NextResponse.json({
       response: cleanResponse,
       entries: referencedEntries,
+      memory_context: {
+        confirmed_axioms: confirmedAxiomCount,
+        connection_principles: connectionPrincipleCount,
+        note: 'Confirmed axioms are trusted rules; Connections are read-only operating principles.',
+      },
     })
   } catch (error) {
     console.error('Search chat error:', error)

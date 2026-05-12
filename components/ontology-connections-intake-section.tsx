@@ -8,6 +8,9 @@ import {
   CONNECTION_INTAKE_ACTION_LABELS,
   CONNECTION_ONTOLOGY_BUCKET_LABELS,
   CONNECTION_ONTOLOGY_INTAKE_ITEMS,
+  findConnectionEvidenceCandidates,
+  type ConnectionEvidenceCandidate,
+  type ConnectionEvidenceEntryLike,
   type ConnectionIntakeLocalAction,
   type ConnectionOntologyBucket,
   type ConnectionOntologyIntakeItem,
@@ -21,6 +24,13 @@ type ConnectionEntryRow = {
   content: string
   connection_type: string | null
   created_at: string
+}
+
+type EvidenceEntryRow = {
+  id: string
+  headline: string | null
+  content: string
+  entry_type: string | null
 }
 
 const BUCKET_ORDER: ConnectionOntologyBucket[] = [
@@ -50,6 +60,7 @@ export function OntologyConnectionsIntakeSection() {
   const [bucketFilter, setBucketFilter] = useState<ConnectionOntologyBucket | 'all'>('all')
   const [localActions, setLocalActions] = useState<Record<string, ConnectionIntakeLocalAction | null>>({})
   const [items, setItems] = useState<ConnectionOntologyIntakeItem[]>(CONNECTION_ONTOLOGY_INTAKE_ITEMS)
+  const [evidenceEntries, setEvidenceEntries] = useState<ConnectionEvidenceEntryLike[]>([])
   const [sourceLabel, setSourceLabel] = useState('calibration seeds')
 
   useEffect(() => {
@@ -79,6 +90,37 @@ export function OntologyConnectionsIntakeSection() {
     }
 
     void loadConnections()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadEvidenceEntries() {
+      const { data, error } = await supabase
+        .from('entries')
+        .select('id, headline, content, entry_type')
+        .neq('entry_type', 'connection')
+        .order('created_at', { ascending: false })
+        .limit(80)
+
+      if (cancelled) return
+      if (error || !data?.length) {
+        setEvidenceEntries([])
+        return
+      }
+
+      setEvidenceEntries((data as EvidenceEntryRow[]).map((entry) => ({
+        id: entry.id,
+        headline: entry.headline,
+        content: entry.content,
+        entry_type: entry.entry_type,
+      })))
+    }
+
+    void loadEvidenceEntries()
     return () => {
       cancelled = true
     }
@@ -161,6 +203,7 @@ export function OntologyConnectionsIntakeSection() {
           <ConnectionIntakeCard
             key={item.id}
             item={item}
+            evidenceCandidates={findConnectionEvidenceCandidates(item, evidenceEntries)}
             selectedAction={localActions[item.id] ?? null}
             onSelectAction={(action) => setAction(item.id, action)}
           />
@@ -201,10 +244,12 @@ function FilterChip({
 
 function ConnectionIntakeCard({
   item,
+  evidenceCandidates,
   selectedAction,
   onSelectAction,
 }: {
   item: ConnectionOntologyIntakeItem
+  evidenceCandidates: ConnectionEvidenceCandidate[]
   selectedAction: ConnectionIntakeLocalAction | null
   onSelectAction: (action: ConnectionIntakeLocalAction | null) => void
 }) {
@@ -269,6 +314,38 @@ function ConnectionIntakeCard({
       ) : (
         <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.8rem', marginTop: '0.75rem' }}>No draft yet.</p>
       )}
+
+      <div
+        style={{
+          marginTop: '0.75rem',
+          padding: '0.65rem 0.75rem',
+          borderRadius: '8px',
+          background: 'rgba(134,239,172,0.05)',
+          border: '1px solid rgba(134,239,172,0.12)',
+        }}
+      >
+        <p style={{ margin: 0, fontSize: '0.7rem', color: 'rgba(187,247,208,0.72)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+          Possible evidence in entries
+        </p>
+        {evidenceCandidates.length ? (
+          <ul style={{ listStyle: 'none', margin: '0.45rem 0 0', padding: 0, display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+            {evidenceCandidates.map((candidate) => (
+              <li key={candidate.entryId}>
+                <p style={{ margin: 0, color: 'rgba(255,255,255,0.72)', fontSize: '0.78rem', lineHeight: 1.4 }}>
+                  {candidate.headline}
+                </p>
+                <p style={{ margin: '0.18rem 0 0', color: 'rgba(255,255,255,0.38)', fontSize: '0.72rem', lineHeight: 1.4 }}>
+                  {candidate.snippet}{candidate.snippet.length >= 180 ? '...' : ''}
+                </p>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p style={{ margin: '0.4rem 0 0', color: 'rgba(255,255,255,0.35)', fontSize: '0.74rem' }}>
+            No obvious recent entry matches yet.
+          </p>
+        )}
+      </div>
 
       <div style={{ marginTop: '0.9rem' }}>
         <p style={{ margin: '0 0 0.4rem', fontSize: '0.7rem', color: 'rgba(255,255,255,0.38)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>

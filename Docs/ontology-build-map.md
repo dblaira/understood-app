@@ -166,7 +166,7 @@ What they proved:
 | --- | --- | --- |
 | Durable split-claim decisions | Local triage disappears or stays browser-local. | Wait until workflow is understood. |
 | Durable Connections ontology decisions | Connection review is local/browser-only. | Wait until intake surface proves useful. |
-| Evidence search for Connections | Strong Connections need lived evidence links. | Not built. |
+| Durable evidence links for Connections | Possible evidence is shown read-only, but not linked. | Not built. |
 | Product ontology lane | Product/system principles need somewhere to live. | Not built. |
 | Public ontology/BFO mapping | Needed for larger trusted architecture. | Conceptual only. |
 | Live SHACL/SPARQL execution | Semantic files exist, but are not running as checks. | Not built. |
@@ -178,7 +178,7 @@ What they proved:
 | --- | --- |
 | Confirmed personal axioms | `ontology_axioms` rows with `status=confirmed`, `scope=personal` |
 | Candidate axioms | `ontology_axioms` rows with `status=candidate`, `scope=personal` |
-| Connections principles | Live `entry_type=connection` rows in `/ontology`, with calibration-backed seed fallback in `lib/ontology/connections-intake.ts` |
+| Connections principles | Live `entry_type=connection` rows in `/ontology`, with calibration-backed seed fallback and read-only evidence suggestions in `lib/ontology/connections-intake.ts` |
 | Product/system principles | Calibration docs only; no product ontology lane yet |
 | Public/domain ontology concepts | Not yet implemented |
 | BFO alignment | Conceptual architecture only |

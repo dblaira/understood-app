@@ -27,6 +27,7 @@ import {
   buildConnectionIntakeItemsFromEntries,
   buildConnectionPrinciplesPromptSection,
   CONNECTION_ONTOLOGY_INTAKE_ITEMS,
+  findConnectionEvidenceCandidates,
   getConnectionPromptPrinciples,
 } from '../lib/ontology/connections-intake'
 import {
@@ -1049,5 +1050,35 @@ describe('connections ontology intake seed', () => {
     assert.equal(items[0].suggestedBucket, 'strong_candidate_personal')
     assert.equal(items[1].suggestedBucket, 'product_system_principle')
     assert.equal(items[2].suggestedBucket, 'strong_candidate_personal')
+  })
+
+  it('finds read-only evidence candidates for connection principles', () => {
+    const connection = CONNECTION_ONTOLOGY_INTAKE_ITEMS.find((item) => item.headline === 'Delegation is three sentences')
+    assert.ok(connection)
+
+    const candidates = findConnectionEvidenceCandidates(connection, [
+      {
+        id: 'entry-1',
+        headline: 'Delegation handoff worked',
+        content: 'The delegation handoff improved when I named what done looks like.',
+        entry_type: 'story',
+      },
+      {
+        id: 'entry-2',
+        headline: 'Connection itself excluded',
+        content: 'Delegation is three sentences.',
+        entry_type: 'connection',
+      },
+      {
+        id: 'entry-3',
+        headline: 'Unrelated',
+        content: 'I went for a run and slept well.',
+        entry_type: 'story',
+      },
+    ])
+
+    assert.equal(candidates.length, 1)
+    assert.equal(candidates[0].entryId, 'entry-1')
+    assert.ok(candidates[0].matchedTerms.includes('delegation'))
   })
 })

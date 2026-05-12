@@ -35,6 +35,21 @@ export interface ConnectionOntologyEntryLike {
   connection_type?: ConnectionType | 'connection' | string | null
 }
 
+export interface ConnectionEvidenceEntryLike {
+  id: string
+  headline?: string | null
+  content: string
+  entry_type?: string | null
+}
+
+export interface ConnectionEvidenceCandidate {
+  entryId: string
+  headline: string
+  snippet: string
+  score: number
+  matchedTerms: string[]
+}
+
 export const CONNECTION_ONTOLOGY_INTAKE_STORAGE_KEY = 'understood.connectionsOntologyIntake.v1'
 
 export const CONNECTION_ONTOLOGY_BUCKET_LABELS: Record<ConnectionOntologyBucket, string> = {
@@ -377,6 +392,80 @@ function inferCalibrationMove(bucket: ConnectionOntologyBucket): string {
   if (bucket === 'mixed_personal_product') return 'split before review'
   if (bucket === 'remain_connection_only') return 'connection only'
   return 'candidate'
+}
+
+export function findConnectionEvidenceCandidates(
+  connection: ConnectionOntologyIntakeItem,
+  entries: ConnectionEvidenceEntryLike[],
+  limit = 3
+): ConnectionEvidenceCandidate[] {
+  const connectionText = `${connection.headline} ${connection.candidateAxiomDraft ?? ''}`
+  const terms = extractEvidenceTerms(connectionText)
+  if (!terms.length) return []
+
+  return entries
+    .filter((entry) => entry.entry_type !== 'connection' && entry.id !== connection.id)
+    .map((entry) => {
+      const text = stripHtml(`${entry.headline ?? ''} ${entry.content}`)
+      const normalized = text.toLowerCase()
+      const matchedTerms = terms.filter((term) => normalized.includes(term))
+      return {
+        entry,
+        text,
+        matchedTerms,
+        score: matchedTerms.length,
+      }
+    })
+    .filter((candidate) => candidate.score > 0)
+    .sort((a, b) => b.score - a.score || a.entry.id.localeCompare(b.entry.id))
+    .slice(0, limit)
+    .map((candidate) => ({
+      entryId: candidate.entry.id,
+      headline: candidate.entry.headline?.trim() || 'Untitled entry',
+      snippet: candidate.text.slice(0, 180),
+      score: candidate.score,
+      matchedTerms: candidate.matchedTerms,
+    }))
+}
+
+function extractEvidenceTerms(value: string): string[] {
+  const stopwords = new Set([
+    'about',
+    'action',
+    'around',
+    'because',
+    'before',
+    'being',
+    'build',
+    'creates',
+    'doing',
+    'first',
+    'from',
+    'have',
+    'into',
+    'looks',
+    'more',
+    'then',
+    'that',
+    'this',
+    'what',
+    'when',
+    'with',
+    'without',
+    'work',
+    'system',
+  ])
+
+  return [
+    ...new Set(
+      stripHtml(value)
+        .toLowerCase()
+        .split(/[^a-z0-9]+/)
+        .map((term) => term.trim())
+        .filter((term) => term.length >= 5)
+        .filter((term) => !stopwords.has(term))
+    ),
+  ].slice(0, 16)
 }
 
 function normalizeConnectionHeadline(value: string): string {

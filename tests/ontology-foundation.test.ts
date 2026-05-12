@@ -23,6 +23,7 @@ import { buildAxiomEvidenceUpdate, summarizeAxiomEvidence } from '../lib/ontolog
 import { projectAxiomsToKnowledgeGraph } from '../lib/ontology/knowledge-graph'
 import { exportAxiomsToTurtle } from '../lib/ontology/rdf-export'
 import { buildOntologyShaclShapes } from '../lib/ontology/shacl-shapes'
+import { validateOntologyAxiomTurtle } from '../lib/ontology/semantic-validation'
 import {
   buildConnectionIntakeItemsFromEntries,
   buildConnectionPrinciplesPromptSection,
@@ -964,6 +965,52 @@ describe('SHACL shapes', () => {
     assert.match(shapes, /sh:path understood:confidence ;\n\s+sh:minCount 1 ;\n\s+sh:datatype xsd:decimal ;/)
     assert.match(shapes, /sh:path understood:evidenceCount ;\n\s+sh:minCount 1 ;\n\s+sh:datatype xsd:integer ;/)
     assert.match(shapes, /sh:path understood:provenanceSource ;\n\s+sh:minCount 1 ;/)
+  })
+})
+
+describe('semantic validation', () => {
+  it('validates exported Turtle against required axiom predicates', () => {
+    const turtle = exportAxiomsToTurtle([
+      {
+        id: 'axiom-1',
+        antecedent: 'High Learning',
+        consequent: 'Higher Affect',
+        confidence: 0.67,
+        status: 'confirmed',
+        scope: 'personal',
+        relationshipType: 'predicts',
+        evidenceEntryIds: ['entry-1'],
+        evidenceCount: 1,
+        provenance: { source: 'self_declared' },
+      },
+    ])
+
+    assert.deepEqual(validateOntologyAxiomTurtle(turtle), {
+      valid: true,
+      checkedSubjects: 1,
+      issues: [],
+    })
+  })
+
+  it('reports missing required predicates in Turtle exports', () => {
+    const result = validateOntologyAxiomTurtle(`
+@prefix understood: <https://understood.app/ontology#> .
+
+understood:axiom_axiom_1
+  a understood:Axiom ;
+  understood:axiomId "axiom-1" ;
+  understood:antecedent "High Learning" .
+`)
+
+    assert.equal(result.valid, false)
+    assert.equal(result.checkedSubjects, 1)
+    assert.deepEqual(result.issues[0].missingPredicates, [
+      'understood:consequent',
+      'understood:relationshipType',
+      'understood:confidence',
+      'understood:evidenceCount',
+      'understood:provenanceSource',
+    ])
   })
 })
 

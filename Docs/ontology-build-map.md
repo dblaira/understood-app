@@ -157,6 +157,7 @@ What they proved:
 | --- | --- | --- |
 | `lib/ontology/rdf-export.ts` | Exports trusted axioms to Turtle | Built |
 | `lib/ontology/shacl-shapes.ts` | Defines validation shapes | Built |
+| `lib/ontology/semantic-validation.ts` | Checks exported Turtle for required axiom predicates | Built |
 | `lib/ontology/sparql-queries.ts` | Defines competency query templates | Built |
 | `fixtures/ontology/` | Canonical Turtle examples | Built |
 | `lib/ontology/public-reference.ts` | BFO/domain reference scaffold and personal-public bridges | Built |
@@ -170,7 +171,7 @@ What they proved:
 | Durable evidence links for Connections | Possible evidence is shown read-only, but not linked. | Not built. |
 | Product ontology lane | Product/system principles need somewhere to live. | Not built. |
 | External public ontology import | Needed for larger trusted architecture. | Not built. |
-| Live SHACL/SPARQL execution | Semantic files exist, but are not running as checks. | Not built. |
+| Live SHACL/SPARQL execution | Turtle export has a local required-field validator; SPARQL remains template-only. | Partly built. |
 | Assistant explanation UX | Search assistant receives confirmed axioms and read-only Connections with separate labels and returns memory-context counts. | Partly built. |
 
 ## Current Source of Truth

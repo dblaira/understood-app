@@ -48,7 +48,7 @@ AI assistant
 | --- | --- | --- |
 | Personal ontology foundation | Built | Entries, axioms, evidence, provenance, review gates exist. |
 | Calibration workflow | Built | Real entries and Connections have been reviewed in docs. |
-| Split-claim review UI | Built as local triage | Useful, but not durable. |
+| Split-claim review UI | Built as browser-persisted triage | Useful, saved locally, and still cannot mutate axioms or confidence. |
 | Connections ontology intake | Built as live triage + candidate creation + read-only context | Live Connections load into review with calibration fallback; strong personal Connections can guide AI as principles and can be manually promoted to candidate axioms. |
 | Semantic web layer | Scaffolded | RDF, SHACL, SPARQL exist as export/check/template layer. |
 | Public ontology/BFO integration | Scaffolded | BFO/domain reference placeholders and personal-public bridges exist; no external ontology import yet. |
@@ -147,7 +147,7 @@ What they proved:
 | UI Surface | Status | Writes to DB? |
 | --- | --- | --- |
 | Candidate review queue | Built | Yes, for axiom status review |
-| Split-claim review | Built as local triage | No |
+| Split-claim review | Built as browser-persisted triage | No server write |
 | Connections ontology intake | Built as live triage with seed fallback | Yes, only when manually creating a candidate axiom |
 | Connections as read-only AI context | Built | No new DB write |
 
@@ -166,7 +166,7 @@ What they proved:
 
 | Missing Piece | Why It Matters | Current Decision |
 | --- | --- | --- |
-| Durable split-claim decisions | Local triage disappears or stays browser-local. | Wait until workflow is understood. |
+| Durable split-claim decisions | Split-claim choices and edits persist in browser-local storage; no ontology write occurs. | Built as browser-local durability. |
 | Durable Connections ontology decisions | Personal-only Connections can be manually written as candidate axioms; other triage choices remain browser-local. | Built for candidate creation. |
 | Durable evidence links for Connections | Possible evidence is shown read-only, but not linked. | Not built. |
 | Product ontology lane | Product/system principles are extracted separately and available as product-only prompt context. | Scaffolded. |

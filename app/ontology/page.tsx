@@ -73,6 +73,38 @@ interface SplitReviewEntry {
 type ClaimDecision = 'unreviewed' | 'keep_note' | 'candidate_review' | 'ignore'
 type LowSignalDecision = 'normal' | 'low_signal'
 
+const SPLIT_CLAIM_TRIAGE_STORAGE_KEY = 'understood.splitClaimReview.v1'
+
+interface SplitClaimTriageState {
+  decisions: Record<string, ClaimDecision>
+  texts: Record<string, string>
+  lowSignal: Record<string, LowSignalDecision>
+}
+
+function loadSplitClaimTriageState(): SplitClaimTriageState {
+  if (typeof window === 'undefined') {
+    return { decisions: {}, texts: {}, lowSignal: {} }
+  }
+
+  try {
+    const raw = window.localStorage.getItem(SPLIT_CLAIM_TRIAGE_STORAGE_KEY)
+    if (!raw) return { decisions: {}, texts: {}, lowSignal: {} }
+    const parsed = JSON.parse(raw) as Partial<SplitClaimTriageState>
+    return {
+      decisions: parsed.decisions ?? {},
+      texts: parsed.texts ?? {},
+      lowSignal: parsed.lowSignal ?? {},
+    }
+  } catch {
+    return { decisions: {}, texts: {}, lowSignal: {} }
+  }
+}
+
+function saveSplitClaimTriageState(state: SplitClaimTriageState) {
+  if (typeof window === 'undefined') return
+  window.localStorage.setItem(SPLIT_CLAIM_TRIAGE_STORAGE_KEY, JSON.stringify(state))
+}
+
 function mapAxiom(row: AxiomRow): OntologyAxiom {
   const c = typeof row.confidence === 'number' ? row.confidence : Number(row.confidence)
   return {
@@ -115,6 +147,7 @@ export default function OntologyPage() {
   const [claimDecisions, setClaimDecisions] = useState<Record<string, ClaimDecision>>({})
   const [claimTexts, setClaimTexts] = useState<Record<string, string>>({})
   const [lowSignalClaims, setLowSignalClaims] = useState<Record<string, LowSignalDecision>>({})
+  const [splitTriageLoaded, setSplitTriageLoaded] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [reviewError, setReviewError] = useState<string | null>(null)
@@ -181,6 +214,23 @@ export default function OntologyPage() {
       cancelled = true
     }
   }, [])
+
+  useEffect(() => {
+    const saved = loadSplitClaimTriageState()
+    setClaimDecisions(saved.decisions)
+    setClaimTexts(saved.texts)
+    setLowSignalClaims(saved.lowSignal)
+    setSplitTriageLoaded(true)
+  }, [])
+
+  useEffect(() => {
+    if (!splitTriageLoaded) return
+    saveSplitClaimTriageState({
+      decisions: claimDecisions,
+      texts: claimTexts,
+      lowSignal: lowSignalClaims,
+    })
+  }, [claimDecisions, claimTexts, lowSignalClaims, splitTriageLoaded])
 
   function handleReviewAxiom(axiomId: string, status: OntologyAxiomStatus) {
     setReviewError(null)
@@ -506,7 +556,7 @@ export default function OntologyPage() {
             >
               <h2 style={{ fontSize: '1.25rem', marginBottom: '0.35rem', fontWeight: 600 }}>Split-claim review</h2>
               <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.82rem', marginBottom: '1.25rem', lineHeight: 1.45 }}>
-                Recent bundled entries are split into proposed claims before ontology review. Local triage only. Nothing is saved yet: no axiom is created, confirmed, or given confidence here.
+                Recent bundled entries are split into proposed claims before ontology review. Triage is saved in this browser only: no axiom is created, confirmed, or given confidence here.
               </p>
               {splitEntries.length === 0 ? (
                 <p style={{ color: 'rgba(255,255,255,0.45)', margin: 0 }}>No recent multi-claim entries found.</p>

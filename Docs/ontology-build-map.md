@@ -169,7 +169,7 @@ What they proved:
 | Durable split-claim decisions | Local triage disappears or stays browser-local. | Wait until workflow is understood. |
 | Durable Connections ontology decisions | Connection review is local/browser-only. | Wait until intake surface proves useful. |
 | Durable evidence links for Connections | Possible evidence is shown read-only, but not linked. | Not built. |
-| Product ontology lane | Product/system principles need somewhere to live. | Not built. |
+| Product ontology lane | Product/system principles are extracted separately and available as product-only prompt context. | Scaffolded. |
 | External public ontology import | Needed for larger trusted architecture. | Not built. |
 | Live SHACL/SPARQL execution | Turtle export has a local required-field validator; SPARQL remains template-only. | Partly built. |
 | Assistant explanation UX | Search assistant receives confirmed axioms and read-only Connections with separate labels and returns memory-context counts. | Partly built. |
@@ -181,7 +181,7 @@ What they proved:
 | Confirmed personal axioms | `ontology_axioms` rows with `status=confirmed`, `scope=personal` |
 | Candidate axioms | `ontology_axioms` rows with `status=candidate`, `scope=personal` |
 | Connections principles | Live `entry_type=connection` rows in `/ontology`, with calibration-backed seed fallback and read-only evidence suggestions in `lib/ontology/connections-intake.ts` |
-| Product/system principles | Calibration docs only; no product ontology lane yet |
+| Product/system principles | `lib/ontology/product-ontology.ts` product-only scaffold |
 | Public/domain ontology concepts | `lib/ontology/public-reference.ts` scaffold |
 | BFO alignment | `bfo:*` placeholders in `lib/ontology/public-reference.ts` |
 

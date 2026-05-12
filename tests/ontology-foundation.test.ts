@@ -45,6 +45,7 @@ import {
   PERSONAL_PUBLIC_BRIDGES,
   PUBLIC_ONTOLOGY_REFERENCES,
 } from '../lib/ontology/public-reference'
+import { buildProductOntologyPromptSection, extractProductOntologyPrinciples } from '../lib/ontology/product-ontology'
 
 describe('standard ontology vocabulary', () => {
   it('keeps neutral product vocabulary separate from Adam example axioms', () => {
@@ -1171,5 +1172,26 @@ describe('public ontology reference scaffold', () => {
     assert.match(summary, /Adam's Sleep mapsTo Sleep/)
     assert.match(summary, /Adam's EveningCaffeineRule constrainedBy Caffeine/)
     assert.match(summary, /Understood app architecture mapsTo Software system/)
+  })
+})
+
+describe('product ontology lane', () => {
+  it('extracts product and mixed connection principles away from personal axioms', () => {
+    const principles = extractProductOntologyPrinciples()
+
+    assert.ok(principles.length > 0)
+    assert.ok(principles.some((principle) => principle.kind === 'product_system_principle'))
+    assert.ok(principles.some((principle) => principle.kind === 'mixed_product_claim'))
+    assert.ok(principles.every((principle) => principle.id.startsWith('product:')))
+    assert.ok(principles.some((principle) => principle.headline === 'Products fight potential slipping away'))
+  })
+
+  it('builds product-only prompt context without personal-rule authority', () => {
+    const section = buildProductOntologyPromptSection()
+
+    assert.match(section, /Product\/system principles/)
+    assert.match(section, /product reasoning only/)
+    assert.match(section, /Products fight potential slipping away/)
+    assert.doesNotMatch(section, /Delegation is three sentences/)
   })
 })

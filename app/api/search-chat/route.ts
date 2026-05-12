@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { buildOntologyPromptSection } from '@/lib/ontology/build-prompt-section'
 import { buildConnectionPrinciplesPromptSection, getConnectionPromptPrinciples } from '@/lib/ontology/connections-intake'
+import { buildProductOntologyPromptSection } from '@/lib/ontology/product-ontology'
 
 interface ChatMessage {
   role: 'user' | 'assistant'
@@ -87,6 +88,7 @@ export async function POST(request: NextRequest) {
 
     const connectionPrinciplesSection = buildConnectionPrinciplesPromptSection()
     const connectionPrincipleCount = getConnectionPromptPrinciples().length
+    const productPrinciplesSection = buildProductOntologyPromptSection()
 
     // Build a compact index of entries for the AI
     const entryIndex = entries.map((e, i) => {
@@ -114,9 +116,9 @@ export async function POST(request: NextRequest) {
 
 Your job is to help the user find specific entries by analyzing their natural language query against the entry index below. Be conversational, warm, and concise.
 
-${ontologyMemorySection}${connectionPrinciplesSection}
+${ontologyMemorySection}${connectionPrinciplesSection}${productPrinciplesSection}
 
-When using the memory context above, distinguish confirmed ontology axioms from user-authored Connections. Confirmed axioms are stronger rules. Connections are helpful operating principles. Do not claim a Connection is confirmed unless it appears as a confirmed ontology axiom.
+When using the memory context above, distinguish confirmed ontology axioms from user-authored Connections and product/system principles. Confirmed axioms are stronger rules. Connections are helpful operating principles. Product/system principles apply only to product reasoning. Do not claim a Connection is confirmed unless it appears as a confirmed ontology axiom.
 
 ## ENTRY INDEX (${entries.length} entries total):
 ${entryIndex}

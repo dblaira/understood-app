@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { buildOntologyPromptSection } from '@/lib/ontology/build-prompt-section'
+import { buildConnectionPrinciplesPromptSection } from '@/lib/ontology/connections-intake'
 
 interface ChatMessage {
   role: 'user' | 'assistant'
@@ -65,6 +67,24 @@ export async function POST(request: NextRequest) {
       })
     }
 
+    let ontologyMemorySection = ''
+    try {
+      const { data: axiomRows, error: axiomError } = await supabase
+        .from('ontology_axioms')
+        .select('antecedent, consequent, confidence, status, scope')
+        .eq('user_id', user.id)
+        .eq('status', 'confirmed')
+        .order('confidence', { ascending: false })
+
+      if (!axiomError && axiomRows?.length) {
+        ontologyMemorySection = buildOntologyPromptSection(axiomRows)
+      }
+    } catch {
+      // Ontology table may not exist in older environments.
+    }
+
+    const connectionPrinciplesSection = buildConnectionPrinciplesPromptSection()
+
     // Build a compact index of entries for the AI
     const entryIndex = entries.map((e, i) => {
       const date = new Date(e.created_at).toLocaleDateString('en-US', {
@@ -87,9 +107,13 @@ export async function POST(request: NextRequest) {
       })
     )
 
-    const systemPrompt = `You are a helpful search assistant for a personal journal app called "Understood." The user has journal entries of three types: stories (reflections), notes (reference info), and actions (tasks).
+    const systemPrompt = `You are a helpful search assistant for a personal journal app called "Understood." The user has journal entries of four types: stories (reflections), notes (reference info), actions (tasks), and connections (user-authored principles).
 
 Your job is to help the user find specific entries by analyzing their natural language query against the entry index below. Be conversational, warm, and concise.
+
+${ontologyMemorySection}${connectionPrinciplesSection}
+
+When using the memory context above, distinguish confirmed ontology axioms from user-authored Connections. Confirmed axioms are stronger rules. Connections are helpful operating principles. Do not claim a Connection is confirmed unless it appears as a confirmed ontology axiom.
 
 ## ENTRY INDEX (${entries.length} entries total):
 ${entryIndex}

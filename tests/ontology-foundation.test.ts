@@ -1021,6 +1021,26 @@ describe('connections ontology intake seed', () => {
     assert.doesNotMatch(section, /My assignment is to create desire/)
   })
 
+  it('labels connection prompt principles separately from confirmed axioms', () => {
+    const section = [
+      buildOntologyPromptSection([
+        {
+          antecedent: 'Low sleep',
+          consequent: 'Lower patience',
+          confidence: 0.72,
+          status: 'confirmed',
+          scope: 'personal',
+        },
+      ]),
+      buildConnectionPrinciplesPromptSection(),
+    ].join('')
+
+    assert.match(section, /Personal ontology rules/)
+    assert.match(section, /User-authored Connections/)
+    assert.match(section, /Low sleep → Lower patience/)
+    assert.match(section, /not confirmed ontology axioms/)
+  })
+
   it('maps live connection rows into intake items with seed fallback', () => {
     assert.equal(buildConnectionIntakeItemsFromEntries([]), CONNECTION_ONTOLOGY_INTAKE_ITEMS)
 

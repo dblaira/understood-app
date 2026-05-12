@@ -8,7 +8,8 @@
     "setup": "node scripts/complete-setup.js",
     "setup:verify": "node scripts/setup-verification.js",
     "setup:storage": "node scripts/create-storage-bucket.js",
-    "setup:migrations": "node scripts/run-migrations.js"
+    "setup:migrations": "node scripts/run-migrations.js",
+    "check:ontology": "npx tsx scripts/check-ontology-semantic.ts"
   },
   "overrides": {
     "pdfjs-dist": "5.4.530"

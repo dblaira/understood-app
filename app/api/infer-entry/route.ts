@@ -4,10 +4,9 @@ import { EntryType } from '@/types'
 import { LIFE_DOMAINS, parseLifeDomains, type LifeDomain } from '@/types/ontology'
 import { buildOntologyPromptSection } from '@/lib/ontology/build-prompt-section'
 import {
-  buildConnectionIntakeItemsFromEntries,
-  buildConnectionPrinciplesPromptSection,
-} from '@/lib/ontology/connections-intake'
-import { buildProductOntologyPromptSection } from '@/lib/ontology/product-ontology'
+  buildLayeredOntologyPromptContext,
+  CONNECTION_PROMPT_LIMIT,
+} from '@/lib/ontology/prompt-context'
 
 export interface InferredEntry {
   headline: string
@@ -80,8 +79,7 @@ export async function POST(request: NextRequest) {
       // Table may not exist until migration is applied
     }
 
-    let connectionPrinciplesSection = ''
-    let productPrinciplesSection = ''
+    let layeredPromptContext = buildLayeredOntologyPromptContext([])
     try {
       const { data: connectionRows, error: connectionError } = await supabase
         .from('entries')
@@ -89,23 +87,23 @@ export async function POST(request: NextRequest) {
         .eq('user_id', user.id)
         .eq('entry_type', 'connection')
         .order('created_at', { ascending: false })
-        .limit(50)
+        .limit(CONNECTION_PROMPT_LIMIT)
 
-      const liveConnectionItems = connectionError
-        ? buildConnectionIntakeItemsFromEntries([])
-        : buildConnectionIntakeItemsFromEntries(connectionRows ?? [])
-      connectionPrinciplesSection = buildConnectionPrinciplesPromptSection(liveConnectionItems)
-      productPrinciplesSection = buildProductOntologyPromptSection(liveConnectionItems)
+      layeredPromptContext = buildLayeredOntologyPromptContext(connectionError ? [] : connectionRows ?? [])
     } catch {
-      connectionPrinciplesSection = buildConnectionPrinciplesPromptSection()
-      productPrinciplesSection = buildProductOntologyPromptSection()
+      layeredPromptContext = buildLayeredOntologyPromptContext([])
     }
 
     const inferred = await inferEntryMetadata(
       content.trim(),
       apiKey,
       documentContent,
-      [ontologySection, connectionPrinciplesSection, productPrinciplesSection].filter(Boolean).join('')
+      [
+        ontologySection,
+        layeredPromptContext.connectionPrinciplesSection,
+        layeredPromptContext.productPrinciplesSection,
+        layeredPromptContext.publicOntologyGuardrailSection,
+      ].filter(Boolean).join('')
     )
 
     // SAFETY NET: If AI returned "story", check if it's actually a connection or action

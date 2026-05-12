@@ -50,6 +50,11 @@ import {
   PUBLIC_ONTOLOGY_REFERENCES,
 } from '../lib/ontology/public-reference'
 import { buildProductOntologyPromptSection, extractProductOntologyPrinciples } from '../lib/ontology/product-ontology'
+import {
+  buildConnectionItemsForPrompt,
+  buildLayeredOntologyPromptContext,
+  CONNECTION_PROMPT_LIMIT,
+} from '../lib/ontology/prompt-context'
 
 describe('standard ontology vocabulary', () => {
   it('keeps neutral product vocabulary separate from Adam example axioms', () => {
@@ -1252,6 +1257,52 @@ describe('connections ontology intake seed', () => {
       ignored: true,
       reason: 'Connection needs splitting before candidate review',
     })
+  })
+})
+
+describe('layered ontology prompt context', () => {
+  it('uses one connection merge policy for prompt consumers', () => {
+    const context = buildLayeredOntologyPromptContext([
+      {
+        id: 'live-1',
+        headline: 'Delegation is three sentences',
+        content: 'Delegation is three sentences',
+        connection_type: 'process_anchor',
+        entry_type: 'connection',
+      },
+      {
+        id: 'live-2',
+        headline: 'A product must reduce user friction',
+        content: 'The app workflow should reduce user friction.',
+        connection_type: 'validated_principle',
+        entry_type: 'connection',
+      },
+      {
+        id: 'entry-1',
+        headline: 'Not a connection',
+        content: 'Regular entry',
+        entry_type: 'story',
+      },
+    ])
+
+    assert.equal(context.liveConnectionItems.length, 2)
+    assert.equal(context.connectionPrincipleCount, 1)
+    assert.match(context.connectionPrinciplesSection, /Delegation is three sentences/)
+    assert.match(context.productPrinciplesSection, /A product must reduce user friction/)
+    assert.match(context.publicOntologyGuardrailSection, /Public ontology guardrails/)
+    assert.ok(context.publicGuardrailCount > 0)
+  })
+
+  it('applies the shared connection prompt limit', () => {
+    const entries = Array.from({ length: CONNECTION_PROMPT_LIMIT + 2 }, (_, index) => ({
+      id: `connection-${index}`,
+      headline: `Connection ${index}`,
+      content: `If condition ${index}, then outcome ${index}.`,
+      connection_type: 'validated_principle',
+      entry_type: 'connection',
+    }))
+
+    assert.equal(buildConnectionItemsForPrompt(entries).length, CONNECTION_PROMPT_LIMIT)
   })
 })
 

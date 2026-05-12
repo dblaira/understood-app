@@ -1,13 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { buildOntologyPromptSection } from '@/lib/ontology/build-prompt-section'
-import {
-  buildConnectionIntakeItemsFromEntries,
-  buildConnectionPrinciplesPromptSection,
-  getConnectionPromptPrinciples,
-} from '@/lib/ontology/connections-intake'
-import { buildProductOntologyPromptSection } from '@/lib/ontology/product-ontology'
-import { buildPublicOntologyGuardrailSection, PUBLIC_ONTOLOGY_REFERENCES } from '@/lib/ontology/public-reference'
+import { buildLayeredOntologyPromptContext } from '@/lib/ontology/prompt-context'
 
 interface ChatMessage {
   role: 'user' | 'assistant'
@@ -91,7 +85,7 @@ export async function POST(request: NextRequest) {
       // Ontology table may not exist in older environments.
     }
 
-    const liveConnectionItems = buildConnectionIntakeItemsFromEntries(
+    const ontologyPromptContext = buildLayeredOntologyPromptContext(
       entries
         .filter((entry) => entry.entry_type === 'connection')
         .map((entry) => ({
@@ -101,10 +95,6 @@ export async function POST(request: NextRequest) {
           connection_type: entry.connection_type,
         }))
     )
-    const connectionPrinciplesSection = buildConnectionPrinciplesPromptSection(liveConnectionItems)
-    const connectionPrincipleCount = getConnectionPromptPrinciples(liveConnectionItems).length
-    const productPrinciplesSection = buildProductOntologyPromptSection(liveConnectionItems)
-    const publicOntologyGuardrailSection = buildPublicOntologyGuardrailSection()
 
     // Build a compact index of entries for the AI
     const entryIndex = entries.map((e, i) => {
@@ -132,7 +122,7 @@ export async function POST(request: NextRequest) {
 
 Your job is to help the user find specific entries by analyzing their natural language query against the entry index below. Be conversational, warm, and concise.
 
-${ontologyMemorySection}${connectionPrinciplesSection}${productPrinciplesSection}${publicOntologyGuardrailSection}
+${ontologyMemorySection}${ontologyPromptContext.connectionPrinciplesSection}${ontologyPromptContext.productPrinciplesSection}${ontologyPromptContext.publicOntologyGuardrailSection}
 
 When using the memory context above, distinguish confirmed ontology axioms from user-authored Connections, product/system principles, and public ontology guardrails. Confirmed axioms are stronger personal rules. Connections are helpful operating principles. Product/system principles apply only to product reasoning. Public ontology references discipline terminology and scope, but they do not turn the user's personal observations into medical, dietary, legal, or financial advice. Do not claim a Connection is confirmed unless it appears as a confirmed ontology axiom.
 
@@ -223,8 +213,8 @@ ${entryIndex}
       entries: referencedEntries,
       memory_context: {
         confirmed_axioms: confirmedAxiomCount,
-        connection_principles: connectionPrincipleCount,
-        public_guardrails: PUBLIC_ONTOLOGY_REFERENCES.length,
+        connection_principles: ontologyPromptContext.connectionPrincipleCount,
+        public_guardrails: ontologyPromptContext.publicGuardrailCount,
         note: 'Confirmed axioms are trusted rules; Connections are read-only principles; public guardrails discipline scope.',
       },
     })

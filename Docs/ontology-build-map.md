@@ -62,6 +62,7 @@ AI assistant
 | Semantic web layer | Built as visible check layer | RDF, SHACL, validation, and SPARQL competency templates are visible in `/ontology`. |
 | Public ontology/BFO integration | Built as guardrail scaffold | BFO/domain references, source IRIs, personal-public bridges, and assistant prompt guardrails exist; no bulk external import yet. |
 | Durable ontology pipeline | Built for current cycle | Axioms can be reviewed, split-claim triage persists locally, and personal Connections can become candidate axioms. |
+| Prompt-context parity | Built | Search chat and entry inference use the same live Connection merge policy, product lane, and public guardrails. |
 
 ## What Is Built
 
@@ -169,6 +170,8 @@ What they proved:
 | `lib/ontology/semantic-validation.ts` | Checks exported Turtle for required axiom predicates | Built |
 | `lib/ontology/semantic-report.ts` | Combines RDF export, SHACL, validation, and SPARQL templates for the UI | Built |
 | `lib/ontology/sparql-queries.ts` | Defines competency query templates | Built |
+| `lib/ontology/prompt-context.ts` | Shared prompt-context builder for live Connections, product principles, and public guardrails | Built |
+| `scripts/check-ontology-semantic.ts` | CI-ready semantic checklist for export validation and fixtures | Built |
 | `fixtures/ontology/` | Canonical Turtle examples | Built |
 | `lib/ontology/public-reference.ts` | BFO/domain references, source IRIs, guardrail prompt section, and personal-public bridges | Built |
 

@@ -16,6 +16,7 @@ interface ChatMessage {
 interface MemoryContext {
   confirmed_axioms: number
   connection_principles: number
+  public_guardrails?: number
   note: string
 }
 
@@ -285,6 +286,9 @@ export function SearchChat({ userId, entries, onClose, onViewEntry }: SearchChat
                   <div>
                     {message.memoryContext.confirmed_axioms} confirmed axioms ·{' '}
                     {message.memoryContext.connection_principles} Connection principles
+                    {typeof message.memoryContext.public_guardrails === 'number'
+                      ? ` · ${message.memoryContext.public_guardrails} public guardrails`
+                      : ''}
                   </div>
                   <div style={{ color: '#B45309', marginTop: '0.15rem' }}>
                     {message.memoryContext.note}

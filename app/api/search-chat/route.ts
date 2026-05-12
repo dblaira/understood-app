@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { buildOntologyPromptSection } from '@/lib/ontology/build-prompt-section'
 import { buildConnectionPrinciplesPromptSection, getConnectionPromptPrinciples } from '@/lib/ontology/connections-intake'
 import { buildProductOntologyPromptSection } from '@/lib/ontology/product-ontology'
+import { buildPublicOntologyGuardrailSection, PUBLIC_ONTOLOGY_REFERENCES } from '@/lib/ontology/public-reference'
 
 interface ChatMessage {
   role: 'user' | 'assistant'
@@ -89,6 +90,7 @@ export async function POST(request: NextRequest) {
     const connectionPrinciplesSection = buildConnectionPrinciplesPromptSection()
     const connectionPrincipleCount = getConnectionPromptPrinciples().length
     const productPrinciplesSection = buildProductOntologyPromptSection()
+    const publicOntologyGuardrailSection = buildPublicOntologyGuardrailSection()
 
     // Build a compact index of entries for the AI
     const entryIndex = entries.map((e, i) => {
@@ -116,9 +118,9 @@ export async function POST(request: NextRequest) {
 
 Your job is to help the user find specific entries by analyzing their natural language query against the entry index below. Be conversational, warm, and concise.
 
-${ontologyMemorySection}${connectionPrinciplesSection}${productPrinciplesSection}
+${ontologyMemorySection}${connectionPrinciplesSection}${productPrinciplesSection}${publicOntologyGuardrailSection}
 
-When using the memory context above, distinguish confirmed ontology axioms from user-authored Connections and product/system principles. Confirmed axioms are stronger rules. Connections are helpful operating principles. Product/system principles apply only to product reasoning. Do not claim a Connection is confirmed unless it appears as a confirmed ontology axiom.
+When using the memory context above, distinguish confirmed ontology axioms from user-authored Connections, product/system principles, and public ontology guardrails. Confirmed axioms are stronger personal rules. Connections are helpful operating principles. Product/system principles apply only to product reasoning. Public ontology references discipline terminology and scope, but they do not turn the user's personal observations into medical, dietary, legal, or financial advice. Do not claim a Connection is confirmed unless it appears as a confirmed ontology axiom.
 
 ## ENTRY INDEX (${entries.length} entries total):
 ${entryIndex}
@@ -208,7 +210,8 @@ ${entryIndex}
       memory_context: {
         confirmed_axioms: confirmedAxiomCount,
         connection_principles: connectionPrincipleCount,
-        note: 'Confirmed axioms are trusted rules; Connections are read-only operating principles.',
+        public_guardrails: PUBLIC_ONTOLOGY_REFERENCES.length,
+        note: 'Confirmed axioms are trusted rules; Connections are read-only principles; public guardrails discipline scope.',
       },
     })
   } catch (error) {

@@ -41,7 +41,9 @@ import {
 import { buildOntologyReviewQueue, getAxiomProvenanceLabel } from '../lib/ontology/review-queue'
 import { getProvenanceSourceDescriptor, normalizeProvenanceSource } from '../lib/ontology/provenance'
 import {
+  buildPublicOntologyGuardrailSection,
   getPersonalPublicBridgeSummary,
+  getPublicReferencesByDomain,
   getPublicReferenceById,
   PERSONAL_PUBLIC_BRIDGES,
   PUBLIC_ONTOLOGY_REFERENCES,
@@ -1219,6 +1221,18 @@ describe('public ontology reference scaffold', () => {
     assert.match(summary, /Adam's Sleep mapsTo Sleep/)
     assert.match(summary, /Adam's EveningCaffeineRule constrainedBy Caffeine/)
     assert.match(summary, /Understood app architecture mapsTo Software system/)
+  })
+
+  it('builds a public ontology guardrail section without personal-rule authority', () => {
+    const nutritionReferences = getPublicReferencesByDomain('nutrition')
+    assert.ok(nutritionReferences.some((reference) => reference.sourceUrl.includes('purl.obolibrary.org')))
+
+    const section = buildPublicOntologyGuardrailSection()
+    assert.match(section, /Public ontology guardrails/)
+    assert.match(section, /Basic Formal Ontology/)
+    assert.match(section, /FoodOn/)
+    assert.match(section, /do not override the user's confirmed personal axioms/)
+    assert.match(section, /not medical, dietary, legal, or financial advice/)
   })
 })
 

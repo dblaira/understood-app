@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useTransition } from 'react'
+import { useEffect, useMemo, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
@@ -8,6 +8,7 @@ import { updateOntologyAxiomStatus } from '@/app/actions/ontology'
 import { evaluateAxiomRetirementReadiness, type AxiomRetirementReadiness } from '@/lib/ontology/axiom-review'
 import { splitEntryIntoClaims, type ClaimSplitResult } from '@/lib/ontology/claim-splitting'
 import { summarizeAxiomEvidence, type AxiomEvidenceSummary } from '@/lib/ontology/evidence'
+import { buildOntologySemanticReport } from '@/lib/ontology/semantic-report'
 import { getProvenanceSourceDescriptor, normalizeProvenanceSource, type ProvenanceSourceDescriptor } from '@/lib/ontology/provenance'
 import { buildOntologyReviewQueue, getAxiomProvenanceLabel } from '@/lib/ontology/review-queue'
 import {
@@ -154,6 +155,7 @@ export default function OntologyPage() {
   const [showHowItWorks, setShowHowItWorks] = useState(true)
   const [isReviewing, startReviewTransition] = useTransition()
   const reviewQueue = buildOntologyReviewQueue(axioms)
+  const semanticReport = useMemo(() => buildOntologySemanticReport(axioms), [axioms])
 
   useEffect(() => {
     let cancelled = false
@@ -678,6 +680,39 @@ export default function OntologyPage() {
 
             <OntologyConnectionsIntakeSection />
 
+            <section
+              style={{
+                background: 'rgba(34,197,94,0.06)',
+                border: '1px solid rgba(34,197,94,0.18)',
+                borderRadius: '12px',
+                padding: '1.5rem',
+                marginBottom: '2rem',
+              }}
+            >
+              <h2 style={{ fontSize: '1.25rem', marginBottom: '0.35rem', fontWeight: 600 }}>Semantic check</h2>
+              <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.82rem', marginBottom: '1rem', lineHeight: 1.45 }}>
+                Confirmed personal axioms are exported to Turtle, checked against required semantic predicates, and mapped to competency-query templates.
+              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '0.75rem' }}>
+                <SemanticStat label="Exported axioms" value={semanticReport.exportedAxiomCount} />
+                <SemanticStat label="Validated subjects" value={semanticReport.validation.checkedSubjects} />
+                <SemanticStat label="Validation" value={semanticReport.validation.valid ? 'Pass' : 'Review'} tone={semanticReport.validation.valid ? 'good' : 'warn'} />
+                <SemanticStat label="SPARQL templates" value={semanticReport.queryTemplateCount} />
+              </div>
+              {semanticReport.validation.issues.length > 0 && (
+                <ul style={{ margin: '0.75rem 0 0', paddingLeft: '1.1rem', color: 'rgba(248,113,113,0.85)', fontSize: '0.78rem' }}>
+                  {semanticReport.validation.issues.map((issue) => (
+                    <li key={issue.subject}>
+                      {issue.subject}: missing {issue.missingPredicates.join(', ')}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.72rem', margin: '0.85rem 0 0', lineHeight: 1.45 }}>
+                Query layer: {semanticReport.queryNames.join(' · ')}
+              </p>
+            </section>
+
             <div
               style={{
                 display: 'grid',
@@ -1008,6 +1043,35 @@ function provenanceRoleColor(role: ProvenanceSourceDescriptor['reviewRole']): st
   if (role === 'user_originated') return '#f0abfc'
   if (role === 'derived_from_record') return '#c4b5fd'
   return 'rgba(255,255,255,0.45)'
+}
+
+function SemanticStat({
+  label,
+  value,
+  tone = 'neutral',
+}: {
+  label: string
+  value: number | string
+  tone?: 'neutral' | 'good' | 'warn'
+}) {
+  const color = tone === 'good' ? '#86efac' : tone === 'warn' ? '#fbbf24' : 'rgba(255,255,255,0.78)'
+  return (
+    <div
+      style={{
+        border: '1px solid rgba(255,255,255,0.1)',
+        borderRadius: '10px',
+        padding: '0.8rem',
+        background: 'rgba(0,0,0,0.16)',
+      }}
+    >
+      <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.7rem', margin: 0, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+        {label}
+      </p>
+      <p style={{ color, fontSize: '1.2rem', margin: '0.25rem 0 0', fontWeight: 600 }}>
+        {value}
+      </p>
+    </div>
+  )
 }
 
 function EvidenceBadge({

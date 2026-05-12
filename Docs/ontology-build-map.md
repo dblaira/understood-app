@@ -50,7 +50,7 @@ AI assistant
 | Calibration workflow | Built | Real entries and Connections have been reviewed in docs. |
 | Split-claim review UI | Built as browser-persisted triage | Useful, saved locally, and still cannot mutate axioms or confidence. |
 | Connections ontology intake | Built as live triage + candidate creation + read-only context | Live Connections load into review with calibration fallback; strong personal Connections can guide AI as principles and can be manually promoted to candidate axioms. |
-| Semantic web layer | Scaffolded | RDF, SHACL, SPARQL exist as export/check/template layer. |
+| Semantic web layer | Built as visible check layer | RDF, SHACL, validation, and SPARQL competency templates are visible in `/ontology`. |
 | Public ontology/BFO integration | Built as guardrail scaffold | BFO/domain references, source IRIs, personal-public bridges, and assistant prompt guardrails exist; no bulk external import yet. |
 | Durable ontology pipeline | Partly built | Axioms can be reviewed, but split-claim and Connection intake decisions are not persisted. |
 
@@ -158,6 +158,7 @@ What they proved:
 | `lib/ontology/rdf-export.ts` | Exports trusted axioms to Turtle | Built |
 | `lib/ontology/shacl-shapes.ts` | Defines validation shapes | Built |
 | `lib/ontology/semantic-validation.ts` | Checks exported Turtle for required axiom predicates | Built |
+| `lib/ontology/semantic-report.ts` | Combines RDF export, SHACL, validation, and SPARQL templates for the UI | Built |
 | `lib/ontology/sparql-queries.ts` | Defines competency query templates | Built |
 | `fixtures/ontology/` | Canonical Turtle examples | Built |
 | `lib/ontology/public-reference.ts` | BFO/domain references, source IRIs, guardrail prompt section, and personal-public bridges | Built |
@@ -171,7 +172,7 @@ What they proved:
 | Durable evidence links for Connections | Possible evidence is shown read-only, but not linked. | Not built. |
 | Product ontology lane | Product/system principles are extracted separately and available as product-only prompt context. | Scaffolded. |
 | External public ontology import | Needed for full third-party ontology ingestion. | Guardrail catalog built; bulk import not built. |
-| Live SHACL/SPARQL execution | Turtle export has a local required-field validator; SPARQL remains template-only. | Partly built. |
+| Live SHACL/SPARQL execution | `/ontology` shows live Turtle export counts, semantic validation status, and SPARQL competency templates. | Built as local semantic check layer. |
 | Assistant explanation UX | Search assistant receives confirmed axioms and read-only Connections with separate labels and shows memory-context counts in the chat UI. | Built. |
 
 ## Current Source of Truth

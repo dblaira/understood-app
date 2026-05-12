@@ -23,6 +23,7 @@ import { buildAxiomEvidenceUpdate, summarizeAxiomEvidence } from '../lib/ontolog
 import { projectAxiomsToKnowledgeGraph } from '../lib/ontology/knowledge-graph'
 import { exportAxiomsToTurtle } from '../lib/ontology/rdf-export'
 import { buildOntologyShaclShapes } from '../lib/ontology/shacl-shapes'
+import { buildOntologySemanticReport } from '../lib/ontology/semantic-report'
 import { validateOntologyAxiomTurtle } from '../lib/ontology/semantic-validation'
 import {
   buildCandidateAxiomFromConnection,
@@ -1015,6 +1016,45 @@ understood:axiom_axiom_1
       'understood:evidenceCount',
       'understood:provenanceSource',
     ])
+  })
+})
+
+describe('semantic report', () => {
+  it('summarizes RDF export, SHACL, validation, and SPARQL templates together', () => {
+    const report = buildOntologySemanticReport([
+      {
+        id: 'a1',
+        antecedent: 'Low sleep',
+        consequent: 'Lower patience',
+        confidence: 0.7,
+        status: 'confirmed',
+        scope: 'personal',
+        relationshipType: 'predicts',
+        evidenceEntryIds: ['e1'],
+        evidenceCount: 1,
+        provenance: { source: 'self_declared' },
+      },
+      {
+        id: 'a2',
+        antecedent: 'Candidate only',
+        consequent: 'Not exported',
+        confidence: 0.4,
+        status: 'candidate',
+        scope: 'personal',
+        relationshipType: 'predicts',
+        evidenceEntryIds: [],
+        evidenceCount: 0,
+        provenance: { source: 'ai_proposed' },
+      },
+    ])
+
+    assert.equal(report.exportedAxiomCount, 1)
+    assert.equal(report.validation.valid, true)
+    assert.equal(report.validation.checkedSubjects, 1)
+    assert.equal(report.queryTemplateCount, 4)
+    assert.match(report.turtle, /understood:Axiom/)
+    assert.match(report.shacl, /sh:NodeShape/)
+    assert.ok(report.queryNames.includes('CQ-005 prompt eligibility'))
   })
 })
 

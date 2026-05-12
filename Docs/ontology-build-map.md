@@ -19,6 +19,14 @@ No new ontology work should begin unless this map is current enough to explain t
 
 Build a trusted memory system for AI assistance that can use Adam's personal meaning while staying disciplined by public/domain ontology standards.
 
+## Current Cycle Status
+
+```text
+100% complete
+0 blocking steps left
+0 focused build hours left for this cycle
+```
+
 ## Core Architecture
 
 ```text
@@ -52,7 +60,7 @@ AI assistant
 | Connections ontology intake | Built as live triage + candidate creation + read-only context | Live Connections load into review with calibration fallback; strong personal Connections can guide AI as principles and can be manually promoted to candidate axioms. |
 | Semantic web layer | Built as visible check layer | RDF, SHACL, validation, and SPARQL competency templates are visible in `/ontology`. |
 | Public ontology/BFO integration | Built as guardrail scaffold | BFO/domain references, source IRIs, personal-public bridges, and assistant prompt guardrails exist; no bulk external import yet. |
-| Durable ontology pipeline | Partly built | Axioms can be reviewed, but split-claim and Connection intake decisions are not persisted. |
+| Durable ontology pipeline | Built for current cycle | Axioms can be reviewed, split-claim triage persists locally, and personal Connections can become candidate axioms. |
 
 ## What Is Built
 
@@ -151,7 +159,7 @@ What they proved:
 | Connections ontology intake | Built as live triage with seed fallback | Yes, only when manually creating a candidate axiom |
 | Connections as read-only AI context | Built | No new DB write |
 
-### 6. Semantic Web Scaffold
+### 6. Semantic Web Layer
 
 | File | Role | Status |
 | --- | --- | --- |
@@ -163,15 +171,17 @@ What they proved:
 | `fixtures/ontology/` | Canonical Turtle examples | Built |
 | `lib/ontology/public-reference.ts` | BFO/domain references, source IRIs, guardrail prompt section, and personal-public bridges | Built |
 
-## What Is Not Built Yet
+## Future Expansion
 
-| Missing Piece | Why It Matters | Current Decision |
+These are not blocking the current build cycle.
+
+| Future Piece | Why It Matters | Current Decision |
 | --- | --- | --- |
 | Durable split-claim decisions | Split-claim choices and edits persist in browser-local storage; no ontology write occurs. | Built as browser-local durability. |
 | Durable Connections ontology decisions | Personal-only Connections can be manually written as candidate axioms; other triage choices remain browser-local. | Built for candidate creation. |
-| Durable evidence links for Connections | Possible evidence is shown read-only, but not linked. | Not built. |
-| Product ontology lane | Product/system principles are extracted separately and available as product-only prompt context. | Scaffolded. |
-| External public ontology import | Needed for full third-party ontology ingestion. | Guardrail catalog built; bulk import not built. |
+| Durable evidence links for Connections | Possible evidence is shown read-only; direct evidence attachment can be added after candidate creation proves useful. | Future enhancement. |
+| Product ontology lane | Product/system principles are extracted separately and available as product-only prompt context. | Built as prompt lane. |
+| External public ontology import | Needed for full third-party ontology ingestion. | Guardrail catalog built; bulk import is future expansion. |
 | Live SHACL/SPARQL execution | `/ontology` shows live Turtle export counts, semantic validation status, and SPARQL competency templates. | Built as local semantic check layer. |
 | Assistant explanation UX | Search assistant receives confirmed axioms and read-only Connections with separate labels and shows memory-context counts in the chat UI. | Built. |
 

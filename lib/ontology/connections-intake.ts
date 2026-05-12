@@ -75,6 +75,40 @@ export interface ConnectionPromptPrinciple {
   boundary: OntologyBoundary
 }
 
+export interface ConnectionCandidateAxiom {
+  name: string
+  description: string
+  antecedent: string
+  consequent: string
+  confidence: 0.5
+  status: 'candidate'
+  scope: 'personal'
+  relationshipType: 'predicts'
+  evidenceEntryIds: string[]
+  evidenceCount: 1
+  sources: ['self_declared']
+  provenance: {
+    source: 'self_declared'
+    connectionId: string
+    connectionHeadline: string
+    connectionType: string
+    suggestedBucket: ConnectionOntologyBucket
+    competencyQuestion: 'connections-calibration'
+    requiresHumanReview: true
+  }
+}
+
+export type ConnectionCandidateAxiomResult =
+  | ConnectionCandidateAxiom
+  | {
+      ignored: true
+      reason:
+        | 'Connection is not a personal ontology claim'
+        | 'Connection needs splitting before candidate review'
+        | 'Connection has no candidate axiom draft'
+        | 'Connection draft is not an if-then pattern'
+    }
+
 /**
  * Canonical 18 items from Docs/ontology-connections-calibration-001.md
  * with suggestedBucket from Docs/ontology-connections-calibration-001-summary.md
@@ -332,6 +366,67 @@ ${principles.map((item) => `- ${item.headline}: ${item.principle}`).join('\n')}
 `
 }
 
+export function buildCandidateAxiomFromConnection(
+  item: ConnectionOntologyIntakeItem
+): ConnectionCandidateAxiomResult {
+  if (item.boundary === 'both') {
+    return {
+      ignored: true,
+      reason: 'Connection needs splitting before candidate review',
+    }
+  }
+
+  if (
+    item.boundary !== 'personal_pattern' ||
+    item.suggestedBucket === 'product_system_principle' ||
+    item.suggestedBucket === 'mixed_personal_product'
+  ) {
+    return {
+      ignored: true,
+      reason: 'Connection is not a personal ontology claim',
+    }
+  }
+
+  const draft = item.candidateAxiomDraft?.trim()
+  if (!draft) {
+    return {
+      ignored: true,
+      reason: 'Connection has no candidate axiom draft',
+    }
+  }
+
+  const parsed = parseIfThenPattern(draft)
+  if (!parsed) {
+    return {
+      ignored: true,
+      reason: 'Connection draft is not an if-then pattern',
+    }
+  }
+
+  return {
+    name: item.headline,
+    description: `Candidate axiom created from Connection "${item.headline}". Requires human review before it can govern reasoning.`,
+    antecedent: parsed.antecedent,
+    consequent: parsed.consequent,
+    confidence: 0.5,
+    status: 'candidate',
+    scope: 'personal',
+    relationshipType: 'predicts',
+    evidenceEntryIds: [item.id],
+    evidenceCount: 1,
+    sources: ['self_declared'],
+    provenance: {
+      source: 'self_declared',
+      connectionId: item.id,
+      connectionHeadline: item.headline,
+      connectionType: String(item.connectionType),
+      suggestedBucket: item.suggestedBucket,
+      competencyQuestion: 'connections-calibration',
+      requiresHumanReview: true,
+    },
+  }
+}
+
 export function buildConnectionIntakeItemsFromEntries(
   entries: ConnectionOntologyEntryLike[],
   fallbackItems: ConnectionOntologyIntakeItem[] = CONNECTION_ONTOLOGY_INTAKE_ITEMS
@@ -392,6 +487,17 @@ function inferCalibrationMove(bucket: ConnectionOntologyBucket): string {
   if (bucket === 'mixed_personal_product') return 'split before review'
   if (bucket === 'remain_connection_only') return 'connection only'
   return 'candidate'
+}
+
+function parseIfThenPattern(value: string): { antecedent: string; consequent: string } | null {
+  const match = value.match(/^if\s+(.+?)(?:,\s*)?\s+then\s+(.+?)(?:\.)?$/i)
+  if (!match) return null
+
+  const antecedent = match[1].trim()
+  const consequent = match[2].trim()
+  if (!antecedent || !consequent) return null
+
+  return { antecedent, consequent }
 }
 
 export function findConnectionEvidenceCandidates(

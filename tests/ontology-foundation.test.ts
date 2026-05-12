@@ -25,6 +25,7 @@ import { exportAxiomsToTurtle } from '../lib/ontology/rdf-export'
 import { buildOntologyShaclShapes } from '../lib/ontology/shacl-shapes'
 import { validateOntologyAxiomTurtle } from '../lib/ontology/semantic-validation'
 import {
+  buildCandidateAxiomFromConnection,
   buildConnectionIntakeItemsFromEntries,
   buildConnectionPrinciplesPromptSection,
   CONNECTION_ONTOLOGY_INTAKE_ITEMS,
@@ -1154,6 +1155,52 @@ describe('connections ontology intake seed', () => {
     assert.equal(candidates.length, 1)
     assert.equal(candidates[0].entryId, 'entry-1')
     assert.ok(candidates[0].matchedTerms.includes('delegation'))
+  })
+
+  it('turns eligible personal connections into candidate axioms only', () => {
+    const connection = CONNECTION_ONTOLOGY_INTAKE_ITEMS.find((item) => item.headline === 'Delegation is three sentences')
+    assert.ok(connection)
+
+    const candidate = buildCandidateAxiomFromConnection(connection)
+
+    assert.deepEqual(candidate, {
+      name: 'Delegation is three sentences',
+      description: 'Candidate axiom created from Connection "Delegation is three sentences". Requires human review before it can govern reasoning.',
+      antecedent: 'delegation includes what I want, how I think about it, and what done looks like',
+      consequent: 'handoff quality improves',
+      confidence: 0.5,
+      status: 'candidate',
+      scope: 'personal',
+      relationshipType: 'predicts',
+      evidenceEntryIds: ['conn-004'],
+      evidenceCount: 1,
+      sources: ['self_declared'],
+      provenance: {
+        source: 'self_declared',
+        connectionId: 'conn-004',
+        connectionHeadline: 'Delegation is three sentences',
+        connectionType: 'process_anchor',
+        suggestedBucket: 'strong_candidate_personal',
+        competencyQuestion: 'connections-calibration',
+        requiresHumanReview: true,
+      },
+    })
+  })
+
+  it('blocks product and mixed connections from direct personal candidate creation', () => {
+    const product = CONNECTION_ONTOLOGY_INTAKE_ITEMS.find((item) => item.headline === 'Products fight potential slipping away')
+    const mixed = CONNECTION_ONTOLOGY_INTAKE_ITEMS.find((item) => item.headline === 'My assignment is to create desire')
+    assert.ok(product)
+    assert.ok(mixed)
+
+    assert.deepEqual(buildCandidateAxiomFromConnection(product), {
+      ignored: true,
+      reason: 'Connection is not a personal ontology claim',
+    })
+    assert.deepEqual(buildCandidateAxiomFromConnection(mixed), {
+      ignored: true,
+      reason: 'Connection needs splitting before candidate review',
+    })
   })
 })
 

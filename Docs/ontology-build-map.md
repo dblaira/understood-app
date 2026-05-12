@@ -49,7 +49,7 @@ AI assistant
 | Personal ontology foundation | Built | Entries, axioms, evidence, provenance, review gates exist. |
 | Calibration workflow | Built | Real entries and Connections have been reviewed in docs. |
 | Split-claim review UI | Built as local triage | Useful, but not durable. |
-| Connections ontology intake | Built as live local triage + read-only context | Live Connections load into review with calibration fallback; strong personal Connections can guide AI as principles without becoming confirmed axioms. |
+| Connections ontology intake | Built as live triage + candidate creation + read-only context | Live Connections load into review with calibration fallback; strong personal Connections can guide AI as principles and can be manually promoted to candidate axioms. |
 | Semantic web layer | Scaffolded | RDF, SHACL, SPARQL exist as export/check/template layer. |
 | Public ontology/BFO integration | Scaffolded | BFO/domain reference placeholders and personal-public bridges exist; no external ontology import yet. |
 | Durable ontology pipeline | Partly built | Axioms can be reviewed, but split-claim and Connection intake decisions are not persisted. |
@@ -148,7 +148,7 @@ What they proved:
 | --- | --- | --- |
 | Candidate review queue | Built | Yes, for axiom status review |
 | Split-claim review | Built as local triage | No |
-| Connections ontology intake | Built as live local triage with seed fallback | No |
+| Connections ontology intake | Built as live triage with seed fallback | Yes, only when manually creating a candidate axiom |
 | Connections as read-only AI context | Built | No new DB write |
 
 ### 6. Semantic Web Scaffold
@@ -167,7 +167,7 @@ What they proved:
 | Missing Piece | Why It Matters | Current Decision |
 | --- | --- | --- |
 | Durable split-claim decisions | Local triage disappears or stays browser-local. | Wait until workflow is understood. |
-| Durable Connections ontology decisions | Connection review is local/browser-only. | Wait until intake surface proves useful. |
+| Durable Connections ontology decisions | Personal-only Connections can be manually written as candidate axioms; other triage choices remain browser-local. | Built for candidate creation. |
 | Durable evidence links for Connections | Possible evidence is shown read-only, but not linked. | Not built. |
 | Product ontology lane | Product/system principles are extracted separately and available as product-only prompt context. | Scaffolded. |
 | External public ontology import | Needed for larger trusted architecture. | Not built. |

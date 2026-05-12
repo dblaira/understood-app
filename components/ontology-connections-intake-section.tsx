@@ -1,6 +1,7 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState, useTransition } from 'react'
+import { createCandidateAxiomFromConnection } from '@/app/actions/ontology'
 import { getProvenanceSourceDescriptor } from '@/lib/ontology/provenance'
 import { supabase } from '@/lib/supabase/client'
 import {
@@ -62,6 +63,9 @@ export function OntologyConnectionsIntakeSection() {
   const [items, setItems] = useState<ConnectionOntologyIntakeItem[]>(CONNECTION_ONTOLOGY_INTAKE_ITEMS)
   const [evidenceEntries, setEvidenceEntries] = useState<ConnectionEvidenceEntryLike[]>([])
   const [sourceLabel, setSourceLabel] = useState('calibration seeds')
+  const [createdCandidates, setCreatedCandidates] = useState<Record<string, string>>({})
+  const [candidateErrors, setCandidateErrors] = useState<Record<string, string>>({})
+  const [isCreatingCandidate, startCreateCandidateTransition] = useTransition()
 
   useEffect(() => {
     setLocalActions(loadConnectionIntakeLocalState())
@@ -139,6 +143,20 @@ export function OntologyConnectionsIntakeSection() {
     saveConnectionIntakeLocalState({})
   }, [])
 
+  const createCandidate = useCallback((item: ConnectionOntologyIntakeItem) => {
+    setCandidateErrors((current) => ({ ...current, [item.id]: '' }))
+    startCreateCandidateTransition(async () => {
+      const result = await createCandidateAxiomFromConnection(item)
+      if (result.error) {
+        setCandidateErrors((current) => ({ ...current, [item.id]: result.error ?? 'Failed to create candidate' }))
+        return
+      }
+
+      setCreatedCandidates((current) => ({ ...current, [item.id]: result.data?.id ?? 'created' }))
+      setAction(item.id, 'mark_for_candidate_review')
+    })
+  }, [setAction])
+
   const filteredItems = useMemo(() => {
     return items.filter(
       (item) => bucketFilter === 'all' || item.suggestedBucket === bucketFilter
@@ -206,6 +224,10 @@ export function OntologyConnectionsIntakeSection() {
             evidenceCandidates={findConnectionEvidenceCandidates(item, evidenceEntries)}
             selectedAction={localActions[item.id] ?? null}
             onSelectAction={(action) => setAction(item.id, action)}
+            onCreateCandidate={() => createCandidate(item)}
+            candidateCreated={createdCandidates[item.id] != null}
+            candidateError={candidateErrors[item.id] || null}
+            isCreatingCandidate={isCreatingCandidate}
           />
         ))}
       </ul>
@@ -247,13 +269,26 @@ function ConnectionIntakeCard({
   evidenceCandidates,
   selectedAction,
   onSelectAction,
+  onCreateCandidate,
+  candidateCreated,
+  candidateError,
+  isCreatingCandidate,
 }: {
   item: ConnectionOntologyIntakeItem
   evidenceCandidates: ConnectionEvidenceCandidate[]
   selectedAction: ConnectionIntakeLocalAction | null
   onSelectAction: (action: ConnectionIntakeLocalAction | null) => void
+  onCreateCandidate: () => void
+  candidateCreated: boolean
+  candidateError: string | null
+  isCreatingCandidate: boolean
 }) {
   const prov = getProvenanceSourceDescriptor(item.provenanceSource)
+  const canCreateCandidate =
+    item.boundary === 'personal_pattern' &&
+    item.suggestedBucket !== 'product_system_principle' &&
+    item.suggestedBucket !== 'mixed_personal_product' &&
+    item.candidateAxiomDraft != null
 
   return (
     <li
@@ -378,6 +413,39 @@ function ConnectionIntakeCard({
           <p style={{ color: 'rgba(147,197,253,0.85)', fontSize: '0.72rem', margin: '0.5rem 0 0' }}>
             Selected: {CONNECTION_INTAKE_ACTION_LABELS[selectedAction]}
           </p>
+        )}
+        {selectedAction === 'mark_for_candidate_review' && (
+          <div style={{ marginTop: '0.6rem' }}>
+            <button
+              type="button"
+              onClick={onCreateCandidate}
+              disabled={!canCreateCandidate || candidateCreated || isCreatingCandidate}
+              style={{
+                border: '1px solid rgba(251,191,36,0.35)',
+                background: canCreateCandidate && !candidateCreated ? 'rgba(251,191,36,0.12)' : 'rgba(255,255,255,0.04)',
+                color: canCreateCandidate && !candidateCreated ? '#fde68a' : 'rgba(255,255,255,0.35)',
+                borderRadius: '8px',
+                padding: '0.45rem 0.7rem',
+                fontSize: '0.72rem',
+                cursor: canCreateCandidate && !candidateCreated && !isCreatingCandidate ? 'pointer' : 'not-allowed',
+              }}
+            >
+              {candidateCreated ? 'Candidate created' : isCreatingCandidate ? 'Creating...' : 'Create candidate axiom'}
+            </button>
+            <p style={{ color: 'rgba(255,255,255,0.36)', fontSize: '0.7rem', margin: '0.4rem 0 0', lineHeight: 1.4 }}>
+              Creates a candidate only. Human review is still required before it can govern prompts, graph, or RDF.
+            </p>
+            {!canCreateCandidate && (
+              <p style={{ color: 'rgba(248,113,113,0.82)', fontSize: '0.7rem', margin: '0.35rem 0 0' }}>
+                Not eligible until it is a personal-only claim.
+              </p>
+            )}
+            {candidateError && (
+              <p style={{ color: 'rgba(248,113,113,0.82)', fontSize: '0.7rem', margin: '0.35rem 0 0' }}>
+                {candidateError}
+              </p>
+            )}
+          </div>
         )}
       </div>
     </li>

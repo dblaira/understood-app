@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { buildOntologyPromptSection } from '@/lib/ontology/build-prompt-section'
-import { buildConnectionPrinciplesPromptSection, getConnectionPromptPrinciples } from '@/lib/ontology/connections-intake'
+import {
+  buildConnectionIntakeItemsFromEntries,
+  buildConnectionPrinciplesPromptSection,
+  getConnectionPromptPrinciples,
+} from '@/lib/ontology/connections-intake'
 import { buildProductOntologyPromptSection } from '@/lib/ontology/product-ontology'
 import { buildPublicOntologyGuardrailSection, PUBLIC_ONTOLOGY_REFERENCES } from '@/lib/ontology/public-reference'
 
@@ -50,7 +54,7 @@ export async function POST(request: NextRequest) {
     // Fetch all user entries (summaries only for cost efficiency)
     const { data: entries, error: fetchError } = await supabase
       .from('entries')
-      .select('id, headline, subheading, category, mood, entry_type, created_at, content, completed_at, due_date')
+      .select('id, headline, subheading, category, mood, entry_type, connection_type, created_at, content, completed_at, due_date')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
 
@@ -87,9 +91,19 @@ export async function POST(request: NextRequest) {
       // Ontology table may not exist in older environments.
     }
 
-    const connectionPrinciplesSection = buildConnectionPrinciplesPromptSection()
-    const connectionPrincipleCount = getConnectionPromptPrinciples().length
-    const productPrinciplesSection = buildProductOntologyPromptSection()
+    const liveConnectionItems = buildConnectionIntakeItemsFromEntries(
+      entries
+        .filter((entry) => entry.entry_type === 'connection')
+        .map((entry) => ({
+          id: entry.id,
+          headline: entry.headline,
+          content: entry.content,
+          connection_type: entry.connection_type,
+        }))
+    )
+    const connectionPrinciplesSection = buildConnectionPrinciplesPromptSection(liveConnectionItems)
+    const connectionPrincipleCount = getConnectionPromptPrinciples(liveConnectionItems).length
+    const productPrinciplesSection = buildProductOntologyPromptSection(liveConnectionItems)
     const publicOntologyGuardrailSection = buildPublicOntologyGuardrailSection()
 
     // Build a compact index of entries for the AI

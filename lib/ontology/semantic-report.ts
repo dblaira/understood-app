@@ -1,5 +1,5 @@
-import type { RdfExportableAxiom } from '@/lib/ontology/rdf-export'
-import { exportAxiomsToTurtle } from '@/lib/ontology/rdf-export'
+import type { RdfExportableAxiom, RdfExportMetadata } from '@/lib/ontology/rdf-export'
+import { ONTOLOGY_VOCAB_VERSION, exportAxiomsToTurtle } from '@/lib/ontology/rdf-export'
 import { validateOntologyAxiomTurtle, type TurtleValidationResult } from '@/lib/ontology/semantic-validation'
 import { buildOntologyShaclShapes } from '@/lib/ontology/shacl-shapes'
 import {
@@ -11,6 +11,8 @@ import {
 
 export interface OntologySemanticReport {
   exportedAxiomCount: number
+  vocabularyVersion: string
+  appVersion: string
   turtle: string
   shacl: string
   validation: TurtleValidationResult
@@ -18,8 +20,13 @@ export interface OntologySemanticReport {
   queryNames: string[]
 }
 
-export function buildOntologySemanticReport(axioms: RdfExportableAxiom[]): OntologySemanticReport {
-  const turtle = exportAxiomsToTurtle(axioms)
+export function buildOntologySemanticReport(
+  axioms: RdfExportableAxiom[],
+  metadata: RdfExportMetadata = {}
+): OntologySemanticReport {
+  const vocabularyVersion = metadata.vocabularyVersion ?? ONTOLOGY_VOCAB_VERSION
+  const appVersion = metadata.appVersion ?? 'unknown'
+  const turtle = exportAxiomsToTurtle(axioms, { ...metadata, vocabularyVersion, appVersion })
   const validation = validateOntologyAxiomTurtle(turtle)
   const queries = [
     { name: 'CQ-005 prompt eligibility', query: buildPromptEligibleAxiomsQuery() },
@@ -30,6 +37,8 @@ export function buildOntologySemanticReport(axioms: RdfExportableAxiom[]): Ontol
 
   return {
     exportedAxiomCount: axioms.filter((axiom) => axiom.status === 'confirmed' && axiom.scope === 'personal').length,
+    vocabularyVersion,
+    appVersion,
     turtle,
     shacl: buildOntologyShaclShapes(),
     validation,

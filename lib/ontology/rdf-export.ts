@@ -1,6 +1,7 @@
 import type { OntologyAxiomScope, OntologyAxiomStatus, OntologyRelationshipType } from '@/types/ontology'
 
 const BASE_IRI = 'https://understood.app/ontology'
+export const ONTOLOGY_VOCAB_VERSION = 'understood-ontology-v1'
 
 export interface RdfExportableAxiom {
   id: string
@@ -15,12 +16,25 @@ export interface RdfExportableAxiom {
   provenance: Record<string, unknown>
 }
 
-export function exportAxiomsToTurtle(axioms: RdfExportableAxiom[]): string {
+export interface RdfExportMetadata {
+  vocabularyVersion?: string
+  appVersion?: string
+  exportedAt?: string
+}
+
+export function exportAxiomsToTurtle(
+  axioms: RdfExportableAxiom[],
+  metadata: RdfExportMetadata = {}
+): string {
   const confirmedPersonalAxioms = axioms.filter((axiom) => {
     return axiom.status === 'confirmed' && axiom.scope === 'personal'
   })
 
   const sections = [
+    `# vocabularyVersion: ${escapeComment(metadata.vocabularyVersion ?? ONTOLOGY_VOCAB_VERSION)}`,
+    `# appVersion: ${escapeComment(metadata.appVersion ?? 'unknown')}`,
+    metadata.exportedAt ? `# exportedAt: ${escapeComment(metadata.exportedAt)}` : null,
+    '',
     '@prefix understood: <https://understood.app/ontology#> .',
     '@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .',
     '',
@@ -31,7 +45,7 @@ export function exportAxiomsToTurtle(axioms: RdfExportableAxiom[]): string {
     ]),
   ]
 
-  return `${sections.join('\n\n')}\n`
+  return `${sections.filter((section) => section != null).join('\n\n')}\n`
 }
 
 function axiomTurtle(axiom: RdfExportableAxiom): string {
@@ -86,6 +100,10 @@ function escapeTurtleString(value: string): string {
     .replace(/"/g, '\\"')
     .replace(/\n/g, '\\n')
     .replace(/\r/g, '\\r')
+}
+
+function escapeComment(value: string): string {
+  return value.replace(/\r?\n/g, ' ').trim()
 }
 
 function formatDecimal(value: number): string {

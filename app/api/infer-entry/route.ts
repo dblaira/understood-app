@@ -3,7 +3,11 @@ import { createClient } from '@/lib/supabase/server'
 import { EntryType } from '@/types'
 import { LIFE_DOMAINS, parseLifeDomains, type LifeDomain } from '@/types/ontology'
 import { buildOntologyPromptSection } from '@/lib/ontology/build-prompt-section'
-import { buildConnectionPrinciplesPromptSection } from '@/lib/ontology/connections-intake'
+import {
+  buildConnectionIntakeItemsFromEntries,
+  buildConnectionPrinciplesPromptSection,
+} from '@/lib/ontology/connections-intake'
+import { buildProductOntologyPromptSection } from '@/lib/ontology/product-ontology'
 
 export interface InferredEntry {
   headline: string
@@ -76,13 +80,32 @@ export async function POST(request: NextRequest) {
       // Table may not exist until migration is applied
     }
 
-    const connectionPrinciplesSection = buildConnectionPrinciplesPromptSection()
+    let connectionPrinciplesSection = ''
+    let productPrinciplesSection = ''
+    try {
+      const { data: connectionRows, error: connectionError } = await supabase
+        .from('entries')
+        .select('id, headline, content, connection_type')
+        .eq('user_id', user.id)
+        .eq('entry_type', 'connection')
+        .order('created_at', { ascending: false })
+        .limit(50)
+
+      const liveConnectionItems = connectionError
+        ? buildConnectionIntakeItemsFromEntries([])
+        : buildConnectionIntakeItemsFromEntries(connectionRows ?? [])
+      connectionPrinciplesSection = buildConnectionPrinciplesPromptSection(liveConnectionItems)
+      productPrinciplesSection = buildProductOntologyPromptSection(liveConnectionItems)
+    } catch {
+      connectionPrinciplesSection = buildConnectionPrinciplesPromptSection()
+      productPrinciplesSection = buildProductOntologyPromptSection()
+    }
 
     const inferred = await inferEntryMetadata(
       content.trim(),
       apiKey,
       documentContent,
-      [ontologySection, connectionPrinciplesSection].filter(Boolean).join('')
+      [ontologySection, connectionPrinciplesSection, productPrinciplesSection].filter(Boolean).join('')
     )
 
     // SAFETY NET: If AI returned "story", check if it's actually a connection or action

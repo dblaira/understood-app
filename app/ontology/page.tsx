@@ -155,7 +155,9 @@ export default function OntologyPage() {
   const [showHowItWorks, setShowHowItWorks] = useState(true)
   const [isReviewing, startReviewTransition] = useTransition()
   const reviewQueue = buildOntologyReviewQueue(axioms)
-  const semanticReport = useMemo(() => buildOntologySemanticReport(axioms), [axioms])
+  const semanticReport = useMemo(() => buildOntologySemanticReport(axioms, {
+    appVersion: process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA ?? 'local',
+  }), [axioms])
 
   useEffect(() => {
     let cancelled = false
@@ -710,6 +712,9 @@ export default function OntologyPage() {
               )}
               <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.72rem', margin: '0.85rem 0 0', lineHeight: 1.45 }}>
                 Query layer: {semanticReport.queryNames.join(' · ')}
+              </p>
+              <p style={{ color: 'rgba(255,255,255,0.32)', fontSize: '0.7rem', margin: '0.45rem 0 0', lineHeight: 1.45 }}>
+                Version: {semanticReport.vocabularyVersion} · {semanticReport.appVersion}
               </p>
             </section>
 

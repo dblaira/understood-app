@@ -923,6 +923,8 @@ describe('RDF export', () => {
       },
     ])
 
+    assert.match(turtle, /# vocabularyVersion: understood-ontology-v1/)
+    assert.match(turtle, /# appVersion: unknown/)
     assert.match(turtle, /@prefix understood: <https:\/\/understood\.app\/ontology#> \./)
     assert.match(turtle, /<https:\/\/understood\.app\/ontology\/axiom\/axiom-1> a understood:Axiom ;/)
     assert.match(turtle, /understood:antecedent <https:\/\/understood\.app\/ontology\/concept\/high-learning> ;/)
@@ -1021,38 +1023,45 @@ understood:axiom_axiom_1
 
 describe('semantic report', () => {
   it('summarizes RDF export, SHACL, validation, and SPARQL templates together', () => {
-    const report = buildOntologySemanticReport([
-      {
-        id: 'a1',
-        antecedent: 'Low sleep',
-        consequent: 'Lower patience',
-        confidence: 0.7,
-        status: 'confirmed',
-        scope: 'personal',
-        relationshipType: 'predicts',
-        evidenceEntryIds: ['e1'],
-        evidenceCount: 1,
-        provenance: { source: 'self_declared' },
-      },
-      {
-        id: 'a2',
-        antecedent: 'Candidate only',
-        consequent: 'Not exported',
-        confidence: 0.4,
-        status: 'candidate',
-        scope: 'personal',
-        relationshipType: 'predicts',
-        evidenceEntryIds: [],
-        evidenceCount: 0,
-        provenance: { source: 'ai_proposed' },
-      },
-    ])
+    const report = buildOntologySemanticReport(
+      [
+        {
+          id: 'a1',
+          antecedent: 'Low sleep',
+          consequent: 'Lower patience',
+          confidence: 0.7,
+          status: 'confirmed',
+          scope: 'personal',
+          relationshipType: 'predicts',
+          evidenceEntryIds: ['e1'],
+          evidenceCount: 1,
+          provenance: { source: 'self_declared' },
+        },
+        {
+          id: 'a2',
+          antecedent: 'Candidate only',
+          consequent: 'Not exported',
+          confidence: 0.4,
+          status: 'candidate',
+          scope: 'personal',
+          relationshipType: 'predicts',
+          evidenceEntryIds: [],
+          evidenceCount: 0,
+          provenance: { source: 'ai_proposed' },
+        },
+      ],
+      { appVersion: 'test-sha', exportedAt: '2026-05-12T00:00:00.000Z' }
+    )
 
     assert.equal(report.exportedAxiomCount, 1)
+    assert.equal(report.vocabularyVersion, 'understood-ontology-v1')
+    assert.equal(report.appVersion, 'test-sha')
     assert.equal(report.validation.valid, true)
     assert.equal(report.validation.checkedSubjects, 1)
     assert.equal(report.queryTemplateCount, 4)
     assert.match(report.turtle, /understood:Axiom/)
+    assert.match(report.turtle, /# appVersion: test-sha/)
+    assert.match(report.turtle, /# exportedAt: 2026-05-12T00:00:00.000Z/)
     assert.match(report.shacl, /sh:NodeShape/)
     assert.ok(report.queryNames.includes('CQ-005 prompt eligibility'))
   })

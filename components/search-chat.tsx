@@ -9,7 +9,14 @@ interface ChatMessage {
   role: 'user' | 'assistant'
   content: string
   entries?: EntryReference[]
+  memoryContext?: MemoryContext
   isLoading?: boolean
+}
+
+interface MemoryContext {
+  confirmed_axioms: number
+  connection_principles: number
+  note: string
 }
 
 interface EntryReference {
@@ -115,6 +122,7 @@ export function SearchChat({ userId, entries, onClose, onViewEntry }: SearchChat
           role: 'assistant',
           content: data.response,
           entries: data.entries,
+          memoryContext: data.memory_context,
         },
       ])
     } catch (error: any) {
@@ -254,6 +262,35 @@ export function SearchChat({ userId, entries, onClose, onViewEntry }: SearchChat
                   )}
                 </div>
               </div>
+
+              {/* Memory context */}
+              {message.memoryContext && (
+                <div
+                  style={{
+                    marginTop: '0.5rem',
+                    marginLeft: '0.5rem',
+                    maxWidth: '85%',
+                    padding: '0.55rem 0.7rem',
+                    borderRadius: '8px',
+                    border: '1px solid #E5E7EB',
+                    background: '#FFFBEB',
+                    color: '#92400E',
+                    fontSize: '0.72rem',
+                    lineHeight: 1.4,
+                  }}
+                >
+                  <div style={{ fontWeight: 700, marginBottom: '0.15rem' }}>
+                    Memory context
+                  </div>
+                  <div>
+                    {message.memoryContext.confirmed_axioms} confirmed axioms ·{' '}
+                    {message.memoryContext.connection_principles} Connection principles
+                  </div>
+                  <div style={{ color: '#B45309', marginTop: '0.15rem' }}>
+                    {message.memoryContext.note}
+                  </div>
+                </div>
+              )}
 
               {/* Entry cards */}
               {message.entries && message.entries.length > 0 && (

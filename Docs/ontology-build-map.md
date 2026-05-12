@@ -172,7 +172,7 @@ What they proved:
 | Product ontology lane | Product/system principles are extracted separately and available as product-only prompt context. | Scaffolded. |
 | External public ontology import | Needed for larger trusted architecture. | Not built. |
 | Live SHACL/SPARQL execution | Turtle export has a local required-field validator; SPARQL remains template-only. | Partly built. |
-| Assistant explanation UX | Search assistant receives confirmed axioms and read-only Connections with separate labels and returns memory-context counts. | Partly built. |
+| Assistant explanation UX | Search assistant receives confirmed axioms and read-only Connections with separate labels and shows memory-context counts in the chat UI. | Built. |
 
 ## Current Source of Truth
 

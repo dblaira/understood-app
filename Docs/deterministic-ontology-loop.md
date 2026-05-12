@@ -106,6 +106,8 @@ confidence >= configured confidence gate
 antecedent and consequent are present
 ```
 
+Entry inference may include a separate, labeled **User-authored Connections** block from `buildConnectionPrinciplesPromptSection` (`lib/ontology/connections-intake.ts`) as non-governing context only—it must not be merged into CQ-005 prompt eligibility, graph projection, or RDF export, which remain confined to confirmed personal axioms.
+
 Everything else is review material, history, reference material, or training data.
 
 ## Product vs Personal Boundary

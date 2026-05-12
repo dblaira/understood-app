@@ -20,6 +20,7 @@ import {
   type OntologyAxiomStatus,
   type OntologyRelationshipType,
 } from '@/types/ontology'
+import { OntologyConnectionsIntakeSection } from '@/components/ontology-connections-intake-section'
 
 type AxiomRow = {
   id: string
@@ -624,6 +625,8 @@ export default function OntologyPage() {
                 </ul>
               )}
             </section>
+
+            <OntologyConnectionsIntakeSection />
 
             <div
               style={{

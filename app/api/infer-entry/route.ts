@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { EntryType } from '@/types'
 import { LIFE_DOMAINS, parseLifeDomains, type LifeDomain } from '@/types/ontology'
 import { buildOntologyPromptSection } from '@/lib/ontology/build-prompt-section'
+import { buildConnectionPrinciplesPromptSection } from '@/lib/ontology/connections-intake'
 
 export interface InferredEntry {
   headline: string
@@ -75,11 +76,13 @@ export async function POST(request: NextRequest) {
       // Table may not exist until migration is applied
     }
 
+    const connectionPrinciplesSection = buildConnectionPrinciplesPromptSection()
+
     const inferred = await inferEntryMetadata(
       content.trim(),
       apiKey,
       documentContent,
-      ontologySection
+      [ontologySection, connectionPrinciplesSection].filter(Boolean).join('')
     )
 
     // SAFETY NET: If AI returned "story", check if it's actually a connection or action
@@ -478,4 +481,3 @@ function detectObviousConnectionPatterns(content: string): string | null {
 
   return null
 }
-

@@ -24,6 +24,11 @@ import { projectAxiomsToKnowledgeGraph } from '../lib/ontology/knowledge-graph'
 import { exportAxiomsToTurtle } from '../lib/ontology/rdf-export'
 import { buildOntologyShaclShapes } from '../lib/ontology/shacl-shapes'
 import {
+  buildConnectionPrinciplesPromptSection,
+  CONNECTION_ONTOLOGY_INTAKE_ITEMS,
+  getConnectionPromptPrinciples,
+} from '../lib/ontology/connections-intake'
+import {
   buildContradictionEvidenceQuery,
   buildGraphProjectionQuery,
   buildPromptEligibleAxiomsQuery,
@@ -988,5 +993,29 @@ describe('SPARQL query templates', () => {
     assert.match(query, /# CQ-010: Provenance and Source Trust/)
     assert.match(query, /SELECT \?axiom \?provenanceSource/)
     assert.match(query, /understood:provenanceSource \?provenanceSource/)
+  })
+})
+
+describe('connections ontology intake seed', () => {
+  it('provides 18 calibration-backed items with unique ids', () => {
+    assert.equal(CONNECTION_ONTOLOGY_INTAKE_ITEMS.length, 18)
+    const ids = new Set(CONNECTION_ONTOLOGY_INTAKE_ITEMS.map((item) => item.id))
+    assert.equal(ids.size, 18)
+  })
+
+  it('exposes strong personal connections as read-only prompt principles', () => {
+    const principles = getConnectionPromptPrinciples()
+
+    assert.ok(principles.length > 0)
+    assert.ok(principles.every((item) => item.bucket === 'strong_candidate_personal'))
+    assert.ok(principles.every((item) => item.boundary === 'personal_pattern'))
+    assert.ok(principles.some((item) => item.headline === 'Delegation is three sentences'))
+
+    const section = buildConnectionPrinciplesPromptSection()
+    assert.match(section, /User-authored Connections/)
+    assert.match(section, /helpful context, not confirmed ontology axioms/)
+    assert.match(section, /Delegation is three sentences/)
+    assert.doesNotMatch(section, /Products fight potential slipping away/)
+    assert.doesNotMatch(section, /My assignment is to create desire/)
   })
 })

@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { getProvenanceSourceDescriptor } from '@/lib/ontology/provenance'
+import { supabase } from '@/lib/supabase/client'
 import {
+  buildConnectionIntakeItemsFromEntries,
   CONNECTION_INTAKE_ACTION_LABELS,
   CONNECTION_ONTOLOGY_BUCKET_LABELS,
   CONNECTION_ONTOLOGY_INTAKE_ITEMS,
@@ -12,6 +14,14 @@ import {
   loadConnectionIntakeLocalState,
   saveConnectionIntakeLocalState,
 } from '@/lib/ontology/connections-intake'
+
+type ConnectionEntryRow = {
+  id: string
+  headline: string | null
+  content: string
+  connection_type: string | null
+  created_at: string
+}
 
 const BUCKET_ORDER: ConnectionOntologyBucket[] = [
   'strong_candidate_personal',
@@ -39,9 +49,39 @@ function formatBoundary(b: ConnectionOntologyIntakeItem['boundary']): string {
 export function OntologyConnectionsIntakeSection() {
   const [bucketFilter, setBucketFilter] = useState<ConnectionOntologyBucket | 'all'>('all')
   const [localActions, setLocalActions] = useState<Record<string, ConnectionIntakeLocalAction | null>>({})
+  const [items, setItems] = useState<ConnectionOntologyIntakeItem[]>(CONNECTION_ONTOLOGY_INTAKE_ITEMS)
+  const [sourceLabel, setSourceLabel] = useState('calibration seeds')
 
   useEffect(() => {
     setLocalActions(loadConnectionIntakeLocalState())
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadConnections() {
+      const { data, error } = await supabase
+        .from('entries')
+        .select('id, headline, content, connection_type, created_at')
+        .eq('entry_type', 'connection')
+        .order('created_at', { ascending: false })
+        .limit(50)
+
+      if (cancelled) return
+      if (error || !data?.length) {
+        setItems(CONNECTION_ONTOLOGY_INTAKE_ITEMS)
+        setSourceLabel('calibration seeds')
+        return
+      }
+
+      setItems(buildConnectionIntakeItemsFromEntries(data as ConnectionEntryRow[]))
+      setSourceLabel('live Connections')
+    }
+
+    void loadConnections()
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   const setAction = useCallback((id: string, action: ConnectionIntakeLocalAction | null) => {
@@ -58,14 +98,14 @@ export function OntologyConnectionsIntakeSection() {
   }, [])
 
   const filteredItems = useMemo(() => {
-    return CONNECTION_ONTOLOGY_INTAKE_ITEMS.filter(
+    return items.filter(
       (item) => bucketFilter === 'all' || item.suggestedBucket === bucketFilter
     )
-  }, [bucketFilter])
+  }, [bucketFilter, items])
 
   const reviewedCount = useMemo(
-    () => CONNECTION_ONTOLOGY_INTAKE_ITEMS.filter((item) => localActions[item.id] != null).length,
-    [localActions]
+    () => items.filter((item) => localActions[item.id] != null).length,
+    [items, localActions]
   )
 
   return (
@@ -80,12 +120,12 @@ export function OntologyConnectionsIntakeSection() {
     >
       <h2 style={{ fontSize: '1.25rem', marginBottom: '0.35rem', fontWeight: 600 }}>Connections ontology intake</h2>
       <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.82rem', marginBottom: '0.75rem', lineHeight: 1.45 }}>
-        Local review only. Seeded from calibration docs: suggested buckets, drafts, boundaries. Nothing is written to the
+        Local review only. Source: {sourceLabel}. Nothing is written to the
         database. Triages stay in this browser via <code style={{ color: 'rgba(255,255,255,0.55)' }}>localStorage</code>
         .
       </p>
       <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.75rem', marginBottom: '1rem', lineHeight: 1.45 }}>
-        Reviewed locally: {reviewedCount} / {CONNECTION_ONTOLOGY_INTAKE_ITEMS.length}
+        Reviewed locally: {reviewedCount} / {items.length}
         <button
           type="button"
           onClick={clearAllLocal}

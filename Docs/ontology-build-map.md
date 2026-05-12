@@ -49,7 +49,7 @@ AI assistant
 | Personal ontology foundation | Built | Entries, axioms, evidence, provenance, review gates exist. |
 | Calibration workflow | Built | Real entries and Connections have been reviewed in docs. |
 | Split-claim review UI | Built as local triage | Useful, but not durable. |
-| Connections ontology intake | Built as local triage + read-only context | Connections can guide AI as principles without becoming confirmed axioms. |
+| Connections ontology intake | Built as live local triage + read-only context | Live Connections load into review with calibration fallback; strong personal Connections can guide AI as principles without becoming confirmed axioms. |
 | Semantic web layer | Scaffolded | RDF, SHACL, SPARQL exist as export/check/template layer. |
 | Public ontology/BFO integration | Not built | Conceptual direction exists, but no domain ontology import/mapping yet. |
 | Durable ontology pipeline | Partly built | Axioms can be reviewed, but split-claim and Connection intake decisions are not persisted. |
@@ -148,7 +148,7 @@ What they proved:
 | --- | --- | --- |
 | Candidate review queue | Built | Yes, for axiom status review |
 | Split-claim review | Built as local triage | No |
-| Connections ontology intake | Built as local triage | No |
+| Connections ontology intake | Built as live local triage with seed fallback | No |
 | Connections as read-only AI context | Built | No new DB write |
 
 ### 6. Semantic Web Scaffold
@@ -165,7 +165,7 @@ What they proved:
 | Missing Piece | Why It Matters | Current Decision |
 | --- | --- | --- |
 | Durable split-claim decisions | Local triage disappears or stays browser-local. | Wait until workflow is understood. |
-| Durable Connections ontology decisions | Connection review is local only. | Wait until intake surface proves useful. |
+| Durable Connections ontology decisions | Connection review is local/browser-only. | Wait until intake surface proves useful. |
 | Evidence search for Connections | Strong Connections need lived evidence links. | Not built. |
 | Product ontology lane | Product/system principles need somewhere to live. | Not built. |
 | Public ontology/BFO mapping | Needed for larger trusted architecture. | Conceptual only. |
@@ -178,7 +178,7 @@ What they proved:
 | --- | --- |
 | Confirmed personal axioms | `ontology_axioms` rows with `status=confirmed`, `scope=personal` |
 | Candidate axioms | `ontology_axioms` rows with `status=candidate`, `scope=personal` |
-| Connections principles | Calibration-backed seed list in `lib/ontology/connections-intake.ts` |
+| Connections principles | Live `entry_type=connection` rows in `/ontology`, with calibration-backed seed fallback in `lib/ontology/connections-intake.ts` |
 | Product/system principles | Calibration docs only; no product ontology lane yet |
 | Public/domain ontology concepts | Not yet implemented |
 | BFO alignment | Conceptual architecture only |
@@ -294,4 +294,3 @@ Possible answers:
 | They need evidence first. | Build evidence search/linking for Connections. |
 | They mix personal/product too much. | Build a product ontology lane. |
 | The whole picture is still unclear. | Stop building and update this map. |
-

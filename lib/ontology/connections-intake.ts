@@ -1,4 +1,5 @@
 import type { OntologyBoundary } from '@/lib/ontology/boundary'
+import { classifyOntologyBoundary } from '@/lib/ontology/boundary'
 import type { ConnectionType } from '@/types'
 
 /** Buckets from Docs/ontology-connections-calibration-001-summary.md */
@@ -25,6 +26,13 @@ export interface ConnectionOntologyIntakeItem {
   boundary: OntologyBoundary
   provenanceSource: 'self_declared'
   calibrationRecommendedMove: string
+}
+
+export interface ConnectionOntologyEntryLike {
+  id: string
+  headline?: string | null
+  content: string
+  connection_type?: ConnectionType | 'connection' | string | null
 }
 
 export const CONNECTION_ONTOLOGY_INTAKE_STORAGE_KEY = 'understood.connectionsOntologyIntake.v1'
@@ -307,4 +315,81 @@ export function buildConnectionPrinciplesPromptSection(
 These are user-authored operating principles from Connections. Treat them as helpful context, not confirmed ontology axioms. Do not use them to auto-confirm, reject, retire, or change confidence on ontology rules.
 ${principles.map((item) => `- ${item.headline}: ${item.principle}`).join('\n')}
 `
+}
+
+export function buildConnectionIntakeItemsFromEntries(
+  entries: ConnectionOntologyEntryLike[],
+  fallbackItems: ConnectionOntologyIntakeItem[] = CONNECTION_ONTOLOGY_INTAKE_ITEMS
+): ConnectionOntologyIntakeItem[] {
+  if (!entries.length) return fallbackItems
+
+  const calibratedByHeadline = new Map(
+    fallbackItems.map((item) => [normalizeConnectionHeadline(item.headline), item])
+  )
+
+  return entries.map((entry) => {
+    const headline = entry.headline?.trim() || stripHtml(entry.content).slice(0, 80) || 'Untitled connection'
+    const calibrated = calibratedByHeadline.get(normalizeConnectionHeadline(headline))
+    if (calibrated) {
+      return {
+        ...calibrated,
+        id: entry.id,
+        headline,
+        connectionType: entry.connection_type ?? calibrated.connectionType,
+      }
+    }
+
+    const text = stripHtml(entry.content)
+    const boundary = classifyOntologyBoundary(`${headline}\n${text}`).boundary
+    const suggestedBucket = inferBucketFromConnection(entry.connection_type, boundary)
+
+    return {
+      id: entry.id,
+      headline,
+      connectionType: entry.connection_type ?? 'connection',
+      suggestedBucket,
+      candidateAxiomDraft: text || headline,
+      boundary,
+      provenanceSource: 'self_declared',
+      calibrationRecommendedMove: inferCalibrationMove(suggestedBucket),
+    }
+  })
+}
+
+function inferBucketFromConnection(
+  connectionType: ConnectionOntologyEntryLike['connection_type'],
+  boundary: OntologyBoundary
+): ConnectionOntologyBucket {
+  if (boundary === 'product_system') return 'product_system_principle'
+  if (boundary === 'both') return 'mixed_personal_product'
+
+  if (connectionType === 'validated_principle') return 'strong_candidate_personal'
+  if (connectionType === 'process_anchor') return 'needs_evidence_before_candidate'
+  if (connectionType === 'pattern_interrupt') return 'remain_connection_only'
+  if (connectionType === 'identity_anchor') return 'needs_evidence_before_candidate'
+
+  return 'needs_evidence_before_candidate'
+}
+
+function inferCalibrationMove(bucket: ConnectionOntologyBucket): string {
+  if (bucket === 'strong_candidate_personal') return 'confirmed review'
+  if (bucket === 'product_system_principle') return 'product candidate'
+  if (bucket === 'mixed_personal_product') return 'split before review'
+  if (bucket === 'remain_connection_only') return 'connection only'
+  return 'candidate'
+}
+
+function normalizeConnectionHeadline(value: string): string {
+  return value.trim().toLowerCase().replace(/\s+/g, ' ')
+}
+
+function stripHtml(value: string): string {
+  return value
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\s+/g, ' ')
+    .trim()
 }

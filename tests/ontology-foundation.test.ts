@@ -24,6 +24,7 @@ import { projectAxiomsToKnowledgeGraph } from '../lib/ontology/knowledge-graph'
 import { exportAxiomsToTurtle } from '../lib/ontology/rdf-export'
 import { buildOntologyShaclShapes } from '../lib/ontology/shacl-shapes'
 import {
+  buildConnectionIntakeItemsFromEntries,
   buildConnectionPrinciplesPromptSection,
   CONNECTION_ONTOLOGY_INTAKE_ITEMS,
   getConnectionPromptPrinciples,
@@ -1017,5 +1018,36 @@ describe('connections ontology intake seed', () => {
     assert.match(section, /Delegation is three sentences/)
     assert.doesNotMatch(section, /Products fight potential slipping away/)
     assert.doesNotMatch(section, /My assignment is to create desire/)
+  })
+
+  it('maps live connection rows into intake items with seed fallback', () => {
+    assert.equal(buildConnectionIntakeItemsFromEntries([]), CONNECTION_ONTOLOGY_INTAKE_ITEMS)
+
+    const items = buildConnectionIntakeItemsFromEntries([
+      {
+        id: 'live-1',
+        headline: 'Delegation is three sentences',
+        content: 'Delegation is three sentences',
+        connection_type: 'process_anchor',
+      },
+      {
+        id: 'live-2',
+        headline: 'A product must reduce user friction',
+        content: 'The app workflow should reduce user friction.',
+        connection_type: 'validated_principle',
+      },
+      {
+        id: 'live-3',
+        headline: 'Momentum beats polish',
+        content: 'If I have momentum, I should preserve it before polishing.',
+        connection_type: 'validated_principle',
+      },
+    ])
+
+    assert.equal(items.length, 3)
+    assert.equal(items[0].id, 'live-1')
+    assert.equal(items[0].suggestedBucket, 'strong_candidate_personal')
+    assert.equal(items[1].suggestedBucket, 'product_system_principle')
+    assert.equal(items[2].suggestedBucket, 'strong_candidate_personal')
   })
 })

@@ -51,7 +51,7 @@ AI assistant
 | Split-claim review UI | Built as local triage | Useful, but not durable. |
 | Connections ontology intake | Built as live local triage + read-only context | Live Connections load into review with calibration fallback; strong personal Connections can guide AI as principles without becoming confirmed axioms. |
 | Semantic web layer | Scaffolded | RDF, SHACL, SPARQL exist as export/check/template layer. |
-| Public ontology/BFO integration | Not built | Conceptual direction exists, but no domain ontology import/mapping yet. |
+| Public ontology/BFO integration | Scaffolded | BFO/domain reference placeholders and personal-public bridges exist; no external ontology import yet. |
 | Durable ontology pipeline | Partly built | Axioms can be reviewed, but split-claim and Connection intake decisions are not persisted. |
 
 ## What Is Built
@@ -159,6 +159,7 @@ What they proved:
 | `lib/ontology/shacl-shapes.ts` | Defines validation shapes | Built |
 | `lib/ontology/sparql-queries.ts` | Defines competency query templates | Built |
 | `fixtures/ontology/` | Canonical Turtle examples | Built |
+| `lib/ontology/public-reference.ts` | BFO/domain reference scaffold and personal-public bridges | Built |
 
 ## What Is Not Built Yet
 
@@ -168,7 +169,7 @@ What they proved:
 | Durable Connections ontology decisions | Connection review is local/browser-only. | Wait until intake surface proves useful. |
 | Durable evidence links for Connections | Possible evidence is shown read-only, but not linked. | Not built. |
 | Product ontology lane | Product/system principles need somewhere to live. | Not built. |
-| Public ontology/BFO mapping | Needed for larger trusted architecture. | Conceptual only. |
+| External public ontology import | Needed for larger trusted architecture. | Not built. |
 | Live SHACL/SPARQL execution | Semantic files exist, but are not running as checks. | Not built. |
 | Assistant explanation UX | Search assistant receives confirmed axioms and read-only Connections with separate labels, but does not yet show users which ones it used. | Partly built. |
 
@@ -180,8 +181,8 @@ What they proved:
 | Candidate axioms | `ontology_axioms` rows with `status=candidate`, `scope=personal` |
 | Connections principles | Live `entry_type=connection` rows in `/ontology`, with calibration-backed seed fallback and read-only evidence suggestions in `lib/ontology/connections-intake.ts` |
 | Product/system principles | Calibration docs only; no product ontology lane yet |
-| Public/domain ontology concepts | Not yet implemented |
-| BFO alignment | Conceptual architecture only |
+| Public/domain ontology concepts | `lib/ontology/public-reference.ts` scaffold |
+| BFO alignment | `bfo:*` placeholders in `lib/ontology/public-reference.ts` |
 
 ## Trust Boundaries
 

@@ -38,6 +38,12 @@ import {
 } from '../lib/ontology/sparql-queries'
 import { buildOntologyReviewQueue, getAxiomProvenanceLabel } from '../lib/ontology/review-queue'
 import { getProvenanceSourceDescriptor, normalizeProvenanceSource } from '../lib/ontology/provenance'
+import {
+  getPersonalPublicBridgeSummary,
+  getPublicReferenceById,
+  PERSONAL_PUBLIC_BRIDGES,
+  PUBLIC_ONTOLOGY_REFERENCES,
+} from '../lib/ontology/public-reference'
 
 describe('standard ontology vocabulary', () => {
   it('keeps neutral product vocabulary separate from Adam example axioms', () => {
@@ -1100,5 +1106,23 @@ describe('connections ontology intake seed', () => {
     assert.equal(candidates.length, 1)
     assert.equal(candidates[0].entryId, 'entry-1')
     assert.ok(candidates[0].matchedTerms.includes('delegation'))
+  })
+})
+
+describe('public ontology reference scaffold', () => {
+  it('keeps BFO and domain references separate from personal axioms', () => {
+    assert.ok(PUBLIC_ONTOLOGY_REFERENCES.some((reference) => reference.id === 'bfo:continuant'))
+    assert.ok(PUBLIC_ONTOLOGY_REFERENCES.some((reference) => reference.id === 'domain:sleep'))
+    assert.ok(PUBLIC_ONTOLOGY_REFERENCES.every((reference) => reference.scope !== 'personal' as never))
+  })
+
+  it('maps personal concepts to public references without merging authority', () => {
+    assert.ok(PERSONAL_PUBLIC_BRIDGES.some((bridge) => bridge.personalLabel === "Adam's Sleep"))
+    assert.equal(getPublicReferenceById('domain:caffeine')?.label, 'Caffeine')
+
+    const summary = getPersonalPublicBridgeSummary()
+    assert.match(summary, /Adam's Sleep mapsTo Sleep/)
+    assert.match(summary, /Adam's EveningCaffeineRule constrainedBy Caffeine/)
+    assert.match(summary, /Understood app architecture mapsTo Software system/)
   })
 })

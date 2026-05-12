@@ -207,10 +207,17 @@ export default function OntologyPage() {
   }
 
   function handleClaimDecision(entryId: string, claimIndex: number, decision: ClaimDecision) {
+    const key = claimDecisionKey(entryId, claimIndex)
     setClaimDecisions((current) => ({
       ...current,
-      [claimDecisionKey(entryId, claimIndex)]: decision,
+      [key]: decision,
     }))
+    if (decision === 'candidate_review') {
+      setLowSignalClaims((current) => ({
+        ...current,
+        [key]: 'normal',
+      }))
+    }
   }
 
   function handleClaimTextChange(entryId: string, claimIndex: number, value: string) {
@@ -223,9 +230,16 @@ export default function OntologyPage() {
   function handleLowSignalToggle(entryId: string, claimIndex: number) {
     setLowSignalClaims((current) => {
       const key = claimDecisionKey(entryId, claimIndex)
+      const nextValue = current[key] === 'low_signal' ? 'normal' : 'low_signal'
+      if (nextValue === 'low_signal') {
+        setClaimDecisions((claimDecisionState) => ({
+          ...claimDecisionState,
+          [key]: claimDecisionState[key] === 'candidate_review' ? 'unreviewed' : claimDecisionState[key] ?? 'unreviewed',
+        }))
+      }
       return {
         ...current,
-        [key]: current[key] === 'low_signal' ? 'normal' : 'low_signal',
+        [key]: nextValue,
       }
     })
   }
@@ -585,6 +599,7 @@ export default function OntologyPage() {
                                   active={decision === 'candidate_review'}
                                   label="Mark for candidate review"
                                   onClick={() => handleClaimDecision(entry.id, index, 'candidate_review')}
+                                  disabled={lowSignalDecision === 'low_signal'}
                                 />
                                 <ClaimDecisionButton
                                   active={decision === 'ignore'}
@@ -820,10 +835,12 @@ function formatClaimDecision(decision: ClaimDecision, lowSignalDecision: LowSign
 
 function ClaimDecisionButton({
   active,
+  disabled = false,
   label,
   onClick,
 }: {
   active: boolean
+  disabled?: boolean
   label: string
   onClick: () => void
 }) {
@@ -831,14 +848,15 @@ function ClaimDecisionButton({
     <button
       type="button"
       onClick={onClick}
+      disabled={disabled}
       style={{
         border: active ? '1px solid rgba(134,239,172,0.55)' : '1px solid rgba(255,255,255,0.15)',
-        background: active ? 'rgba(134,239,172,0.12)' : 'rgba(255,255,255,0.04)',
-        color: active ? '#bbf7d0' : 'rgba(255,255,255,0.65)',
+        background: active ? 'rgba(134,239,172,0.12)' : disabled ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.04)',
+        color: active ? '#bbf7d0' : disabled ? 'rgba(255,255,255,0.28)' : 'rgba(255,255,255,0.65)',
         borderRadius: '999px',
         padding: '0.3rem 0.6rem',
         fontSize: '0.72rem',
-        cursor: 'pointer',
+        cursor: disabled ? 'not-allowed' : 'pointer',
       }}
     >
       {label}

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { EntryType } from '@/types'
 import { LIFE_DOMAINS } from '@/types/ontology'
 import { AiSearchIcon } from './ai-search-icon'
@@ -58,6 +58,7 @@ export function DesktopSidebar({
   hasWeeklyTheme = false,
 }: DesktopSidebarProps) {
   const router = useRouter()
+  const pathname = usePathname()
   const [localSearch, setLocalSearch] = useState(searchQuery)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const searchDebounceRef = useRef<NodeJS.Timeout | null>(null)
@@ -90,6 +91,16 @@ export function DesktopSidebar({
     }
     onEntryTypeChange(type)
   }
+
+  const isRouteActive = (href: string) => {
+    if (href === '/ontology') return pathname === '/ontology'
+    return pathname === href || pathname.startsWith(`${href}/`)
+  }
+
+  const workspaceNavItems = [
+    { href: '/ontology', label: 'Ontology', icon: '◇', accent: 'red' },
+    { href: '/ontology/fluency', label: 'Fluency Tracker', icon: '✓', accent: 'green' },
+  ] as const
 
   const collapsedWidth = '64px'
   const expandedWidth = '260px'
@@ -305,8 +316,22 @@ export function DesktopSidebar({
               </div>
             </div>
 
-            {/* Archive / Timeline — All Entries */}
+            {/* Workspace navigation */}
             <div style={{ marginBottom: '1.5rem' }}>
+              <div
+                style={{
+                  padding: '0 1.5rem',
+                  marginBottom: '0.5rem',
+                  color: 'rgba(255, 255, 255, 0.4)',
+                  fontSize: '0.7rem',
+                  fontWeight: 600,
+                  letterSpacing: '0.1rem',
+                  textTransform: 'uppercase',
+                  fontFamily: "var(--font-bodoni-moda), Georgia, 'Times New Roman', serif",
+                }}
+              >
+                Workspace
+              </div>
               <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
                 <li>
                   <button
@@ -333,58 +358,45 @@ export function DesktopSidebar({
                     <span>All Entries</span>
                   </button>
                 </li>
-                <li>
-                  <button
-                    type="button"
-                    onClick={() => router.push('/ontology')}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.75rem',
-                      width: '100%',
-                      padding: '0.65rem 1.5rem',
-                      background: 'transparent',
-                      border: 'none',
-                      borderLeft: '3px solid transparent',
-                      color: 'rgba(255, 255, 255, 0.75)',
-                      fontSize: '1.05rem',
-                      fontWeight: 500,
-                      fontFamily: "var(--font-bodoni-moda), Georgia, 'Times New Roman', serif",
-                      textAlign: 'left',
-                      cursor: 'pointer',
-                      transition: 'all 0.15s ease',
-                    }}
-                  >
-                    <span style={{ fontSize: '1.1rem' }}>◇</span>
-                    <span>Ontology</span>
-                  </button>
-                </li>
-                <li>
-                  <button
-                    type="button"
-                    onClick={() => router.push('/ontology/fluency')}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.75rem',
-                      width: '100%',
-                      padding: '0.65rem 1.5rem',
-                      background: 'rgba(134, 239, 172, 0.1)',
-                      border: 'none',
-                      borderLeft: '3px solid rgba(134, 239, 172, 0.7)',
-                      color: '#bbf7d0',
-                      fontSize: '1.05rem',
-                      fontWeight: 500,
-                      fontFamily: "var(--font-bodoni-moda), Georgia, 'Times New Roman', serif",
-                      textAlign: 'left',
-                      cursor: 'pointer',
-                      transition: 'all 0.15s ease',
-                    }}
-                  >
-                    <span style={{ fontSize: '1.1rem' }}>✓</span>
-                    <span>Fluency Tracker</span>
-                  </button>
-                </li>
+                {workspaceNavItems.map((item) => {
+                  const isActive = isRouteActive(item.href)
+                  const isGreen = item.accent === 'green'
+
+                  return (
+                    <li key={item.href}>
+                      <button
+                        type="button"
+                        onClick={() => router.push(item.href)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.75rem',
+                          width: '100%',
+                          padding: '0.65rem 1.5rem',
+                          background: isActive
+                            ? (isGreen ? 'rgba(134, 239, 172, 0.12)' : 'rgba(220, 20, 60, 0.15)')
+                            : 'transparent',
+                          border: 'none',
+                          borderLeft: isActive
+                            ? `3px solid ${isGreen ? 'rgba(134, 239, 172, 0.75)' : '#DC143C'}`
+                            : '3px solid transparent',
+                          color: isActive
+                            ? (isGreen ? '#bbf7d0' : '#FFFFFF')
+                            : 'rgba(255, 255, 255, 0.75)',
+                          fontSize: '1.05rem',
+                          fontWeight: 500,
+                          fontFamily: "var(--font-bodoni-moda), Georgia, 'Times New Roman', serif",
+                          textAlign: 'left',
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease',
+                        }}
+                      >
+                        <span style={{ fontSize: '1.1rem' }}>{item.icon}</span>
+                        <span>{item.label}</span>
+                      </button>
+                    </li>
+                  )
+                })}
               </ul>
             </div>
 
@@ -608,48 +620,39 @@ export function DesktopSidebar({
               📅
             </button>
 
-            <button
-              type="button"
-              onClick={() => router.push('/ontology')}
-              title="Ontology"
-              style={{
-                width: '44px',
-                height: '44px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: 'transparent',
-                border: 'none',
-                borderRadius: '8px',
-                color: 'rgba(255, 255, 255, 0.6)',
-                fontSize: '1.2rem',
-                cursor: 'pointer',
-                transition: 'all 0.15s ease',
-              }}
-            >
-              ◇
-            </button>
-            <button
-              type="button"
-              onClick={() => router.push('/ontology/fluency')}
-              title="Fluency Tracker"
-              style={{
-                width: '44px',
-                height: '44px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: 'rgba(134, 239, 172, 0.12)',
-                border: 'none',
-                borderRadius: '8px',
-                color: '#bbf7d0',
-                fontSize: '1.2rem',
-                cursor: 'pointer',
-                transition: 'all 0.15s ease',
-              }}
-            >
-              ✓
-            </button>
+            {workspaceNavItems.map((item) => {
+              const isActive = isRouteActive(item.href)
+              const isGreen = item.accent === 'green'
+
+              return (
+                <button
+                  key={item.href}
+                  type="button"
+                  onClick={() => router.push(item.href)}
+                  title={item.label}
+                  style={{
+                    width: '44px',
+                    height: '44px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: isActive
+                      ? (isGreen ? 'rgba(134, 239, 172, 0.12)' : 'rgba(220, 20, 60, 0.15)')
+                      : 'transparent',
+                    border: 'none',
+                    borderRadius: '8px',
+                    color: isActive
+                      ? (isGreen ? '#bbf7d0' : '#FFFFFF')
+                      : 'rgba(255, 255, 255, 0.6)',
+                    fontSize: '1.2rem',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  {item.icon}
+                </button>
+              )
+            })}
 
             {/* Collapsed entry type buttons: Stories, Notes, Actions */}
             {entryTypes.map((type) => (

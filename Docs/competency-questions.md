@@ -458,6 +458,33 @@ Each split candidate should preserve:
 
 A focused entry about priorities improving productivity remains one claim. A bundled business note about pricing, patenting, and debugging splits into separate candidate claims. A vague reflective note stays a note until human review.
 
+## CQ-018: Relation Semantics for Guardrails
+
+**Question:** What kind of relationship connects an antecedent and consequent before that relationship is allowed to constrain assistant behavior?
+
+**Why it matters:** The assistant must not treat correlation as causation, intention as achieved outcome, support as proof, or prevention as a universal guarantee. Mid-level relation semantics make personal axioms actionable guardrails instead of loose edge labels.
+
+**Required data:**
+
+- Axiom relationship type
+- Mid-level relation policy
+- Evidence direction and count
+- Provenance
+- Human review status
+- Source ontology reference
+
+**Expected behavior:**
+
+- `correlates_with` means co-occurrence only and must not be narrated as causal.
+- `causes` requires stronger evidence than `supports` or `predicts`.
+- `prevents` requires evidence about the outcome being avoided, not merely disliked.
+- `intended_to_achieve` records purpose or aim and must not imply the intended outcome happened.
+- Unknown relationship types are visible as semantic validation issues before they govern prompts, graph projection, or RDF truth.
+
+**Acceptance check:**
+
+An axiom saying cold exposure `correlates_with` sharper writing can be summarized as an observed association. It cannot be rewritten as cold exposure `causes` sharper writing unless the relationship is explicitly reviewed and represented as causal.
+
 ## First Build Priority
 
 Start with these five competency questions because they map directly to the current V1 product and existing tests:
@@ -499,4 +526,3 @@ Human review needed:
 ```
 
 No ontology change is complete unless it supports at least one competency question.
-

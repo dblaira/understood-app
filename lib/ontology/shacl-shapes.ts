@@ -1,4 +1,10 @@
+import { getAllowedRelationshipTypes } from '@/lib/ontology/mid-level-reference'
+
 export function buildOntologyShaclShapes(): string {
+  const allowedRelationshipTypes = getAllowedRelationshipTypes()
+    .map((relationshipType) => `"${relationshipType}"`)
+    .join(' ')
+
   return `@prefix understood: <https://understood.app/ontology#> .
 @prefix sh: <http://www.w3.org/ns/shacl#> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
@@ -20,6 +26,7 @@ understood:AxiomShape a sh:NodeShape ;
   sh:property [
     sh:path understood:relationshipType ;
     sh:minCount 1 ;
+    sh:in (${allowedRelationshipTypes}) ;
   ] ;
   sh:property [
     sh:path understood:confidence ;

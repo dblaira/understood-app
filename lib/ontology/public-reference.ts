@@ -1,10 +1,16 @@
 export type PublicOntologyScope =
   | 'bfo_upper'
+  | 'mid_level_reference'
   | 'domain_reference'
   | 'public_reference'
 
 export type PublicOntologyDomain =
   | 'upper'
+  | 'agent'
+  | 'process'
+  | 'information'
+  | 'time'
+  | 'relation'
   | 'health'
   | 'nutrition'
   | 'software'
@@ -18,7 +24,7 @@ export interface PublicOntologyReference {
   source: string
   sourceUrl: string
   ontologyIri: string
-  trustRole: 'upper_standard' | 'domain_standard' | 'descriptive_schema'
+  trustRole: 'upper_standard' | 'mid_level_standard' | 'domain_standard' | 'descriptive_schema'
   description: string
 }
 
@@ -62,6 +68,72 @@ export const PUBLIC_ONTOLOGY_REFERENCES: PublicOntologyReference[] = [
     ontologyIri: 'http://purl.obolibrary.org/obo/BFO_0000019',
     trustRole: 'upper_standard',
     description: 'A dependent feature or attribute of an entity.',
+  },
+  {
+    id: 'cco:agent-ontology',
+    label: 'Agent Ontology',
+    scope: 'mid_level_reference',
+    domain: 'agent',
+    source: 'Common Core Ontologies',
+    sourceUrl: 'https://github.com/CommonCoreOntology/CommonCoreOntologies',
+    ontologyIri: 'https://www.commoncoreontologies.org/AgentOntology',
+    trustRole: 'mid_level_standard',
+    description: 'A BFO-aligned mid-level source for agents, persons, organizations, roles, and agent participation in processes.',
+  },
+  {
+    id: 'cco:event-ontology',
+    label: 'Event Ontology',
+    scope: 'mid_level_reference',
+    domain: 'process',
+    source: 'Common Core Ontologies',
+    sourceUrl: 'https://github.com/CommonCoreOntology/CommonCoreOntologies',
+    ontologyIri: 'https://www.commoncoreontologies.org/EventOntology',
+    trustRole: 'mid_level_standard',
+    description: 'A BFO-aligned mid-level source for acts, planned acts, natural processes, and process boundaries.',
+  },
+  {
+    id: 'cco:information-entity-ontology',
+    label: 'Information Entity Ontology',
+    scope: 'mid_level_reference',
+    domain: 'information',
+    source: 'Common Core Ontologies',
+    sourceUrl: 'https://github.com/CommonCoreOntology/CommonCoreOntologies',
+    ontologyIri: 'https://www.commoncoreontologies.org/InformationEntityOntology',
+    trustRole: 'mid_level_standard',
+    description: 'A BFO-aligned mid-level source for information content entities, descriptions, prescriptions, identifiers, and information bearing entities.',
+  },
+  {
+    id: 'cco:time-ontology',
+    label: 'Time Ontology',
+    scope: 'mid_level_reference',
+    domain: 'time',
+    source: 'Common Core Ontologies',
+    sourceUrl: 'https://github.com/CommonCoreOntology/CommonCoreOntologies',
+    ontologyIri: 'https://www.commoncoreontologies.org/TimeOntology',
+    trustRole: 'mid_level_standard',
+    description: 'A BFO-aligned mid-level source for temporal instants, temporal intervals, and interval relations such as before, during, overlaps, and contains.',
+  },
+  {
+    id: 'cco:extended-relation-ontology',
+    label: 'Extended Relation Ontology',
+    scope: 'mid_level_reference',
+    domain: 'relation',
+    source: 'Common Core Ontologies',
+    sourceUrl: 'https://github.com/CommonCoreOntology/CommonCoreOntologies',
+    ontologyIri: 'https://www.commoncoreontologies.org/ExtendedRelationOntology',
+    trustRole: 'mid_level_standard',
+    description: 'A BFO-aligned mid-level source for relation semantics such as affects, is cause of, has input, has output, and process starts.',
+  },
+  {
+    id: 'ro:causal-relations',
+    label: 'Causal Relations',
+    scope: 'mid_level_reference',
+    domain: 'relation',
+    source: 'OBO Relation Ontology',
+    sourceUrl: 'https://oborel.github.io/obo-relations/causal-relations/',
+    ontologyIri: 'http://purl.obolibrary.org/obo/ro.owl',
+    trustRole: 'mid_level_standard',
+    description: 'A BFO/OBO-aligned relation source used to supplement causal and prevention semantics when CCO relation coverage is not specific enough.',
   },
   {
     id: 'domain:sleep',
@@ -163,7 +235,7 @@ export function buildPublicOntologyGuardrailSection(
   return `
 
 ## Public ontology guardrails
-These public/BFO references discipline interpretation. They do not override the user's confirmed personal axioms, and they are not medical, dietary, legal, or financial advice. Use them to keep concepts separated, avoid overclaiming, and identify when a domain expert or stronger source is needed.
+These public/BFO/mid-level references discipline interpretation. They do not override the user's confirmed personal axioms, and they are not medical, dietary, legal, or financial advice. Use them to keep concepts separated, avoid overclaiming, and identify when a domain expert or stronger source is needed.
 ${lines.join('\n')}
 `
 }

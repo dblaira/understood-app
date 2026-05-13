@@ -55,6 +55,11 @@ export const STANDARD_RELATIONSHIP_TYPES = [
   'amplifies',
   'inhibits',
   'correlates_with',
+  'causes',
+  'prevents',
+  'intended_to_achieve',
+  'has_outcome',
+  'affects',
 ] as const
 
 export type OntologyRelationshipType = (typeof STANDARD_RELATIONSHIP_TYPES)[number]

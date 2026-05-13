@@ -7,6 +7,7 @@ import {
 } from '@/lib/ontology/connections-intake'
 import { buildProductOntologyPromptSection } from '@/lib/ontology/product-ontology'
 import { buildPublicOntologyGuardrailSection, PUBLIC_ONTOLOGY_REFERENCES } from '@/lib/ontology/public-reference'
+import { buildRelationSemanticPromptSection } from '@/lib/ontology/mid-level-reference'
 
 export const CONNECTION_PROMPT_LIMIT = 50
 
@@ -51,7 +52,7 @@ export function buildLayeredOntologyPromptContext(
     connectionPrinciplesSection: buildConnectionPrinciplesPromptSection(liveConnectionItems),
     connectionPrincipleCount: getConnectionPromptPrinciples(liveConnectionItems).length,
     productPrinciplesSection: buildProductOntologyPromptSection(liveConnectionItems),
-    publicOntologyGuardrailSection: buildPublicOntologyGuardrailSection(),
+    publicOntologyGuardrailSection: `${buildPublicOntologyGuardrailSection()}${buildRelationSemanticPromptSection()}`,
     publicGuardrailCount: PUBLIC_ONTOLOGY_REFERENCES.length,
   }
 }

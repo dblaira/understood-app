@@ -61,6 +61,7 @@ AI assistant
 | Connections ontology intake | Built as live triage + candidate creation + read-only context | Live Connections load into review with calibration fallback; strong personal Connections can guide AI as principles and can be manually promoted to candidate axioms. |
 | Semantic web layer | Built as visible check layer | RDF, SHACL, validation, and SPARQL competency templates are visible in `/ontology`. |
 | Public ontology/BFO integration | Built as guardrail scaffold | BFO/domain references, source IRIs, personal-public bridges, and assistant prompt guardrails exist; no bulk external import yet. |
+| Mid-level ontology profiles | Built as curated guardrail profiles | CCO/RO-backed Agent, Process/Event, Information Entity, Time, and Guardrail Relation profiles exist as allowlisted references; no bulk CCO import. |
 | Durable ontology pipeline | Built for current cycle | Axioms can be reviewed, split-claim triage persists locally, and personal Connections can become candidate axioms. |
 | Prompt-context parity | Built | Search chat and entry inference use the same live Connection merge policy, product lane, and public guardrails. |
 
@@ -174,6 +175,7 @@ What they proved:
 | `scripts/check-ontology-semantic.ts` | CI-ready semantic checklist for export validation and fixtures | Built |
 | `fixtures/ontology/` | Canonical Turtle examples | Built |
 | `lib/ontology/public-reference.ts` | BFO/domain references, source IRIs, guardrail prompt section, and personal-public bridges | Built |
+| `lib/ontology/mid-level-reference.ts` | CCO/RO-backed mid-level profiles and relation semantic policies | Built |
 
 ## Future Expansion
 
@@ -199,6 +201,7 @@ These are not blocking the current build cycle.
 | Product/system principles | `lib/ontology/product-ontology.ts` product-only scaffold |
 | Public/domain ontology concepts | `lib/ontology/public-reference.ts` scaffold |
 | BFO alignment | `bfo:*` placeholders in `lib/ontology/public-reference.ts` |
+| Mid-level ontology profiles | `lib/ontology/mid-level-reference.ts` with references exposed through `lib/ontology/public-reference.ts` |
 
 ## Trust Boundaries
 

@@ -62,3 +62,21 @@ WHERE {
 ORDER BY ?provenanceSource ?axiom
 `
 }
+
+export function buildRelationSemanticsQuery(): string {
+  return `${PREFIXES}
+
+# CQ-018: Relation Semantics for Guardrails
+SELECT ?axiom ?relationshipType ?relationshipPolicy ?semanticKind ?assistantRule
+WHERE {
+  ?axiom a understood:Axiom ;
+    understood:relationshipType ?relationshipType ;
+    understood:relationshipPolicy ?relationshipPolicy .
+  OPTIONAL {
+    ?relationshipPolicy understood:semanticKind ?semanticKind ;
+      understood:assistantRule ?assistantRule .
+  }
+}
+ORDER BY ?relationshipType ?axiom
+`
+}

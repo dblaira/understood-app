@@ -1,4 +1,5 @@
 import type { OntologyAxiomScope, OntologyAxiomStatus, OntologyRelationshipType } from '@/types/ontology'
+import { getRelationSemanticPolicy } from '@/lib/ontology/mid-level-reference'
 
 const BASE_IRI = 'https://understood.app/ontology'
 export const ONTOLOGY_VOCAB_VERSION = 'understood-ontology-v1'
@@ -38,6 +39,7 @@ export function exportAxiomsToTurtle(
     '@prefix understood: <https://understood.app/ontology#> .',
     '@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .',
     '',
+    ...getUsedRelationshipTypes(confirmedPersonalAxioms).map((relationshipType) => relationPolicyTurtle(relationshipType)),
     ...confirmedPersonalAxioms.flatMap((axiom) => [
       conceptTurtle(axiom.antecedent),
       conceptTurtle(axiom.consequent),
@@ -60,12 +62,34 @@ function axiomTurtle(axiom: RdfExportableAxiom): string {
     `  understood:antecedentLabel "${escapeTurtleString(axiom.antecedent)}" ;`,
     `  understood:consequent ${conceptIri(axiom.consequent)} ;`,
     `  understood:consequentLabel "${escapeTurtleString(axiom.consequent)}" ;`,
+    `  understood:relationshipPolicy ${relationPolicyIri(axiom.relationshipType)} ;`,
     `  understood:relationshipType "${escapeTurtleString(axiom.relationshipType)}" ;`,
     `  understood:confidence "${formatDecimal(axiom.confidence)}"^^xsd:decimal ;`,
     `  understood:evidenceCount ${Math.max(axiom.evidenceCount, axiom.evidenceEntryIds.length)} ;`,
     `  understood:status "${axiom.status}" ;`,
     `  understood:scope "${axiom.scope}" ;`,
     `  understood:provenanceSource "${escapeTurtleString(provenanceSource)}" .`,
+  ].join('\n')
+}
+
+function relationPolicyTurtle(relationshipType: OntologyRelationshipType): string {
+  const policy = getRelationSemanticPolicy(relationshipType)
+
+  if (!policy) {
+    return [
+      `${relationPolicyIri(relationshipType)} a understood:RelationPolicy ;`,
+      `  understood:relationshipType "${escapeTurtleString(relationshipType)}" .`,
+    ].join('\n')
+  }
+
+  return [
+    `${relationPolicyIri(relationshipType)} a understood:RelationPolicy ;`,
+    `  understood:relationshipType "${escapeTurtleString(policy.relationshipType)}" ;`,
+    `  understood:relationLabel "${escapeTurtleString(policy.label)}" ;`,
+    `  understood:semanticKind "${escapeTurtleString(policy.semanticKind)}" ;`,
+    `  understood:evidenceExpectation "${escapeTurtleString(policy.evidenceExpectation)}" ;`,
+    `  understood:assistantRule "${escapeTurtleString(policy.assistantRule)}" ;`,
+    `  understood:sourceReferenceIds "${escapeTurtleString(policy.sourceReferenceIds.join(','))}" .`,
   ].join('\n')
 }
 
@@ -80,8 +104,16 @@ function conceptIri(label: string): string {
   return iri('concept', slugify(label))
 }
 
-function iri(kind: 'axiom' | 'concept', value: string): string {
+function relationPolicyIri(relationshipType: OntologyRelationshipType): string {
+  return iri('relation', relationshipType)
+}
+
+function iri(kind: 'axiom' | 'concept' | 'relation', value: string): string {
   return `<${BASE_IRI}/${kind}/${encodeURIComponent(value)}>`
+}
+
+function getUsedRelationshipTypes(axioms: RdfExportableAxiom[]): OntologyRelationshipType[] {
+  return [...new Set(axioms.map((axiom) => axiom.relationshipType))]
 }
 
 function slugify(value: string): string {

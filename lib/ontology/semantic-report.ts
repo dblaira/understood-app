@@ -7,6 +7,7 @@ import {
   buildGraphProjectionQuery,
   buildPromptEligibleAxiomsQuery,
   buildProvenanceSourceQuery,
+  buildRelationSemanticsQuery,
 } from '@/lib/ontology/sparql-queries'
 
 export interface OntologySemanticReport {
@@ -33,6 +34,7 @@ export function buildOntologySemanticReport(
     { name: 'CQ-006 graph projection', query: buildGraphProjectionQuery() },
     { name: 'CQ-009 contradiction evidence', query: buildContradictionEvidenceQuery() },
     { name: 'CQ-010 provenance source', query: buildProvenanceSourceQuery() },
+    { name: 'CQ-018 relation semantics', query: buildRelationSemanticsQuery() },
   ]
 
   return {

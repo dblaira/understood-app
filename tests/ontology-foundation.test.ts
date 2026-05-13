@@ -38,6 +38,7 @@ import {
   buildGraphProjectionQuery,
   buildPromptEligibleAxiomsQuery,
   buildProvenanceSourceQuery,
+  buildRelationSemanticsQuery,
 } from '../lib/ontology/sparql-queries'
 import { buildOntologyReviewQueue, getAxiomProvenanceLabel } from '../lib/ontology/review-queue'
 import { getProvenanceSourceDescriptor, normalizeProvenanceSource } from '../lib/ontology/provenance'
@@ -55,6 +56,12 @@ import {
   buildLayeredOntologyPromptContext,
   CONNECTION_PROMPT_LIMIT,
 } from '../lib/ontology/prompt-context'
+import {
+  buildRelationSemanticPromptSection,
+  getRelationSemanticPolicy,
+  MID_LEVEL_ONTOLOGY_PROFILES,
+  RELATION_SEMANTIC_POLICIES,
+} from '../lib/ontology/mid-level-reference'
 
 describe('standard ontology vocabulary', () => {
   it('keeps neutral product vocabulary separate from Adam example axioms', () => {
@@ -66,6 +73,8 @@ describe('standard ontology vocabulary', () => {
     assert.equal(STANDARD_ONTOLOGY_VOCABULARY.exampleAxioms.length, 0)
     assert.ok(STANDARD_ONTOLOGY_VOCABULARY.parentDomains.every((domain) => domain.childLabels.length > 0))
     assert.ok(STANDARD_RELATIONSHIP_TYPES.includes('predicts'))
+    assert.ok(STANDARD_RELATIONSHIP_TYPES.includes('causes'))
+    assert.ok(STANDARD_RELATIONSHIP_TYPES.includes('intended_to_achieve'))
     assert.ok(STANDARD_AXIOM_STATUSES.includes('candidate'))
   })
 
@@ -934,6 +943,8 @@ describe('RDF export', () => {
     assert.match(turtle, /<https:\/\/understood\.app\/ontology\/axiom\/axiom-1> a understood:Axiom ;/)
     assert.match(turtle, /understood:antecedent <https:\/\/understood\.app\/ontology\/concept\/high-learning> ;/)
     assert.match(turtle, /understood:consequent <https:\/\/understood\.app\/ontology\/concept\/higher-affect> ;/)
+    assert.match(turtle, /<https:\/\/understood\.app\/ontology\/relation\/predicts> a understood:RelationPolicy ;/)
+    assert.match(turtle, /understood:relationshipPolicy <https:\/\/understood\.app\/ontology\/relation\/predicts> ;/)
     assert.match(turtle, /understood:relationshipType "predicts" ;/)
     assert.match(turtle, /understood:confidence "0.67"\^\^xsd:decimal ;/)
     assert.match(turtle, /understood:evidenceCount 2 ;/)
@@ -961,6 +972,28 @@ describe('RDF export', () => {
     assert.match(turtle, /understood:antecedentLabel "Learning \\"flow\\"" ;/)
     assert.match(turtle, /understood:consequentLabel "Higher affect\\\\energy" ;/)
   })
+
+  it('exports relation policy metadata for stronger guardrail relations', () => {
+    const turtle = exportAxiomsToTurtle([
+      {
+        id: 'axiom-cause',
+        antecedent: 'Repeated low sleep',
+        consequent: 'Lower patience',
+        confidence: 0.75,
+        status: 'confirmed',
+        scope: 'personal',
+        relationshipType: 'causes',
+        evidenceEntryIds: ['entry-1', 'entry-2', 'entry-3'],
+        evidenceCount: 3,
+        provenance: { source: 'human_confirmed' },
+      },
+    ])
+
+    assert.match(turtle, /understood:relationshipType "causes" ;/)
+    assert.match(turtle, /understood:semanticKind "causation" ;/)
+    assert.match(turtle, /understood:evidenceExpectation "Requires stronger evidence than support/)
+    assert.match(turtle, /understood:sourceReferenceIds "cco:extended-relation-ontology,ro:causal-relations" \./)
+  })
 })
 
 describe('SHACL shapes', () => {
@@ -974,6 +1007,7 @@ describe('SHACL shapes', () => {
     assert.match(shapes, /sh:path understood:antecedent ;\n\s+sh:minCount 1 ;/)
     assert.match(shapes, /sh:path understood:consequent ;\n\s+sh:minCount 1 ;/)
     assert.match(shapes, /sh:path understood:relationshipType ;\n\s+sh:minCount 1 ;/)
+    assert.match(shapes, /sh:in \([^)]*"predicts"[^)]*"causes"[^)]*"intended_to_achieve"[^)]*\) ;/)
     assert.match(shapes, /sh:path understood:confidence ;\n\s+sh:minCount 1 ;\n\s+sh:datatype xsd:decimal ;/)
     assert.match(shapes, /sh:path understood:evidenceCount ;\n\s+sh:minCount 1 ;\n\s+sh:datatype xsd:integer ;/)
     assert.match(shapes, /sh:path understood:provenanceSource ;\n\s+sh:minCount 1 ;/)
@@ -1024,6 +1058,26 @@ understood:axiom_axiom_1
       'understood:provenanceSource',
     ])
   })
+
+  it('reports relationship types outside the mid-level allowlist', () => {
+    const result = validateOntologyAxiomTurtle(`
+@prefix understood: <https://understood.app/ontology#> .
+
+<https://understood.app/ontology/axiom/axiom-1>
+  a understood:Axiom ;
+  understood:axiomId "axiom-1" ;
+  understood:antecedent "High Learning" ;
+  understood:consequent "Higher Affect" ;
+  understood:relationshipType "magically_guarantees" ;
+  understood:confidence "0.67" ;
+  understood:evidenceCount 1 ;
+  understood:provenanceSource "self_declared" .
+`)
+
+    assert.equal(result.valid, false)
+    assert.equal(result.issues[0].subject, '<https://understood.app/ontology/axiom/axiom-1>')
+    assert.deepEqual(result.issues[0].invalidRelationshipTypes, ['magically_guarantees'])
+  })
 })
 
 describe('semantic report', () => {
@@ -1063,7 +1117,7 @@ describe('semantic report', () => {
     assert.equal(report.appVersion, 'test-sha')
     assert.equal(report.validation.valid, true)
     assert.equal(report.validation.checkedSubjects, 1)
-    assert.equal(report.queryTemplateCount, 4)
+    assert.equal(report.queryTemplateCount, 5)
     assert.match(report.turtle, /understood:Axiom/)
     assert.match(report.turtle, /# appVersion: test-sha/)
     assert.match(report.turtle, /# exportedAt: 2026-05-12T00:00:00.000Z/)
@@ -1106,6 +1160,14 @@ describe('SPARQL query templates', () => {
     assert.match(query, /# CQ-010: Provenance and Source Trust/)
     assert.match(query, /SELECT \?axiom \?provenanceSource/)
     assert.match(query, /understood:provenanceSource \?provenanceSource/)
+  })
+
+  it('maps CQ-018 to relation semantic guardrail checks', () => {
+    const query = buildRelationSemanticsQuery()
+
+    assert.match(query, /# CQ-018: Relation Semantics for Guardrails/)
+    assert.match(query, /SELECT \?axiom \?relationshipType \?relationshipPolicy \?semanticKind \?assistantRule/)
+    assert.match(query, /understood:relationshipPolicy \?relationshipPolicy/)
   })
 })
 
@@ -1290,6 +1352,7 @@ describe('layered ontology prompt context', () => {
     assert.match(context.connectionPrinciplesSection, /Delegation is three sentences/)
     assert.match(context.productPrinciplesSection, /A product must reduce user friction/)
     assert.match(context.publicOntologyGuardrailSection, /Public ontology guardrails/)
+    assert.match(context.publicOntologyGuardrailSection, /Mid-level relation semantics/)
     assert.ok(context.publicGuardrailCount > 0)
   })
 
@@ -1310,7 +1373,55 @@ describe('public ontology reference scaffold', () => {
   it('keeps BFO and domain references separate from personal axioms', () => {
     assert.ok(PUBLIC_ONTOLOGY_REFERENCES.some((reference) => reference.id === 'bfo:continuant'))
     assert.ok(PUBLIC_ONTOLOGY_REFERENCES.some((reference) => reference.id === 'domain:sleep'))
+    assert.ok(PUBLIC_ONTOLOGY_REFERENCES.some((reference) => reference.id === 'cco:extended-relation-ontology'))
     assert.ok(PUBLIC_ONTOLOGY_REFERENCES.every((reference) => reference.scope !== 'personal' as never))
+  })
+
+  it('keeps curated mid-level profiles tied to named failure modes', () => {
+    const shipNowProfiles = MID_LEVEL_ONTOLOGY_PROFILES.filter((profile) => profile.status === 'ship_now')
+
+    assert.deepEqual(
+      shipNowProfiles.map((profile) => profile.id),
+      [
+        'profile:agent',
+        'profile:process-event',
+        'profile:information-entity',
+        'profile:time',
+        'profile:guardrail-relations',
+      ]
+    )
+    assert.ok(shipNowProfiles.every((profile) => profile.failureMode.length > 20))
+    assert.ok(shipNowProfiles.every((profile) => profile.sourceReferenceIds.length > 0))
+
+    const deferredProfileIds = MID_LEVEL_ONTOLOGY_PROFILES
+      .filter((profile) => profile.status === 'deferred')
+      .map((profile) => profile.id)
+
+    assert.deepEqual(deferredProfileIds, [
+      'profile:quality',
+      'profile:units-of-measure',
+      'profile:artifact',
+      'profile:facility',
+      'profile:social-organization',
+      'profile:geospatial',
+      'profile:currency',
+    ])
+  })
+
+  it('defines relation semantics that prevent causal and intention upgrades', () => {
+    const correlation = getRelationSemanticPolicy('correlates_with')
+    const intention = getRelationSemanticPolicy('intended_to_achieve')
+    const causation = getRelationSemanticPolicy('causes')
+
+    assert.equal(RELATION_SEMANTIC_POLICIES.length, STANDARD_RELATIONSHIP_TYPES.length)
+    assert.match(correlation?.assistantRule ?? '', /Never rewrite as causes/)
+    assert.match(intention?.assistantRule ?? '', /Do not imply the intended outcome happened/)
+    assert.match(causation?.evidenceExpectation ?? '', /Requires stronger evidence/)
+
+    const promptSection = buildRelationSemanticPromptSection()
+    assert.match(promptSection, /Mid-level relation semantics/)
+    assert.match(promptSection, /correlation is not causation/)
+    assert.match(promptSection, /intention is not outcome/)
   })
 
   it('maps personal concepts to public references without merging authority', () => {

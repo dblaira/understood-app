@@ -1,6 +1,9 @@
+import { isAllowedRelationshipType } from '@/lib/ontology/mid-level-reference'
+
 export interface TurtleValidationIssue {
   subject: string
   missingPredicates: string[]
+  invalidRelationshipTypes?: string[]
 }
 
 export interface TurtleValidationResult {
@@ -23,14 +26,25 @@ export function validateOntologyAxiomTurtle(turtle: string): TurtleValidationRes
   const subjects = extractAxiomSubjectBlocks(turtle)
   const issues = subjects.map(({ subject, block }) => {
     const missingPredicates = REQUIRED_AXIOM_TURTLE_PREDICATES.filter((predicate) => !block.includes(predicate))
-    return { subject, missingPredicates }
-  }).filter((issue) => issue.missingPredicates.length > 0)
+    const invalidRelationshipTypes = extractRelationshipTypes(block).filter((relationshipType) => {
+      return !isAllowedRelationshipType(relationshipType)
+    })
+    return {
+      subject,
+      missingPredicates,
+      ...(invalidRelationshipTypes.length > 0 ? { invalidRelationshipTypes } : {}),
+    }
+  }).filter((issue) => issue.missingPredicates.length > 0 || (issue.invalidRelationshipTypes?.length ?? 0) > 0)
 
   return {
     valid: issues.length === 0,
     checkedSubjects: subjects.length,
     issues,
   }
+}
+
+function extractRelationshipTypes(block: string): string[] {
+  return [...block.matchAll(/understood:relationshipType\s+"([^"]+)"/g)].map((match) => match[1])
 }
 
 function extractAxiomSubjectBlocks(turtle: string): Array<{ subject: string; block: string }> {
@@ -40,8 +54,7 @@ function extractAxiomSubjectBlocks(turtle: string): Array<{ subject: string; blo
     .filter((block) => block.includes('a understood:Axiom'))
 
   return blocks.map((block) => {
-    const subject = block.match(/^(understood:[^\s]+)/)?.[1] ?? 'unknown'
+    const subject = block.match(/(?:^|\n)\s*((?:understood:[^\s]+)|(?:<[^>]+>))\s+(?:a\s+understood:Axiom|[\s\S]*?\n\s+a\s+understood:Axiom)/)?.[1] ?? 'unknown'
     return { subject, block }
   })
 }
-

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { LIFE_DOMAINS } from '@/types/ontology'
 
 interface MobileMenuProps {
@@ -39,6 +39,7 @@ export function MobileMenu({
   onToggleTimeline,
 }: MobileMenuProps) {
   const router = useRouter()
+  const pathname = usePathname()
   // Prevent body scroll when menu is open
   useEffect(() => {
     if (isOpen) {
@@ -71,6 +72,11 @@ export function MobileMenu({
 
   const handleEntryTypeClick = (type: string | null) => {
     onEntryTypeChange(type === currentEntryType ? null : type)
+    onClose()
+  }
+
+  const handleRouteClick = (href: string) => {
+    router.push(href)
     onClose()
   }
 
@@ -189,6 +195,68 @@ export function MobileMenu({
           ))}
         </ul>
 
+        {/* Workspace */}
+        <div
+          style={{
+            color: 'rgba(255, 255, 255, 0.5)',
+            fontSize: '0.75rem',
+            fontWeight: 600,
+            letterSpacing: '0.15rem',
+            textTransform: 'uppercase',
+            margin: '1.5rem 0 0.75rem',
+          }}
+        >
+          Workspace
+        </div>
+        <button
+          onClick={() => handleRouteClick('/ontology')}
+          style={{
+            display: 'block',
+            width: '100%',
+            padding: '1rem 0',
+            background: 'transparent',
+            border: 'none',
+            borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+            color: pathname === '/ontology' ? '#DC143C' : '#FFFFFF',
+            fontSize: '1rem',
+            fontWeight: 600,
+            letterSpacing: '0.15rem',
+            textTransform: 'uppercase',
+            textAlign: 'left',
+            cursor: 'pointer',
+            transition: 'color 0.2s ease',
+          }}
+        >
+          <span>◇ Ontology</span>
+          {pathname === '/ontology' && (
+            <span style={{ float: 'right', color: '#DC143C' }}>●</span>
+          )}
+        </button>
+        <button
+          onClick={() => handleRouteClick('/ontology/fluency')}
+          style={{
+            display: 'block',
+            width: '100%',
+            padding: '1rem 0',
+            background: 'transparent',
+            border: 'none',
+            borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+            color: pathname.startsWith('/ontology/fluency') ? '#bbf7d0' : '#FFFFFF',
+            fontSize: '1rem',
+            fontWeight: 600,
+            letterSpacing: '0.15rem',
+            textTransform: 'uppercase',
+            textAlign: 'left',
+            cursor: 'pointer',
+            transition: 'color 0.2s ease',
+          }}
+        >
+          <span>✓ Fluency Tracker</span>
+          {pathname.startsWith('/ontology/fluency') && (
+            <span style={{ float: 'right', color: '#bbf7d0' }}>●</span>
+          )}
+        </button>
+
         {/* Divider */}
         <div
           style={{
@@ -285,10 +353,7 @@ export function MobileMenu({
         >
           {/* Ontology */}
           <button
-            onClick={() => {
-              router.push('/ontology')
-              onClose()
-            }}
+            onClick={() => handleRouteClick('/ontology')}
             style={{
               display: 'block',
               width: '100%',
@@ -308,10 +373,7 @@ export function MobileMenu({
             Ontology
           </button>
           <button
-            onClick={() => {
-              router.push('/ontology/fluency')
-              onClose()
-            }}
+            onClick={() => handleRouteClick('/ontology/fluency')}
             style={{
               display: 'block',
               width: '100%',

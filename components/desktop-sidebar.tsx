@@ -733,6 +733,30 @@ export function DesktopSidebar({
         }}
       >
         <button
+          onClick={() => router.push('/ontology')}
+          title="Ontology"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: isExpanded ? 'flex-start' : 'center',
+            gap: '0.75rem',
+            width: '100%',
+            padding: isExpanded ? '0.65rem 0' : '0.5rem',
+            background: isRouteActive('/ontology') ? 'rgba(220, 20, 60, 0.12)' : 'transparent',
+            border: 'none',
+            borderRadius: '6px',
+            color: isRouteActive('/ontology') ? '#FFFFFF' : 'rgba(255, 255, 255, 0.5)',
+            fontSize: '0.85rem',
+            fontWeight: 500,
+            textAlign: 'left',
+            cursor: 'pointer',
+            transition: 'color 0.15s ease, background 0.15s ease',
+          }}
+        >
+          <span style={{ fontSize: '1.1rem' }}>◇</span>
+          {isExpanded && <span>Ontology</span>}
+        </button>
+        <button
           onClick={() => router.push('/settings')}
           title="Settings"
           style={{

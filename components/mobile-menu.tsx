@@ -327,27 +327,6 @@ export function MobileMenu({
             background: '#000000',
           }}
         >
-          {/* Ontology */}
-          <button
-            onClick={() => handleRouteClick('/ontology')}
-            style={{
-              display: 'block',
-              width: '100%',
-              padding: '0.875rem 1.5rem',
-              background: 'transparent',
-              border: '1px solid rgba(255, 255, 255, 0.15)',
-              borderRadius: '4px',
-              color: 'rgba(255, 255, 255, 0.7)',
-              fontSize: '0.85rem',
-              fontWeight: 600,
-              letterSpacing: '0.1rem',
-              textTransform: 'uppercase',
-              cursor: 'pointer',
-              marginBottom: '0.75rem',
-            }}
-          >
-            Ontology
-          </button>
           {/* Settings button */}
           <button
             onClick={() => {

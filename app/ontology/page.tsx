@@ -151,12 +151,25 @@ export default function OntologyPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [reviewError, setReviewError] = useState<string | null>(null)
-  const [showHowItWorks, setShowHowItWorks] = useState(true)
   const [isReviewing, startReviewTransition] = useTransition()
   const reviewQueue = buildOntologyReviewQueue(axioms)
   const semanticReport = useMemo(() => buildOntologySemanticReport(axioms, {
     appVersion: process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA ?? 'local',
   }), [axioms])
+  const trustedAxiomCount = semanticReport.exportedAxiomCount
+  const draftClaimCount = useMemo(() => {
+    return splitEntries.reduce((total, entry) => total + entry.split.claims.length, 0)
+  }, [splitEntries])
+  const markedDraftCount = useMemo(() => {
+    return Object.values(claimDecisions).filter((decision) => decision === 'candidate_review').length
+  }, [claimDecisions])
+  const ontologyStatus = buildOntologyStatusCopy({
+    trustedAxiomCount,
+    pendingCandidateCount: reviewQueue.pendingCount,
+    draftClaimCount,
+    markedDraftCount,
+    semanticValid: semanticReport.validation.valid,
+  })
 
   useEffect(() => {
     let cancelled = false
@@ -336,77 +349,79 @@ export default function OntologyPage() {
             marginBottom: '0.5rem',
           }}
         >
-          Personal ontology
+          Ontology status
         </h1>
-        <p style={{ color: 'rgba(255,255,255,0.55)', marginBottom: '1rem', fontSize: '1rem', lineHeight: 1.5 }}>
-          In one line: when you capture a note, the app picks <strong style={{ color: 'rgba(255,255,255,0.85)' }}>life domains</strong> (same
-          labels as the sidebar) and feeds your <strong style={{ color: 'rgba(255,255,255,0.85)' }}>if→then rules</strong> into the model so
-          answers stay on your worldview—not a generic chatbot.
-        </p>
 
         <div
           style={{
             marginBottom: '1.75rem',
-            border: '1px solid rgba(255,255,255,0.12)',
+            border: `1px solid ${ontologyStatus.border}`,
             borderRadius: '12px',
-            background: 'rgba(255,255,255,0.03)',
-            overflow: 'hidden',
+            background: ontologyStatus.background,
+            padding: '1.25rem',
           }}
         >
-          <button
-            type="button"
-            onClick={() => setShowHowItWorks((v) => !v)}
-            style={{
-              width: '100%',
-              textAlign: 'left',
-              padding: '0.85rem 1rem',
-              background: 'rgba(255,255,255,0.04)',
-              border: 'none',
-              color: 'rgba(255,255,255,0.75)',
-              fontSize: '0.9rem',
-              cursor: 'pointer',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              gap: '0.75rem',
-            }}
-          >
-            <span>{showHowItWorks ? '▼' : '▶'} How this page maps to the app</span>
-            <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.8rem' }}>{showHowItWorks ? 'Hide' : 'Show'}</span>
-          </button>
-          {showHowItWorks && (
-            <ul
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+            <div>
+              <p style={{ color: ontologyStatus.color, margin: '0 0 0.4rem', fontSize: '0.78rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                {ontologyStatus.label}
+              </p>
+              <h2 style={{ margin: 0, fontSize: '1.45rem', lineHeight: 1.2, fontWeight: 700 }}>
+                {ontologyStatus.headline}
+              </h2>
+            </div>
+            <div
               style={{
-                margin: 0,
-                padding: '1rem 1.25rem 1.15rem',
-                listStyle: 'none',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '0.65rem',
-                color: 'rgba(255,255,255,0.5)',
-                fontSize: '0.88rem',
-                lineHeight: 1.55,
+                border: `1px solid ${ontologyStatus.border}`,
+                borderRadius: '999px',
+                color: ontologyStatus.color,
+                padding: '0.4rem 0.7rem',
+                fontSize: '0.78rem',
+                fontWeight: 700,
+                whiteSpace: 'nowrap',
               }}
             >
-              <li>
-                <strong style={{ color: 'rgba(255,255,255,0.8)' }}>Life domain</strong> — a bucket like Exercise or Learning. Stored on
-                entries and used in the sidebar; the infer API returns these after you save.
-              </li>
-              <li>
-                <strong style={{ color: 'rgba(255,255,255,0.8)' }}>Rule (we still call it an axiom in the DB)</strong> — plain English “if
-                this, then that” plus a confidence. Rows in <code style={{ color: 'rgba(255,255,255,0.55)' }}>ontology_axioms</code> get
-                stitched into the prompt in <code style={{ color: 'rgba(255,255,255,0.55)' }}>build-prompt-section</code>.
-              </li>
-              <li>
-                <strong style={{ color: 'rgba(255,255,255,0.8)' }}>Inference here</strong> — the LLM reading your text + rules, not an OWL
-                reasoner. There is no separate logic engine to learn.
-              </li>
-              <li>
-                <strong style={{ color: 'rgba(255,255,255,0.8)' }}>Insights below</strong> — optional weekly summaries once something writes to{' '}
-                <code style={{ color: 'rgba(255,255,255,0.55)' }}>inferred_insights</code>; empty is normal today.
-              </li>
-            </ul>
-          )}
+              AI use: {trustedAxiomCount > 0 ? 'governed' : 'not governed'}
+            </div>
+          </div>
+
+          <p style={{ color: 'rgba(255,255,255,0.68)', fontSize: '0.95rem', lineHeight: 1.5, margin: '0.85rem 0 0' }}>
+            {ontologyStatus.meaning}
+          </p>
+
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(135px, 1fr))',
+              gap: '0.75rem',
+              marginTop: '1rem',
+            }}
+          >
+            <OntologyStatusStat label="Trusted rules" value={trustedAxiomCount} helper="Can guide AI" tone={trustedAxiomCount > 0 ? 'good' : 'muted'} />
+            <OntologyStatusStat label="Needs review" value={reviewQueue.pendingCount} helper="Candidate rules" tone={reviewQueue.pendingCount > 0 ? 'warn' : 'muted'} />
+            <OntologyStatusStat label="Draft claims" value={draftClaimCount} helper="Not trusted yet" tone={draftClaimCount > 0 ? 'warn' : 'muted'} />
+            <OntologyStatusStat label="Semantic check" value={semanticReport.validation.valid ? 'Pass' : 'Review'} helper="Export health" tone={semanticReport.validation.valid ? 'good' : 'warn'} />
+          </div>
+
+          <div
+            style={{
+              marginTop: '1rem',
+              borderTop: '1px solid rgba(255,255,255,0.1)',
+              paddingTop: '0.9rem',
+              display: 'grid',
+              gap: '0.45rem',
+              color: 'rgba(255,255,255,0.62)',
+              fontSize: '0.9rem',
+              lineHeight: 1.45,
+            }}
+          >
+            <p style={{ margin: 0 }}>
+              <strong style={{ color: 'rgba(255,255,255,0.86)' }}>Next:</strong> {ontologyStatus.nextStep}
+            </p>
+            <p style={{ margin: 0 }}>
+              <strong style={{ color: 'rgba(255,255,255,0.86)' }}>Rule:</strong> draft claims and candidates cannot control answers until you confirm them.
+            </p>
+          </div>
         </div>
 
         {loading && <p style={{ color: 'rgba(255,255,255,0.5)' }}>Loading…</p>}
@@ -876,6 +891,116 @@ function mapSplitReviewEntry(row: EntryRow): SplitReviewEntry {
       suggestedDomains: domains,
     }),
   }
+}
+
+function buildOntologyStatusCopy({
+  trustedAxiomCount,
+  pendingCandidateCount,
+  draftClaimCount,
+  markedDraftCount,
+  semanticValid,
+}: {
+  trustedAxiomCount: number
+  pendingCandidateCount: number
+  draftClaimCount: number
+  markedDraftCount: number
+  semanticValid: boolean
+}) {
+  if (!semanticValid) {
+    return {
+      label: 'Needs attention',
+      headline: 'The ontology data needs a semantic check before you trust it.',
+      meaning: 'The page loaded, but the export/validation layer found something that should be reviewed.',
+      nextStep: 'Fix the semantic check before relying on ontology-guided answers.',
+      color: '#fde68a',
+      border: 'rgba(253,230,138,0.38)',
+      background: 'rgba(253,230,138,0.07)',
+    }
+  }
+
+  if (trustedAxiomCount > 0) {
+    return {
+      label: 'Working',
+      headline: 'Confirmed rules are available to guide AI answers.',
+      meaning: `${trustedAxiomCount} trusted ${trustedAxiomCount === 1 ? 'rule is' : 'rules are'} eligible for prompts, graph export, and semantic checks.`,
+      nextStep: pendingCandidateCount > 0
+        ? 'Review the candidate rules below.'
+        : 'Ask the app a question, then check whether the answer cites the right memory.',
+      color: '#86efac',
+      border: 'rgba(134,239,172,0.38)',
+      background: 'rgba(34,197,94,0.08)',
+    }
+  }
+
+  if (pendingCandidateCount > 0) {
+    return {
+      label: 'Not governing yet',
+      headline: 'Candidate rules exist, but none are trusted yet.',
+      meaning: 'AI can show these as review material, but they cannot control answers until you confirm them.',
+      nextStep: 'Confirm useful candidates or reject weak ones.',
+      color: '#fde68a',
+      border: 'rgba(253,230,138,0.38)',
+      background: 'rgba(253,230,138,0.07)',
+    }
+  }
+
+  if (draftClaimCount > 0) {
+    return {
+      label: 'Draft only',
+      headline: 'The ontology has draft claims, but no trusted rules yet.',
+      meaning: `${draftClaimCount} draft ${draftClaimCount === 1 ? 'claim has' : 'claims have'} been found. ${markedDraftCount} ${markedDraftCount === 1 ? 'is' : 'are'} marked for candidate review. Drafts are not allowed to govern AI answers.`,
+      nextStep: 'Turn one useful draft claim into a candidate rule, then confirm it only if you trust it.',
+      color: '#fbbf24',
+      border: 'rgba(251,191,36,0.38)',
+      background: 'rgba(251,191,36,0.07)',
+    }
+  }
+
+  return {
+    label: 'Empty',
+    headline: 'No trusted ontology rules exist yet.',
+    meaning: 'Nothing is broken. The app needs reviewed patterns before the ontology can guide answers.',
+    nextStep: 'Capture more entries or Connections, then create one candidate rule from a real pattern.',
+    color: 'rgba(255,255,255,0.62)',
+    border: 'rgba(255,255,255,0.16)',
+    background: 'rgba(255,255,255,0.04)',
+  }
+}
+
+function OntologyStatusStat({
+  label,
+  value,
+  helper,
+  tone,
+}: {
+  label: string
+  value: number | string
+  helper: string
+  tone: 'good' | 'warn' | 'muted'
+}) {
+  const color = tone === 'good' ? '#86efac' : tone === 'warn' ? '#fde68a' : 'rgba(255,255,255,0.5)'
+
+  return (
+    <div
+      style={{
+        border: '1px solid rgba(255,255,255,0.1)',
+        borderRadius: '8px',
+        background: 'rgba(0,0,0,0.16)',
+        padding: '0.75rem',
+        minHeight: '92px',
+      }}
+    >
+      <p style={{ color: 'rgba(255,255,255,0.45)', margin: 0, fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+        {label}
+      </p>
+      <p style={{ color, margin: '0.35rem 0 0', fontSize: '1.45rem', lineHeight: 1, fontWeight: 700 }}>
+        {value}
+      </p>
+      <p style={{ color: 'rgba(255,255,255,0.45)', margin: '0.45rem 0 0', fontSize: '0.78rem', lineHeight: 1.3 }}>
+        {helper}
+      </p>
+    </div>
+  )
 }
 
 function stripHtml(value: string): string {

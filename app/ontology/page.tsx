@@ -11,7 +11,14 @@ import { buildOntologySemanticReport } from '@/lib/ontology/semantic-report'
 import { getProvenanceSourceDescriptor, normalizeProvenanceSource, type ProvenanceSourceDescriptor } from '@/lib/ontology/provenance'
 import { buildOntologyReviewQueue, getAxiomProvenanceLabel } from '@/lib/ontology/review-queue'
 import {
+  getProvisionalOntologyCoverage,
+  PROVISIONAL_ONTOLOGY_RULES,
+  PROVISIONAL_ONTOLOGY_VERSION,
+  type ProvisionalOntologyRule,
+} from '@/lib/ontology/provisional-complete'
+import {
   parseLifeDomains,
+  LIFE_DOMAINS,
   parseOntologyAxiomScope,
   parseOntologyAxiomStatus,
   type InferredInsight,
@@ -156,6 +163,7 @@ export default function OntologyPage() {
   const semanticReport = useMemo(() => buildOntologySemanticReport(axioms, {
     appVersion: process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA ?? 'local',
   }), [axioms])
+  const provisionalCoverage = useMemo(() => getProvisionalOntologyCoverage(), [])
   const trustedAxiomCount = semanticReport.exportedAxiomCount
   const draftClaimCount = useMemo(() => {
     return splitEntries.reduce((total, entry) => total + entry.split.claims.length, 0)
@@ -169,6 +177,7 @@ export default function OntologyPage() {
     draftClaimCount,
     markedDraftCount,
     semanticValid: semanticReport.validation.valid,
+    provisionalRuleCount: PROVISIONAL_ONTOLOGY_RULES.length,
   })
 
   useEffect(() => {
@@ -381,7 +390,7 @@ export default function OntologyPage() {
                 whiteSpace: 'nowrap',
               }}
             >
-              AI use: {trustedAxiomCount > 0 ? 'governed' : 'not governed'}
+              AI use: {trustedAxiomCount > 0 ? 'governed' : 'provisional'}
             </div>
           </div>
 
@@ -398,6 +407,7 @@ export default function OntologyPage() {
             }}
           >
             <OntologyStatusStat label="Trusted rules" value={trustedAxiomCount} helper="Can guide AI" tone={trustedAxiomCount > 0 ? 'good' : 'muted'} />
+            <OntologyStatusStat label="Provisional rules" value={PROVISIONAL_ONTOLOGY_RULES.length} helper="Active scaffold" tone="good" />
             <OntologyStatusStat label="Needs review" value={reviewQueue.pendingCount} helper="Candidate rules" tone={reviewQueue.pendingCount > 0 ? 'warn' : 'muted'} />
             <OntologyStatusStat label="Draft claims" value={draftClaimCount} helper="Not trusted yet" tone={draftClaimCount > 0 ? 'warn' : 'muted'} />
             <OntologyStatusStat label="Semantic check" value={semanticReport.validation.valid ? 'Pass' : 'Review'} helper="Export health" tone={semanticReport.validation.valid ? 'good' : 'warn'} />
@@ -419,10 +429,50 @@ export default function OntologyPage() {
               <strong style={{ color: 'rgba(255,255,255,0.86)' }}>Next:</strong> {ontologyStatus.nextStep}
             </p>
             <p style={{ margin: 0 }}>
-              <strong style={{ color: 'rgba(255,255,255,0.86)' }}>Rule:</strong> draft claims and candidates cannot control answers until you confirm them.
+              <strong style={{ color: 'rgba(255,255,255,0.86)' }}>Rule:</strong> confirmed rules override provisional rules. Draft claims and candidates cannot control answers until you confirm them.
             </p>
           </div>
         </div>
+
+        <section
+          style={{
+            background: 'rgba(59,130,246,0.07)',
+            border: '1px solid rgba(147,197,253,0.2)',
+            borderRadius: '12px',
+            padding: '1.25rem',
+            marginBottom: '1.75rem',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+            <div>
+              <p style={{ color: '#93c5fd', margin: '0 0 0.35rem', fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                Complete test scaffold
+              </p>
+              <h2 style={{ margin: 0, fontSize: '1.25rem', lineHeight: 1.25, fontWeight: 700 }}>
+                The guessed ontology is active now.
+              </h2>
+            </div>
+            <span style={{ color: '#bfdbfe', border: '1px solid rgba(147,197,253,0.3)', borderRadius: '999px', padding: '0.35rem 0.65rem', fontSize: '0.74rem', whiteSpace: 'nowrap' }}>
+              {provisionalCoverage.coveredDomains.length}/{LIFE_DOMAINS.length} domains covered
+            </span>
+          </div>
+          <p style={{ color: 'rgba(255,255,255,0.68)', margin: '0.75rem 0 0', fontSize: '0.92rem', lineHeight: 1.45 }}>
+            This is not the final truth. It is a working set of hypotheses so journal notes, Connections, purchases, health records, and fitness records can shape answers now.
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '0.75rem', marginTop: '1rem' }}>
+            <OntologyStatusStat label="Prompt status" value="Active" helper="Used as provisional" tone="good" />
+            <OntologyStatusStat label="Version" value="v0" helper={PROVISIONAL_ONTOLOGY_VERSION} tone="muted" />
+            <OntologyStatusStat label="Missing domains" value={provisionalCoverage.missingDomains.length} helper={provisionalCoverage.missingDomains.length ? provisionalCoverage.missingDomains.join(', ') : 'None'} tone={provisionalCoverage.missingDomains.length ? 'warn' : 'good'} />
+          </div>
+          <div style={{ marginTop: '1rem', display: 'grid', gap: '0.65rem' }}>
+            {PROVISIONAL_ONTOLOGY_RULES.slice(0, 8).map((rule) => (
+              <ProvisionalRuleRow key={rule.id} rule={rule} />
+            ))}
+          </div>
+          <p style={{ color: 'rgba(255,255,255,0.36)', fontSize: '0.74rem', margin: '0.85rem 0 0', lineHeight: 1.4 }}>
+            Done means: this page loads, the scaffold reaches prompts, confirmed rules override it, and weak guesses can be replaced after testing.
+          </p>
+        </section>
 
         {loading && <p style={{ color: 'rgba(255,255,255,0.5)' }}>Loading…</p>}
         {error && (
@@ -899,12 +949,14 @@ function buildOntologyStatusCopy({
   draftClaimCount,
   markedDraftCount,
   semanticValid,
+  provisionalRuleCount,
 }: {
   trustedAxiomCount: number
   pendingCandidateCount: number
   draftClaimCount: number
   markedDraftCount: number
   semanticValid: boolean
+  provisionalRuleCount: number
 }) {
   if (!semanticValid) {
     return {
@@ -929,6 +981,22 @@ function buildOntologyStatusCopy({
       color: '#86efac',
       border: 'rgba(134,239,172,0.38)',
       background: 'rgba(34,197,94,0.08)',
+    }
+  }
+
+  if (provisionalRuleCount > 0) {
+    return {
+      label: 'Testable',
+      headline: 'A complete provisional ontology is active for testing.',
+      meaning: `${provisionalRuleCount} guessed rules can shape answers as hypotheses. They are not final truth, and confirmed rules will override them.`,
+      nextStep: pendingCandidateCount > 0
+        ? 'Test the answers, then confirm only the rules that actually hold up.'
+        : draftClaimCount > 0
+          ? 'Use the draft claims below to find rules worth promoting after testing.'
+          : 'Ask the app real questions and look for useful, wrong, or missing assumptions.',
+      color: '#93c5fd',
+      border: 'rgba(147,197,253,0.38)',
+      background: 'rgba(59,130,246,0.08)',
     }
   }
 
@@ -998,6 +1066,32 @@ function OntologyStatusStat({
       </p>
       <p style={{ color: 'rgba(255,255,255,0.45)', margin: '0.45rem 0 0', fontSize: '0.78rem', lineHeight: 1.3 }}>
         {helper}
+      </p>
+    </div>
+  )
+}
+
+function ProvisionalRuleRow({ rule }: { rule: ProvisionalOntologyRule }) {
+  return (
+    <div
+      style={{
+        border: '1px solid rgba(147,197,253,0.16)',
+        borderRadius: '8px',
+        background: 'rgba(0,0,0,0.18)',
+        padding: '0.75rem',
+      }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+        <h3 style={{ margin: 0, fontSize: '0.92rem', fontWeight: 700 }}>{rule.name}</h3>
+        <span style={{ color: '#93c5fd', fontSize: '0.72rem', whiteSpace: 'nowrap' }}>
+          {(rule.confidence * 100).toFixed(0)}% provisional
+        </span>
+      </div>
+      <p style={{ color: 'rgba(255,255,255,0.58)', fontSize: '0.78rem', lineHeight: 1.45, margin: '0.45rem 0 0' }}>
+        <strong style={{ color: 'rgba(255,255,255,0.78)' }}>If</strong> {rule.antecedent}. <strong style={{ color: 'rgba(255,255,255,0.78)' }}>Then</strong> {rule.consequent}.
+      </p>
+      <p style={{ color: 'rgba(255,255,255,0.34)', fontSize: '0.7rem', lineHeight: 1.35, margin: '0.45rem 0 0' }}>
+        {rule.domains.join(', ')} · {rule.relationshipType.replace(/_/g, ' ')} · {rule.source.replace(/_/g, ' ')}
       </p>
     </div>
   )

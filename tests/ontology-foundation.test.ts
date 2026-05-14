@@ -57,6 +57,11 @@ import {
   CONNECTION_PROMPT_LIMIT,
 } from '../lib/ontology/prompt-context'
 import {
+  buildProvisionalOntologyPromptSection,
+  getProvisionalOntologyCoverage,
+  PROVISIONAL_ONTOLOGY_RULES,
+} from '../lib/ontology/provisional-complete'
+import {
   buildRelationSemanticPromptSection,
   getRelationSemanticPolicy,
   MID_LEVEL_ONTOLOGY_PROFILES,
@@ -1350,10 +1355,12 @@ describe('layered ontology prompt context', () => {
     assert.equal(context.liveConnectionItems.length, 2)
     assert.equal(context.connectionPrincipleCount, 1)
     assert.match(context.connectionPrinciplesSection, /Delegation is three sentences/)
+    assert.match(context.provisionalOntologySection, /Provisional complete ontology test scaffold/)
     assert.match(context.productPrinciplesSection, /A product must reduce user friction/)
     assert.match(context.publicOntologyGuardrailSection, /Public ontology guardrails/)
     assert.match(context.publicOntologyGuardrailSection, /Mid-level relation semantics/)
     assert.ok(context.publicGuardrailCount > 0)
+    assert.ok(context.provisionalRuleCount > 0)
   })
 
   it('applies the shared connection prompt limit', () => {
@@ -1366,6 +1373,25 @@ describe('layered ontology prompt context', () => {
     }))
 
     assert.equal(buildConnectionItemsForPrompt(entries).length, CONNECTION_PROMPT_LIMIT)
+  })
+})
+
+describe('provisional complete ontology scaffold', () => {
+  it('covers every life domain with provisional rules', () => {
+    const coverage = getProvisionalOntologyCoverage()
+
+    assert.equal(coverage.missingDomains.length, 0)
+    assert.deepEqual(coverage.coveredDomains, [...LIFE_DOMAINS])
+    assert.ok(PROVISIONAL_ONTOLOGY_RULES.length >= LIFE_DOMAINS.length)
+  })
+
+  it('labels scaffold rules as provisional rather than confirmed truth', () => {
+    const section = buildProvisionalOntologyPromptSection()
+
+    assert.match(section, /guessed, provisional rules/)
+    assert.match(section, /Confirmed ontology axioms override/)
+    assert.match(section, /If Adam captures the raw thought/)
+    assert.doesNotMatch(section, /confirmed personal axiom/)
   })
 })
 

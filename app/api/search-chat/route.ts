@@ -122,9 +122,9 @@ export async function POST(request: NextRequest) {
 
 Your job is to help the user find specific entries by analyzing their natural language query against the entry index below. Be conversational, warm, and concise.
 
-${ontologyMemorySection}${ontologyPromptContext.connectionPrinciplesSection}${ontologyPromptContext.productPrinciplesSection}${ontologyPromptContext.publicOntologyGuardrailSection}
+${ontologyMemorySection}${ontologyPromptContext.connectionPrinciplesSection}${ontologyPromptContext.provisionalOntologySection}${ontologyPromptContext.productPrinciplesSection}${ontologyPromptContext.publicOntologyGuardrailSection}
 
-When using the memory context above, distinguish confirmed ontology axioms from user-authored Connections, product/system principles, and public ontology guardrails. Confirmed axioms are stronger personal rules. Connections are helpful operating principles. Product/system principles apply only to product reasoning. Public ontology references discipline terminology and scope, but they do not turn the user's personal observations into medical, dietary, legal, or financial advice. Do not claim a Connection is confirmed unless it appears as a confirmed ontology axiom.
+When using the memory context above, distinguish confirmed ontology axioms from user-authored Connections, provisional scaffold rules, product/system principles, and public ontology guardrails. Confirmed axioms are strongest. Connections are helpful operating principles. Provisional scaffold rules are test hypotheses only: use them when they help make the system testable, but say they are provisional and do not present them as proven facts. Product/system principles apply only to product reasoning. Public ontology references discipline terminology and scope, but they do not turn the user's personal observations into medical, dietary, legal, or financial advice. Do not claim a Connection or provisional rule is confirmed unless it appears as a confirmed ontology axiom.
 
 ## ENTRY INDEX (${entries.length} entries total):
 ${entryIndex}
@@ -214,8 +214,9 @@ ${entryIndex}
       memory_context: {
         confirmed_axioms: confirmedAxiomCount,
         connection_principles: ontologyPromptContext.connectionPrincipleCount,
+        provisional_rules: ontologyPromptContext.provisionalRuleCount,
         public_guardrails: ontologyPromptContext.publicGuardrailCount,
-        note: 'Confirmed axioms are trusted rules; Connections are read-only principles; public guardrails discipline scope.',
+        note: 'Confirmed axioms are trusted rules; Connections are read-only principles; provisional rules are test scaffolding; public guardrails discipline scope.',
       },
     })
   } catch (error) {

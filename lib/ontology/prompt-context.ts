@@ -8,6 +8,10 @@ import {
 import { buildProductOntologyPromptSection } from '@/lib/ontology/product-ontology'
 import { buildPublicOntologyGuardrailSection, PUBLIC_ONTOLOGY_REFERENCES } from '@/lib/ontology/public-reference'
 import { buildRelationSemanticPromptSection } from '@/lib/ontology/mid-level-reference'
+import {
+  buildProvisionalOntologyPromptSection,
+  PROVISIONAL_ONTOLOGY_RULES,
+} from '@/lib/ontology/provisional-complete'
 
 export const CONNECTION_PROMPT_LIMIT = 50
 
@@ -19,6 +23,8 @@ export interface LayeredOntologyPromptContext {
   liveConnectionItems: ConnectionOntologyIntakeItem[]
   connectionPrinciplesSection: string
   connectionPrincipleCount: number
+  provisionalOntologySection: string
+  provisionalRuleCount: number
   productPrinciplesSection: string
   publicOntologyGuardrailSection: string
   publicGuardrailCount: number
@@ -51,6 +57,8 @@ export function buildLayeredOntologyPromptContext(
     liveConnectionItems,
     connectionPrinciplesSection: buildConnectionPrinciplesPromptSection(liveConnectionItems),
     connectionPrincipleCount: getConnectionPromptPrinciples(liveConnectionItems).length,
+    provisionalOntologySection: buildProvisionalOntologyPromptSection(),
+    provisionalRuleCount: PROVISIONAL_ONTOLOGY_RULES.length,
     productPrinciplesSection: buildProductOntologyPromptSection(liveConnectionItems),
     publicOntologyGuardrailSection: `${buildPublicOntologyGuardrailSection()}${buildRelationSemanticPromptSection()}`,
     publicGuardrailCount: PUBLIC_ONTOLOGY_REFERENCES.length,

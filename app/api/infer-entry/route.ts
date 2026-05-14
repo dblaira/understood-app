@@ -101,6 +101,7 @@ export async function POST(request: NextRequest) {
       [
         ontologySection,
         layeredPromptContext.connectionPrinciplesSection,
+        layeredPromptContext.provisionalOntologySection,
         layeredPromptContext.productPrinciplesSection,
         layeredPromptContext.publicOntologyGuardrailSection,
       ].filter(Boolean).join('')

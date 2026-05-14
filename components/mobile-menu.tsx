@@ -232,30 +232,6 @@ export function MobileMenu({
             <span style={{ float: 'right', color: '#DC143C' }}>●</span>
           )}
         </button>
-        <button
-          onClick={() => handleRouteClick('/ontology/fluency')}
-          style={{
-            display: 'block',
-            width: '100%',
-            padding: '1rem 0',
-            background: 'transparent',
-            border: 'none',
-            borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-            color: pathname.startsWith('/ontology/fluency') ? '#bbf7d0' : '#FFFFFF',
-            fontSize: '1rem',
-            fontWeight: 600,
-            letterSpacing: '0.15rem',
-            textTransform: 'uppercase',
-            textAlign: 'left',
-            cursor: 'pointer',
-            transition: 'color 0.2s ease',
-          }}
-        >
-          <span>✓ Fluency Tracker</span>
-          {pathname.startsWith('/ontology/fluency') && (
-            <span style={{ float: 'right', color: '#bbf7d0' }}>●</span>
-          )}
-        </button>
 
         {/* Divider */}
         <div
@@ -371,26 +347,6 @@ export function MobileMenu({
             }}
           >
             Ontology
-          </button>
-          <button
-            onClick={() => handleRouteClick('/ontology/fluency')}
-            style={{
-              display: 'block',
-              width: '100%',
-              padding: '0.875rem 1.5rem',
-              background: 'rgba(134, 239, 172, 0.12)',
-              border: '1px solid rgba(134, 239, 172, 0.35)',
-              borderRadius: '4px',
-              color: '#bbf7d0',
-              fontSize: '0.85rem',
-              fontWeight: 600,
-              letterSpacing: '0.1rem',
-              textTransform: 'uppercase',
-              cursor: 'pointer',
-              marginBottom: '0.75rem',
-            }}
-          >
-            Fluency Tracker
           </button>
           {/* Settings button */}
           <button

@@ -130,28 +130,6 @@ export function Header({
 
             {/* Right buttons */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-              <button
-                type="button"
-                onClick={() => router.push('/ontology/fluency')}
-                aria-label="Open fluency tracker"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  background: 'rgba(134, 239, 172, 0.12)',
-                  border: '1px solid rgba(134, 239, 172, 0.35)',
-                  borderRadius: '999px',
-                  color: '#bbf7d0',
-                  padding: '0.45rem 0.65rem',
-                  cursor: 'pointer',
-                  fontSize: '0.72rem',
-                  fontWeight: 700,
-                  letterSpacing: '0.05rem',
-                  textTransform: 'uppercase',
-                }}
-              >
-                Fluency
-              </button>
               {/* AI Search */}
               <button
                 onClick={() => onOpenChat?.()}

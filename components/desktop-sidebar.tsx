@@ -98,8 +98,7 @@ export function DesktopSidebar({
   }
 
   const workspaceNavItems = [
-    { href: '/ontology', label: 'Ontology', icon: '◇', accent: 'red' },
-    { href: '/ontology/fluency', label: 'Fluency Tracker', icon: '✓', accent: 'green' },
+    { href: '/ontology', label: 'Ontology', icon: '◇' },
   ] as const
 
   const collapsedWidth = '64px'
@@ -360,7 +359,6 @@ export function DesktopSidebar({
                 </li>
                 {workspaceNavItems.map((item) => {
                   const isActive = isRouteActive(item.href)
-                  const isGreen = item.accent === 'green'
 
                   return (
                     <li key={item.href}>
@@ -373,16 +371,10 @@ export function DesktopSidebar({
                           gap: '0.75rem',
                           width: '100%',
                           padding: '0.65rem 1.5rem',
-                          background: isActive
-                            ? (isGreen ? 'rgba(134, 239, 172, 0.12)' : 'rgba(220, 20, 60, 0.15)')
-                            : 'transparent',
+                          background: isActive ? 'rgba(220, 20, 60, 0.15)' : 'transparent',
                           border: 'none',
-                          borderLeft: isActive
-                            ? `3px solid ${isGreen ? 'rgba(134, 239, 172, 0.75)' : '#DC143C'}`
-                            : '3px solid transparent',
-                          color: isActive
-                            ? (isGreen ? '#bbf7d0' : '#FFFFFF')
-                            : 'rgba(255, 255, 255, 0.75)',
+                          borderLeft: isActive ? '3px solid #DC143C' : '3px solid transparent',
+                          color: isActive ? '#FFFFFF' : 'rgba(255, 255, 255, 0.75)',
                           fontSize: '1.05rem',
                           fontWeight: 500,
                           fontFamily: "var(--font-bodoni-moda), Georgia, 'Times New Roman', serif",
@@ -622,7 +614,6 @@ export function DesktopSidebar({
 
             {workspaceNavItems.map((item) => {
               const isActive = isRouteActive(item.href)
-              const isGreen = item.accent === 'green'
 
               return (
                 <button
@@ -636,14 +627,10 @@ export function DesktopSidebar({
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    background: isActive
-                      ? (isGreen ? 'rgba(134, 239, 172, 0.12)' : 'rgba(220, 20, 60, 0.15)')
-                      : 'transparent',
+                    background: isActive ? 'rgba(220, 20, 60, 0.15)' : 'transparent',
                     border: 'none',
                     borderRadius: '8px',
-                    color: isActive
-                      ? (isGreen ? '#bbf7d0' : '#FFFFFF')
-                      : 'rgba(255, 255, 255, 0.6)',
+                    color: isActive ? '#FFFFFF' : 'rgba(255, 255, 255, 0.6)',
                     fontSize: '1.2rem',
                     cursor: 'pointer',
                     transition: 'all 0.15s ease',

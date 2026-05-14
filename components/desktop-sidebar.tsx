@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { EntryType } from '@/types'
+import { LIFE_DOMAINS } from '@/types/ontology'
 import { AiSearchIcon } from './ai-search-icon'
 
 interface DesktopSidebarProps {
@@ -27,14 +28,7 @@ interface DesktopSidebarProps {
 
 const lifeAreas = [
   { value: 'all', label: 'All' },
-  { value: 'Business', label: 'Business' },
-  { value: 'Finance', label: 'Finance' },
-  { value: 'Health', label: 'Health' },
-  { value: 'Fitness', label: 'Fitness' },
-  { value: 'Spiritual', label: 'Spiritual' },
-  { value: 'Fun', label: 'Fun' },
-  { value: 'Social', label: 'Social' },
-  { value: 'Romance', label: 'Romance' },
+  ...LIFE_DOMAINS.map((d) => ({ value: d, label: d })),
 ]
 
 const entryTypes: { value: EntryType; label: string; icon: string }[] = [
@@ -64,6 +58,7 @@ export function DesktopSidebar({
   hasWeeklyTheme = false,
 }: DesktopSidebarProps) {
   const router = useRouter()
+  const pathname = usePathname()
   const [localSearch, setLocalSearch] = useState(searchQuery)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const searchDebounceRef = useRef<NodeJS.Timeout | null>(null)
@@ -96,6 +91,15 @@ export function DesktopSidebar({
     }
     onEntryTypeChange(type)
   }
+
+  const isRouteActive = (href: string) => {
+    if (href === '/ontology') return pathname === '/ontology'
+    return pathname === href || pathname.startsWith(`${href}/`)
+  }
+
+  const workspaceNavItems = [
+    { href: '/ontology', label: 'Ontology', icon: '◇' },
+  ] as const
 
   const collapsedWidth = '64px'
   const expandedWidth = '260px'
@@ -311,8 +315,22 @@ export function DesktopSidebar({
               </div>
             </div>
 
-            {/* Archive / Timeline — All Entries */}
+            {/* Workspace navigation */}
             <div style={{ marginBottom: '1.5rem' }}>
+              <div
+                style={{
+                  padding: '0 1.5rem',
+                  marginBottom: '0.5rem',
+                  color: 'rgba(255, 255, 255, 0.4)',
+                  fontSize: '0.7rem',
+                  fontWeight: 600,
+                  letterSpacing: '0.1rem',
+                  textTransform: 'uppercase',
+                  fontFamily: "var(--font-bodoni-moda), Georgia, 'Times New Roman', serif",
+                }}
+              >
+                Workspace
+              </div>
               <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
                 <li>
                   <button
@@ -339,6 +357,38 @@ export function DesktopSidebar({
                     <span>All Entries</span>
                   </button>
                 </li>
+                {workspaceNavItems.map((item) => {
+                  const isActive = isRouteActive(item.href)
+
+                  return (
+                    <li key={item.href}>
+                      <button
+                        type="button"
+                        onClick={() => router.push(item.href)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.75rem',
+                          width: '100%',
+                          padding: '0.65rem 1.5rem',
+                          background: isActive ? 'rgba(220, 20, 60, 0.15)' : 'transparent',
+                          border: 'none',
+                          borderLeft: isActive ? '3px solid #DC143C' : '3px solid transparent',
+                          color: isActive ? '#FFFFFF' : 'rgba(255, 255, 255, 0.75)',
+                          fontSize: '1.05rem',
+                          fontWeight: 500,
+                          fontFamily: "var(--font-bodoni-moda), Georgia, 'Times New Roman', serif",
+                          textAlign: 'left',
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease',
+                        }}
+                      >
+                        <span style={{ fontSize: '1.1rem' }}>{item.icon}</span>
+                        <span>{item.label}</span>
+                      </button>
+                    </li>
+                  )
+                })}
               </ul>
             </div>
 
@@ -447,7 +497,7 @@ export function DesktopSidebar({
                   fontFamily: "var(--font-bodoni-moda), Georgia, 'Times New Roman', serif",
                 }}
               >
-                Life Areas
+                Life domains
               </div>
               <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
                 {lifeAreas.map((area) => (
@@ -562,6 +612,35 @@ export function DesktopSidebar({
               📅
             </button>
 
+            {workspaceNavItems.map((item) => {
+              const isActive = isRouteActive(item.href)
+
+              return (
+                <button
+                  key={item.href}
+                  type="button"
+                  onClick={() => router.push(item.href)}
+                  title={item.label}
+                  style={{
+                    width: '44px',
+                    height: '44px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: isActive ? 'rgba(220, 20, 60, 0.15)' : 'transparent',
+                    border: 'none',
+                    borderRadius: '8px',
+                    color: isActive ? '#FFFFFF' : 'rgba(255, 255, 255, 0.6)',
+                    fontSize: '1.2rem',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  {item.icon}
+                </button>
+              )
+            })}
+
             {/* Collapsed entry type buttons: Stories, Notes, Actions */}
             {entryTypes.map((type) => (
               <button
@@ -641,8 +720,8 @@ export function DesktopSidebar({
         }}
       >
         <button
-          onClick={() => router.push('/extractions')}
-          title="Extractions"
+          onClick={() => router.push('/ontology')}
+          title="Ontology"
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -650,18 +729,19 @@ export function DesktopSidebar({
             gap: '0.75rem',
             width: '100%',
             padding: isExpanded ? '0.65rem 0' : '0.5rem',
-            background: 'transparent',
+            background: isRouteActive('/ontology') ? 'rgba(220, 20, 60, 0.12)' : 'transparent',
             border: 'none',
-            color: 'rgba(255, 255, 255, 0.5)',
+            borderRadius: '6px',
+            color: isRouteActive('/ontology') ? '#FFFFFF' : 'rgba(255, 255, 255, 0.5)',
             fontSize: '0.85rem',
             fontWeight: 500,
             textAlign: 'left',
             cursor: 'pointer',
-            transition: 'color 0.15s ease',
+            transition: 'color 0.15s ease, background 0.15s ease',
           }}
         >
-          <span style={{ fontSize: '1.1rem' }}>◆</span>
-          {isExpanded && <span>Extractions</span>}
+          <span style={{ fontSize: '1.1rem' }}>◇</span>
+          {isExpanded && <span>Ontology</span>}
         </button>
         <button
           onClick={() => router.push('/settings')}

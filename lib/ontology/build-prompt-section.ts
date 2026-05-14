@@ -1,6 +1,6 @@
 import { LIFE_DOMAINS, type OntologyAxiomScope, type OntologyAxiomStatus } from '@/types/ontology'
 
-export interface OntologyAxiomPromptRow {
+export type OntologyAxiomPromptRow = {
   antecedent: string
   consequent: string
   confidence: number | string
@@ -8,9 +8,27 @@ export interface OntologyAxiomPromptRow {
   scope?: OntologyAxiomScope | string | null
 }
 
-/** Appended to model prompts once an axiom is confirmed by the user. */
-export function buildOntologyPromptSection(axioms: OntologyAxiomPromptRow[]): string {
-  const activeAxioms = axioms.filter((axiom) => axiom.status === 'confirmed' && axiom.scope === 'personal')
+export interface OntologyPromptSectionOptions {
+  confidenceGate?: number
+}
+
+/** Appended to infer-entry (and similar) system/user prompts. */
+export function buildOntologyPromptSection(
+  axioms: OntologyAxiomPromptRow[],
+  options: OntologyPromptSectionOptions = {}
+): string {
+  const confidenceGate = options.confidenceGate ?? 0.5
+  const activeAxioms = axioms.filter((axiom) => {
+    const confidence = normalizeConfidence(axiom.confidence)
+    return (
+      axiom.status === 'confirmed' &&
+      axiom.scope === 'personal' &&
+      axiom.antecedent.trim().length > 0 &&
+      axiom.consequent.trim().length > 0 &&
+      confidence >= confidenceGate
+    )
+  })
+
   if (!activeAxioms.length) return ''
 
   const lines = activeAxioms.map((a) => {
@@ -19,6 +37,8 @@ export function buildOntologyPromptSection(axioms: OntologyAxiomPromptRow[]): st
     return `- ${a.antecedent} → ${a.consequent} (confidence ${conf})`
   })
 
+  const domainList = LIFE_DOMAINS.join(' | ')
+
   return `
 
 ## Personal ontology rules
@@ -26,7 +46,12 @@ Active axioms (use as formal hypotheses when classifying and tagging):
 ${lines.join('\n')}
 
 Also set **life_domains** to zero or more values from this closed set (exact spelling, JSON array of strings):
-${LIFE_DOMAINS.join(' | ')}
+${domainList}
 Only include domains clearly supported by the entry text; otherwise use [].
 `
+}
+
+function normalizeConfidence(raw: number | string): number {
+  const confidence = typeof raw === 'number' ? raw : Number(raw)
+  return Number.isFinite(confidence) ? confidence : 0
 }

@@ -1,16 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { EntryType } from '@/types'
+import { LIFE_DOMAINS, parseLifeDomains, type LifeDomain } from '@/types/ontology'
+import { buildOntologyPromptSection } from '@/lib/ontology/build-prompt-section'
+import {
+  buildLayeredOntologyPromptContext,
+  CONNECTION_PROMPT_LIMIT,
+} from '@/lib/ontology/prompt-context'
 
 export interface InferredEntry {
   headline: string
   subheading: string
-  category: 'Business' | 'Finance' | 'Health' | 'Spiritual' | 'Fun' | 'Social' | 'Romance'
+  category: LifeDomain
   mood: string
   // Unified entry system fields
   entry_type: EntryType
   due_date: string | null
   connection_type: string | null
+  life_domains: LifeDomain[]
 }
 
 export async function POST(request: NextRequest) {
@@ -56,7 +63,48 @@ export async function POST(request: NextRequest) {
       documentContentLength: documentContent?.length || 0
     })
 
-    const inferred = await inferEntryMetadata(content.trim(), apiKey, documentContent)
+    let ontologySection = ''
+    try {
+      const { data: axiomRows, error: axiomError } = await supabase
+        .from('ontology_axioms')
+        .select('antecedent, consequent, confidence, status, scope')
+        .eq('user_id', user.id)
+        .eq('status', 'confirmed')
+        .order('confidence', { ascending: false })
+
+      if (!axiomError && axiomRows?.length) {
+        ontologySection = buildOntologyPromptSection(axiomRows)
+      }
+    } catch {
+      // Table may not exist until migration is applied
+    }
+
+    let layeredPromptContext = buildLayeredOntologyPromptContext([])
+    try {
+      const { data: connectionRows, error: connectionError } = await supabase
+        .from('entries')
+        .select('id, headline, content, connection_type')
+        .eq('user_id', user.id)
+        .eq('entry_type', 'connection')
+        .order('created_at', { ascending: false })
+        .limit(CONNECTION_PROMPT_LIMIT)
+
+      layeredPromptContext = buildLayeredOntologyPromptContext(connectionError ? [] : connectionRows ?? [])
+    } catch {
+      layeredPromptContext = buildLayeredOntologyPromptContext([])
+    }
+
+    const inferred = await inferEntryMetadata(
+      content.trim(),
+      apiKey,
+      documentContent,
+      [
+        ontologySection,
+        layeredPromptContext.connectionPrinciplesSection,
+        layeredPromptContext.productPrinciplesSection,
+        layeredPromptContext.publicOntologyGuardrailSection,
+      ].filter(Boolean).join('')
+    )
 
     // SAFETY NET: If AI returned "story", check if it's actually a connection or action
     if (inferred.entry_type === 'story') {
@@ -102,7 +150,12 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function inferEntryMetadata(content: string, apiKey: string, documentContent?: string): Promise<InferredEntry> {
+async function inferEntryMetadata(
+  content: string,
+  apiKey: string,
+  documentContent?: string,
+  ontologySection = ''
+): Promise<InferredEntry> {
   // Get current date for relative date inference
   const today = new Date()
   const todayStr = today.toISOString().split('T')[0]
@@ -125,18 +178,20 @@ ${documentContent}
 """
 
 DOCUMENT ANALYSIS GUIDELINES:
-- **Receipts/Invoices**: Typically "Finance" category. Could be "note" (record keeping) or "action" (if user might want to track, return, or follow up)
-- **Contracts/Agreements**: Typically "Business" category, often "action" (deadlines, signatures needed)
-- **Medical docs**: "Health" category
-- **Financial statements**: "Finance" category, usually "note"
+- **Receipts/Invoices**: Often **Purchase** or **Work**; could be "note" (record keeping) or "action" (follow up, return)
+- **Contracts/Agreements**: Often **Work** or **Ambition**; frequently "action" (deadlines, signatures)
+- **Medical docs**: **Health**
+- **Financial statements**: **Purchase** or **Work**, often "note"
 - Create a headline that summarizes the document content meaningfully
 - If it's a purchase receipt, include the vendor and total in headline (e.g., "Amazon Order: $22.85 - Allergy Meds & Water")
 - If user added notes, consider if they're tagging this as something to track (impulse buy, need to return, etc.)
 
 ` : ''
 
-  const prompt = `You are a journal entry classifier. Your #1 job is detecting ACTIONABLE INTENT.
-${documentSection}
+  const lifeDomainList = LIFE_DOMAINS.join(' | ')
+
+  const prompt = `You classify entries for a personal ontology app. Your #1 job is detecting ACTIONABLE INTENT.
+${documentSection}${ontologySection}
 
 ## CRITICAL RULES - READ CAREFULLY:
 
@@ -215,7 +270,7 @@ OUTPUT: "story" (pure reflection, no tasks)
 
 1. **headline**: Punchy, newsworthy headline (5-10 words). For actions, make it task-oriented: "Time to Schedule That Doctor Visit"
 2. **subheading**: Brief context (10-20 words)
-3. **category**: Business | Finance | Health | Spiritual | Fun | Social | Romance
+3. **category** (primary life domain — pick exactly one, exact spelling): ${lifeDomainList}
 4. **mood**: Emotional tone in 1-2 words
 5. **due_date**: For actions with deadlines. Today is ${todayStr}.
    - "today" = ${todayStr}
@@ -236,7 +291,7 @@ ${content}
    - "process_anchor" — a specific sequence for a specific situation
 
 Return ONLY valid JSON:
-{"headline": "...", "subheading": "...", "category": "...", "mood": "...", "entry_type": "...", "due_date": "..." or null, "connection_type": "..." or null}`
+{"headline": "...", "subheading": "...", "category": "...", "mood": "...", "entry_type": "...", "due_date": "..." or null, "connection_type": "..." or null, "life_domains": ["Exercise", ...] or []}`
 
   const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
@@ -247,7 +302,7 @@ Return ONLY valid JSON:
     },
     body: JSON.stringify({
       model: 'claude-sonnet-4-6',
-      max_tokens: 500,
+      max_tokens: 650,
       messages: [
         {
           role: 'user',
@@ -292,9 +347,9 @@ Return ONLY valid JSON:
     const parsed = JSON.parse(text)
     
     // Validate category
-    const validCategories = ['Business', 'Finance', 'Health', 'Spiritual', 'Fun', 'Social', 'Romance']
+    const validCategories = [...LIFE_DOMAINS] as string[]
     if (!validCategories.includes(parsed.category)) {
-      parsed.category = 'Fun' // Default fallback
+      parsed.category = 'Insight'
     }
 
     // Validate entry_type
@@ -327,6 +382,7 @@ Return ONLY valid JSON:
       entry_type: entryType,
       due_date: dueDate,
       connection_type: connectionType,
+      life_domains: parseLifeDomains(parsed.life_domains),
     }
   } catch {
     // If JSON parsing fails, create defaults
@@ -334,11 +390,12 @@ Return ONLY valid JSON:
     return {
       headline: content.slice(0, 50) + (content.length > 50 ? '...' : ''),
       subheading: '',
-      category: 'Fun',
+      category: 'Insight',
       mood: 'reflective',
       entry_type: 'story',
       due_date: null,
       connection_type: null,
+      life_domains: [],
     }
   }
 }
@@ -445,4 +502,3 @@ function detectObviousConnectionPatterns(content: string): string | null {
 
   return null
 }
-

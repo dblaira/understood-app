@@ -8,6 +8,10 @@ export interface DeferredOntologyAdapter {
   boundary: string
 }
 
+/**
+ * Outside ontologies are adapters around precise domains, not the source of
+ * truth for a user's personal ontology.
+ */
 export const DEFERRED_ONTOLOGY_ADAPTERS: readonly DeferredOntologyAdapter[] = [
   {
     domain: 'Exercise',

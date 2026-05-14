@@ -8,6 +8,7 @@
     "setup:verify": "node scripts/setup-verification.js",
     "setup:storage": "node scripts/create-storage-bucket.js",
     "setup:migrations": "node scripts/run-migrations.js",
+    "check:ontology": "npx tsx scripts/check-ontology-semantic.ts",
     "extract": "npx tsx scripts/run-extraction-pipeline.ts",
     "extract:dry": "npx tsx scripts/run-extraction-pipeline.ts --dry-run"
   },

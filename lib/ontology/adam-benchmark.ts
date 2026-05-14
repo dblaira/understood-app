@@ -13,7 +13,10 @@ export interface AdamBenchmarkAxiom {
 
 export const ADAM_EXAMPLE_EXTRACTION_COUNT = 8069
 
-/** Adam's ontology is proof material for demos and evaluation, never a default user truth. */
+/**
+ * Adam's ontology is proof material for demos and evaluation. It must never be
+ * installed as another user's standard vocabulary or confirmed personal truth.
+ */
 export const ADAM_BENCHMARK_AXIOMS: readonly AdamBenchmarkAxiom[] = [
   {
     name: 'Learning Master Key',
@@ -35,4 +38,24 @@ export const ADAM_BENCHMARK_AXIOMS: readonly AdamBenchmarkAxiom[] = [
     extractionCount: ADAM_EXAMPLE_EXTRACTION_COUNT,
     purpose: 'benchmark',
   },
-]
+  {
+    name: 'Belief to Entertainment Lag',
+    antecedent: 'High Belief week N',
+    consequent: 'Higher Entertainment week N+2',
+    confidence: 0.6,
+    relationshipType: 'predicts',
+    domains: ['Belief', 'Entertainment'],
+    extractionCount: ADAM_EXAMPLE_EXTRACTION_COUNT,
+    purpose: 'benchmark',
+  },
+  {
+    name: 'Zero Negative Impact',
+    antecedent: 'Any domain high',
+    consequent: 'No strong negative impact on other domains',
+    confidence: 0.95,
+    relationshipType: 'conflicts_with',
+    domains: ['Exercise', 'Sleep', 'Nutrition', 'Ambition', 'Health', 'Work', 'Social', 'Learning', 'Purchase', 'Belief', 'Affect', 'Insight', 'Entertainment'],
+    extractionCount: ADAM_EXAMPLE_EXTRACTION_COUNT,
+    purpose: 'benchmark',
+  },
+] as const

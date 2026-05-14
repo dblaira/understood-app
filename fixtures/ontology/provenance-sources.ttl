@@ -1,0 +1,85 @@
+@prefix understood: <https://understood.app/ontology#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<https://understood.app/ontology/concept/source-example> a understood:Concept ;
+  understood:label "Source example" .
+
+<https://understood.app/ontology/concept/trust-review> a understood:Concept ;
+  understood:label "Trust review" .
+
+<https://understood.app/ontology/axiom/source-self-declared> a understood:Axiom ;
+  understood:axiomId "source-self-declared" ;
+  understood:antecedent <https://understood.app/ontology/concept/source-example> ;
+  understood:consequent <https://understood.app/ontology/concept/trust-review> ;
+  understood:relationshipType "supports" ;
+  understood:confidence "0.50"^^xsd:decimal ;
+  understood:evidenceCount 1 ;
+  understood:status "candidate" ;
+  understood:scope "personal" ;
+  understood:provenanceSource "self_declared" .
+
+<https://understood.app/ontology/axiom/source-ai-proposed> a understood:Axiom ;
+  understood:axiomId "source-ai-proposed" ;
+  understood:antecedent <https://understood.app/ontology/concept/source-example> ;
+  understood:consequent <https://understood.app/ontology/concept/trust-review> ;
+  understood:relationshipType "supports" ;
+  understood:confidence "0.50"^^xsd:decimal ;
+  understood:evidenceCount 1 ;
+  understood:status "candidate" ;
+  understood:scope "personal" ;
+  understood:provenanceSource "ai_proposed" .
+
+<https://understood.app/ontology/axiom/source-entry-extracted> a understood:Axiom ;
+  understood:axiomId "source-entry-extracted" ;
+  understood:antecedent <https://understood.app/ontology/concept/source-example> ;
+  understood:consequent <https://understood.app/ontology/concept/trust-review> ;
+  understood:relationshipType "supports" ;
+  understood:confidence "0.50"^^xsd:decimal ;
+  understood:evidenceCount 1 ;
+  understood:status "candidate" ;
+  understood:scope "personal" ;
+  understood:provenanceSource "entry_extracted" .
+
+<https://understood.app/ontology/axiom/source-human-confirmed> a understood:Axiom ;
+  understood:axiomId "source-human-confirmed" ;
+  understood:antecedent <https://understood.app/ontology/concept/source-example> ;
+  understood:consequent <https://understood.app/ontology/concept/trust-review> ;
+  understood:relationshipType "supports" ;
+  understood:confidence "0.75"^^xsd:decimal ;
+  understood:evidenceCount 3 ;
+  understood:status "confirmed" ;
+  understood:scope "personal" ;
+  understood:provenanceSource "human_confirmed" .
+
+<https://understood.app/ontology/axiom/source-imported-metric> a understood:Axiom ;
+  understood:axiomId "source-imported-metric" ;
+  understood:antecedent <https://understood.app/ontology/concept/source-example> ;
+  understood:consequent <https://understood.app/ontology/concept/trust-review> ;
+  understood:relationshipType "correlates_with" ;
+  understood:confidence "0.50"^^xsd:decimal ;
+  understood:evidenceCount 1 ;
+  understood:status "candidate" ;
+  understood:scope "personal" ;
+  understood:provenanceSource "imported_metric" .
+
+<https://understood.app/ontology/axiom/source-demo-seed> a understood:Axiom ;
+  understood:axiomId "source-demo-seed" ;
+  understood:antecedent <https://understood.app/ontology/concept/source-example> ;
+  understood:consequent <https://understood.app/ontology/concept/trust-review> ;
+  understood:relationshipType "supports" ;
+  understood:confidence "0.95"^^xsd:decimal ;
+  understood:evidenceCount 99 ;
+  understood:status "confirmed" ;
+  understood:scope "demo" ;
+  understood:provenanceSource "demo_seed" .
+
+<https://understood.app/ontology/axiom/source-starter-hypothesis> a understood:Axiom ;
+  understood:axiomId "source-starter-hypothesis" ;
+  understood:antecedent <https://understood.app/ontology/concept/source-example> ;
+  understood:consequent <https://understood.app/ontology/concept/trust-review> ;
+  understood:relationshipType "supports" ;
+  understood:confidence "0.60"^^xsd:decimal ;
+  understood:evidenceCount 1 ;
+  understood:status "candidate" ;
+  understood:scope "starter_hypothesis" ;
+  understood:provenanceSource "starter_hypothesis" .

@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
+import { LIFE_DOMAINS } from '@/types/ontology'
 
 interface MobileMenuProps {
   isOpen: boolean
@@ -16,17 +17,7 @@ interface MobileMenuProps {
   onToggleTimeline?: () => void
 }
 
-const categories = [
-  'all',
-  'Business',
-  'Finance',
-  'Health',
-  'Fitness',
-  'Spiritual',
-  'Fun',
-  'Social',
-  'Romance',
-]
+const categories = ['all', ...LIFE_DOMAINS]
 
 const entryTypes = [
   { value: 'story', label: 'Stories', icon: '📰' },
@@ -48,6 +39,7 @@ export function MobileMenu({
   onToggleTimeline,
 }: MobileMenuProps) {
   const router = useRouter()
+  const pathname = usePathname()
   // Prevent body scroll when menu is open
   useEffect(() => {
     if (isOpen) {
@@ -80,6 +72,11 @@ export function MobileMenu({
 
   const handleEntryTypeClick = (type: string | null) => {
     onEntryTypeChange(type === currentEntryType ? null : type)
+    onClose()
+  }
+
+  const handleRouteClick = (href: string) => {
+    router.push(href)
     onClose()
   }
 
@@ -198,6 +195,44 @@ export function MobileMenu({
           ))}
         </ul>
 
+        {/* Workspace */}
+        <div
+          style={{
+            color: 'rgba(255, 255, 255, 0.5)',
+            fontSize: '0.75rem',
+            fontWeight: 600,
+            letterSpacing: '0.15rem',
+            textTransform: 'uppercase',
+            margin: '1.5rem 0 0.75rem',
+          }}
+        >
+          Workspace
+        </div>
+        <button
+          onClick={() => handleRouteClick('/ontology')}
+          style={{
+            display: 'block',
+            width: '100%',
+            padding: '1rem 0',
+            background: 'transparent',
+            border: 'none',
+            borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+            color: pathname === '/ontology' ? '#DC143C' : '#FFFFFF',
+            fontSize: '1rem',
+            fontWeight: 600,
+            letterSpacing: '0.15rem',
+            textTransform: 'uppercase',
+            textAlign: 'left',
+            cursor: 'pointer',
+            transition: 'color 0.2s ease',
+          }}
+        >
+          <span>◇ Ontology</span>
+          {pathname === '/ontology' && (
+            <span style={{ float: 'right', color: '#DC143C' }}>●</span>
+          )}
+        </button>
+
         {/* Divider */}
         <div
           style={{
@@ -218,7 +253,7 @@ export function MobileMenu({
             marginBottom: '0.75rem',
           }}
         >
-          Life Areas
+          Life domains
         </div>
         <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
           {categories.map((category) => (
@@ -292,12 +327,9 @@ export function MobileMenu({
             background: '#000000',
           }}
         >
-          {/* Extractions button */}
+          {/* Ontology */}
           <button
-            onClick={() => {
-              router.push('/extractions')
-              onClose()
-            }}
+            onClick={() => handleRouteClick('/ontology')}
             style={{
               display: 'block',
               width: '100%',
@@ -309,12 +341,12 @@ export function MobileMenu({
               fontSize: '0.85rem',
               fontWeight: 600,
               letterSpacing: '0.1rem',
-              textTransform: 'uppercase' as const,
+              textTransform: 'uppercase',
               cursor: 'pointer',
               marginBottom: '0.75rem',
             }}
           >
-            Extractions
+            Ontology
           </button>
           {/* Settings button */}
           <button

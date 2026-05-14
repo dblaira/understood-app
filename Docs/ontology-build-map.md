@@ -1,0 +1,316 @@
+# Ontology Build Map
+
+## Purpose
+
+This is the standing orientation document for the ontology build.
+
+Its job is to answer:
+
+- Where are we?
+- What has been built?
+- What is only a prototype?
+- What is not built yet?
+- What must not happen accidentally?
+- What is the next decision, not just the next task?
+
+No new ontology work should begin unless this map is current enough to explain the work.
+
+## One-Sentence Build Goal
+
+Build a trusted memory system for AI assistance that can use Adam's personal meaning while staying disciplined by public/domain ontology standards.
+
+## Current Cycle Status
+
+```text
+MVP ontology governance + semantic visibility cycle complete
+100% complete for this bounded cycle
+0 blocking steps left
+0 focused build hours left for this cycle
+```
+
+## Core Architecture
+
+```text
+Personal memory
+  -> entries
+  -> connections
+  -> candidate axioms
+  -> human review
+  -> confirmed personal rules
+
+Public discipline
+  -> BFO
+  -> domain ontologies
+  -> public/reference concepts
+  -> safety and meaning constraints
+
+AI assistant
+  -> reads trusted context
+  -> uses Connections as helpful principles
+  -> uses confirmed axioms as stronger rules
+  -> owns neither layer
+```
+
+## Current Build Stage
+
+| Layer | Status | Meaning |
+| --- | --- | --- |
+| Personal ontology foundation | Built | Entries, axioms, evidence, provenance, review gates exist. |
+| Calibration workflow | Built | Real entries and Connections have been reviewed in docs. |
+| Split-claim review UI | Built as browser-persisted triage | Useful, saved locally, and still cannot mutate axioms or confidence. |
+| Connections ontology intake | Built as live triage + candidate creation + read-only context | Live Connections load into review with calibration fallback; strong personal Connections can guide AI as principles and can be manually promoted to candidate axioms. |
+| Semantic web layer | Built as visible check layer | RDF, SHACL, validation, and SPARQL competency templates are visible in `/ontology`. |
+| Public ontology/BFO integration | Built as guardrail scaffold | BFO/domain references, source IRIs, personal-public bridges, and assistant prompt guardrails exist; no bulk external import yet. |
+| Mid-level ontology profiles | Built as curated guardrail profiles | CCO/RO-backed Agent, Process/Event, Information Entity, Time, and Guardrail Relation profiles exist as allowlisted references; no bulk CCO import. |
+| Durable ontology pipeline | Built for current cycle | Axioms can be reviewed, split-claim triage persists locally, and personal Connections can become candidate axioms. |
+| Prompt-context parity | Built | Search chat and entry inference use the same live Connection merge policy, product lane, and public guardrails. |
+
+## What Is Built
+
+### 1. Competency Questions
+
+Source:
+
+```text
+Docs/competency-questions.md
+```
+
+Role:
+
+```text
+Defines what the ontology must be able to answer.
+```
+
+Important CQs already implemented:
+
+| CQ | Meaning | Status |
+| --- | --- | --- |
+| CQ-005 | Which axioms enter assistant prompts? | Built |
+| CQ-006 | Which axioms become graph edges? | Built |
+| CQ-009 | Which axioms have contradiction evidence? | Built |
+| CQ-010 | What source/provenance does a claim carry? | Built |
+| CQ-016 | Is this personal, product/system, both, or unclear? | Built |
+| CQ-017 | Does this item contain multiple claims that need splitting? | Built |
+
+### 2. Deterministic Ontology Loop
+
+Source:
+
+```text
+Docs/deterministic-ontology-loop.md
+```
+
+Current loop:
+
+```text
+entry
+-> product/personal boundary
+-> claim splitting
+-> domain classification
+-> evidence match or candidate axiom
+-> provenance / contradiction / retirement signals
+-> human review
+-> confirmed personal only
+-> prompt / graph / RDF gates
+```
+
+### 3. Review Safety Rules
+
+Source:
+
+```text
+Docs/ontology-agent-build-rules.md
+```
+
+Non-negotiables:
+
+```text
+No auto-confirm.
+No auto-reject.
+No auto-retire.
+No confidence mutation from source labels alone.
+No candidate or demo material entering prompt/graph/RDF gates as trusted truth.
+```
+
+### 4. Calibration Docs
+
+Sources:
+
+```text
+Docs/ontology-calibration-session-001.md
+Docs/ontology-calibration-session-001-followup.md
+Docs/ontology-connections-calibration-001.md
+Docs/ontology-connections-calibration-001-summary.md
+```
+
+What they proved:
+
+| Finding | Consequence |
+| --- | --- |
+| Product/system notes can pollute personal ontology. | Add product-vs-personal boundary. |
+| Long entries contain multiple claims. | Add claim splitting. |
+| Tiny fragments create noise. | Add low-signal triage. |
+| Connections are compressed beliefs/principles. | Treat Connections as first-class ontology intake candidates. |
+| Connections should not all become axioms. | Use them as read-only principles first. |
+
+### 5. Product UI Built
+
+| UI Surface | Status | Writes to DB? |
+| --- | --- | --- |
+| Candidate review queue | Built | Yes, for axiom status review |
+| Split-claim review | Built as browser-persisted triage | No server write |
+| Connections ontology intake | Built as live triage with seed fallback | Yes, only when manually creating a candidate axiom |
+| Connections as read-only AI context | Built | No new DB write |
+
+### 6. Semantic Web Layer
+
+| File | Role | Status |
+| --- | --- | --- |
+| `lib/ontology/rdf-export.ts` | Exports trusted axioms to Turtle | Built |
+| `lib/ontology/shacl-shapes.ts` | Defines validation shapes | Built |
+| `lib/ontology/semantic-validation.ts` | Checks exported Turtle for required axiom predicates | Built |
+| `lib/ontology/semantic-report.ts` | Combines RDF export, SHACL, validation, and SPARQL templates for the UI | Built |
+| `lib/ontology/sparql-queries.ts` | Defines competency query templates | Built |
+| `lib/ontology/prompt-context.ts` | Shared prompt-context builder for live Connections, product principles, and public guardrails | Built |
+| `scripts/check-ontology-semantic.ts` | CI-ready semantic checklist for export validation and fixtures | Built |
+| `fixtures/ontology/` | Canonical Turtle examples | Built |
+| `lib/ontology/public-reference.ts` | BFO/domain references, source IRIs, guardrail prompt section, and personal-public bridges | Built |
+| `lib/ontology/mid-level-reference.ts` | CCO/RO-backed mid-level profiles and relation semantic policies | Built |
+
+## Future Expansion
+
+These are not blocking the current build cycle.
+
+| Future Piece | Why It Matters | Current Decision |
+| --- | --- | --- |
+| Durable split-claim decisions | Split-claim choices and edits persist in browser-local storage; no ontology write occurs. | Built as browser-local durability. |
+| Durable Connections ontology decisions | Personal-only Connections can be manually written as candidate axioms; other triage choices remain browser-local. | Built for candidate creation. |
+| Durable evidence links for Connections | Possible evidence is shown read-only; direct evidence attachment can be added after candidate creation proves useful. | Future enhancement. |
+| Product ontology lane | Product/system principles are extracted separately and available as product-only prompt context. | Built as prompt lane. |
+| External public ontology import | Needed for full third-party ontology ingestion. | Guardrail catalog built; bulk import is future expansion. |
+| Live SHACL/SPARQL execution | `/ontology` shows live Turtle export counts, semantic validation status, and SPARQL competency templates. | Built as local semantic check layer. |
+| Assistant explanation UX | Search assistant receives confirmed axioms and read-only Connections with separate labels and shows memory-context counts in the chat UI. | Built. |
+
+## Current Source of Truth
+
+| Thing | Current Authority |
+| --- | --- |
+| Confirmed personal axioms | `ontology_axioms` rows with `status=confirmed`, `scope=personal` |
+| Candidate axioms | `ontology_axioms` rows with `status=candidate`, `scope=personal` |
+| Connections principles | Live `entry_type=connection` rows in `/ontology`, with calibration-backed seed fallback and read-only evidence suggestions in `lib/ontology/connections-intake.ts` |
+| Product/system principles | `lib/ontology/product-ontology.ts` product-only scaffold |
+| Public/domain ontology concepts | `lib/ontology/public-reference.ts` scaffold |
+| BFO alignment | `bfo:*` placeholders in `lib/ontology/public-reference.ts` |
+| Mid-level ontology profiles | `lib/ontology/mid-level-reference.ts` with references exposed through `lib/ontology/public-reference.ts` |
+
+## Trust Boundaries
+
+### Strong Trust
+
+```text
+confirmed personal axiom
+```
+
+Can enter:
+
+```text
+assistant prompt
+knowledge graph projection
+RDF export
+SPARQL competency query layer
+```
+
+### Medium Context
+
+```text
+user-authored Connection
+```
+
+Can enter:
+
+```text
+AI prompt as helpful operating principle
+```
+
+Cannot enter:
+
+```text
+confirmed axiom set
+graph projection
+RDF trusted export
+confidence mutation
+automatic status changes
+```
+
+### Weak / Review Needed
+
+```text
+candidate axiom
+split claim
+AI-proposed pattern
+product/system principle
+```
+
+Needs human review or a separate lane.
+
+## Mental Model
+
+```text
+Connections = compressed meaning
+Ontology axioms = reviewed trusted rules
+Public ontologies = external discipline
+BFO = upper skeleton
+AI = constrained interpreter
+```
+
+## Build Cycle
+
+The build cycle should now be:
+
+```text
+1. Understand current map.
+2. Use real data.
+3. Observe friction.
+4. Name the decision.
+5. Build the smallest affordance.
+6. Verify guardrails.
+7. Update this map.
+```
+
+Not:
+
+```text
+1. Add next feature.
+2. Add next feature.
+3. Add next feature.
+```
+
+## Current Branch State
+
+As of this map:
+
+```text
+branch: fab-connections-selector
+latest committed ontology work: Add connections as read-only ontology context
+known untracked file: Docs/personal-public-ontology-architecture.html
+```
+
+## Immediate Decision Point
+
+The next decision is not "what feature next?"
+
+The next decision is:
+
+```text
+Do Connections now work well enough as read-only AI memory principles,
+or do they need evidence links before they should influence AI behavior?
+```
+
+Possible answers:
+
+| Answer | Next Move |
+| --- | --- |
+| They work well enough as principles. | Test AI outputs with Connections context. |
+| They need evidence first. | Build evidence search/linking for Connections. |
+| They mix personal/product too much. | Build a product ontology lane. |
+| The whole picture is still unclear. | Stop building and update this map. |

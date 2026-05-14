@@ -45,6 +45,7 @@ export function projectAxiomsToKnowledgeGraph(axioms: GraphProjectableAxiom[]): 
 
     const source = conceptNode(axiom.antecedent)
     const target = conceptNode(axiom.consequent)
+
     nodes.set(source.id, source)
     nodes.set(target.id, target)
     edges.push({
@@ -60,13 +61,24 @@ export function projectAxiomsToKnowledgeGraph(axioms: GraphProjectableAxiom[]): 
     })
   }
 
-  return { nodes: [...nodes.values()], edges }
+  return {
+    nodes: [...nodes.values()],
+    edges,
+  }
 }
 
 function conceptNode(label: string): KnowledgeGraphNode {
-  return { id: `concept:${slugifyConcept(label)}`, label, kind: 'concept' }
+  return {
+    id: `concept:${slugifyConcept(label)}`,
+    label,
+    kind: 'concept',
+  }
 }
 
 function slugifyConcept(value: string): string {
-  return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
 }

@@ -1,0 +1,34 @@
+@prefix understood: <https://understood.app/ontology#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<https://understood.app/ontology/concept/evening-caffeine> a understood:Concept ;
+  understood:label "Evening caffeine" .
+
+<https://understood.app/ontology/concept/lower-sleep-quality> a understood:Concept ;
+  understood:label "Lower sleep quality" .
+
+<https://understood.app/ontology/evidence/evidence-caffeine-supports> a understood:Evidence ;
+  understood:evidenceDirection "supports" ;
+  understood:rationale "Evening caffeine preceded lighter sleep." ;
+  understood:sourceEntryId "entry-caffeine-1" .
+
+<https://understood.app/ontology/evidence/evidence-caffeine-contradicts> a understood:Evidence ;
+  understood:evidenceDirection "contradicts" ;
+  understood:rationale "Evening caffeine had no noticeable effect on sleep." ;
+  understood:sourceEntryId "entry-caffeine-2" .
+
+<https://understood.app/ontology/axiom/axiom-caffeine-sleep> a understood:Axiom ;
+  understood:axiomId "axiom-caffeine-sleep" ;
+  understood:antecedent <https://understood.app/ontology/concept/evening-caffeine> ;
+  understood:antecedentLabel "Evening caffeine" ;
+  understood:consequent <https://understood.app/ontology/concept/lower-sleep-quality> ;
+  understood:consequentLabel "Lower sleep quality" ;
+  understood:relationshipType "predicts" ;
+  understood:confidence "0.58"^^xsd:decimal ;
+  understood:evidenceCount 2 ;
+  understood:status "confirmed" ;
+  understood:scope "personal" ;
+  understood:provenanceSource "human_confirmed" ;
+  understood:evidence <https://understood.app/ontology/evidence/evidence-caffeine-supports> ;
+  understood:evidence <https://understood.app/ontology/evidence/evidence-caffeine-contradicts> ;
+  understood:contradiction "Evening caffeine had no noticeable effect on sleep." .

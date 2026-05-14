@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { buildOntologyPromptSection } from '@/lib/ontology/build-prompt-section'
+import { buildLayeredOntologyPromptContext } from '@/lib/ontology/prompt-context'
 
 interface ChatMessage {
   role: 'user' | 'assistant'
@@ -46,7 +48,7 @@ export async function POST(request: NextRequest) {
     // Fetch all user entries (summaries only for cost efficiency)
     const { data: entries, error: fetchError } = await supabase
       .from('entries')
-      .select('id, headline, subheading, category, mood, entry_type, created_at, content, completed_at, due_date')
+      .select('id, headline, subheading, category, mood, entry_type, connection_type, created_at, content, completed_at, due_date')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
 
@@ -64,6 +66,35 @@ export async function POST(request: NextRequest) {
         entries: [],
       })
     }
+
+    let ontologyMemorySection = ''
+    let confirmedAxiomCount = 0
+    try {
+      const { data: axiomRows, error: axiomError } = await supabase
+        .from('ontology_axioms')
+        .select('antecedent, consequent, confidence, status, scope')
+        .eq('user_id', user.id)
+        .eq('status', 'confirmed')
+        .order('confidence', { ascending: false })
+
+      if (!axiomError && axiomRows?.length) {
+        ontologyMemorySection = buildOntologyPromptSection(axiomRows)
+        confirmedAxiomCount = axiomRows.length
+      }
+    } catch {
+      // Ontology table may not exist in older environments.
+    }
+
+    const ontologyPromptContext = buildLayeredOntologyPromptContext(
+      entries
+        .filter((entry) => entry.entry_type === 'connection')
+        .map((entry) => ({
+          id: entry.id,
+          headline: entry.headline,
+          content: entry.content,
+          connection_type: entry.connection_type,
+        }))
+    )
 
     // Build a compact index of entries for the AI
     const entryIndex = entries.map((e, i) => {
@@ -87,9 +118,13 @@ export async function POST(request: NextRequest) {
       })
     )
 
-    const systemPrompt = `You are a helpful search assistant for a personal journal app called "Understood." The user has journal entries of three types: stories (reflections), notes (reference info), and actions (tasks).
+    const systemPrompt = `You are a helpful search assistant for a personal journal app called "Understood." The user has journal entries of four types: stories (reflections), notes (reference info), actions (tasks), and connections (user-authored principles).
 
 Your job is to help the user find specific entries by analyzing their natural language query against the entry index below. Be conversational, warm, and concise.
+
+${ontologyMemorySection}${ontologyPromptContext.connectionPrinciplesSection}${ontologyPromptContext.productPrinciplesSection}${ontologyPromptContext.publicOntologyGuardrailSection}
+
+When using the memory context above, distinguish confirmed ontology axioms from user-authored Connections, product/system principles, and public ontology guardrails. Confirmed axioms are stronger personal rules. Connections are helpful operating principles. Product/system principles apply only to product reasoning. Public ontology references discipline terminology and scope, but they do not turn the user's personal observations into medical, dietary, legal, or financial advice. Do not claim a Connection is confirmed unless it appears as a confirmed ontology axiom.
 
 ## ENTRY INDEX (${entries.length} entries total):
 ${entryIndex}
@@ -176,6 +211,12 @@ ${entryIndex}
     return NextResponse.json({
       response: cleanResponse,
       entries: referencedEntries,
+      memory_context: {
+        confirmed_axioms: confirmedAxiomCount,
+        connection_principles: ontologyPromptContext.connectionPrincipleCount,
+        public_guardrails: ontologyPromptContext.publicGuardrailCount,
+        note: 'Confirmed axioms are trusted rules; Connections are read-only principles; public guardrails discipline scope.',
+      },
     })
   } catch (error) {
     console.error('Search chat error:', error)

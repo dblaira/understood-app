@@ -19,6 +19,18 @@ No new ontology work should begin unless this map is current enough to explain t
 
 Build a trusted memory system for AI assistance that can use Adam's personal meaning while staying disciplined by public/domain ontology standards.
 
+## Strategic Process Thesis
+
+Source:
+
+```text
+Docs/trustworthy-agent-process-log.md
+```
+
+The broader goal is to test whether a non-technical person can build a trustworthy AI agent by uploading personal digital data, reviewing plain-language candidate ideas, saving only trusted rules, and then seeing how those rules constrain the agent's answers.
+
+Any ontology step that may matter to this repeatable process should be logged in the process log.
+
 ## Current Cycle Status
 
 ```text

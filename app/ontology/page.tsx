@@ -158,6 +158,8 @@ export default function OntologyPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [reviewError, setReviewError] = useState<string | null>(null)
+  const [skippedRuleIds, setSkippedRuleIds] = useState<Set<string>>(new Set())
+  const [skippedSplitKeys, setSkippedSplitKeys] = useState<Set<string>>(new Set())
   const [isReviewing, startReviewTransition] = useTransition()
   const reviewQueue = buildOntologyReviewQueue(axioms)
   const semanticReport = useMemo(() => buildOntologySemanticReport(axioms, {
@@ -320,6 +322,57 @@ export default function OntologyPage() {
     })
   }
 
+  const pendingRules = reviewQueue.pendingCandidates.filter((axiom) => !skippedRuleIds.has(axiom.id))
+  const pendingSplits: { entry: SplitReviewEntry; claimIndex: number }[] = []
+  for (const entry of splitEntries) {
+    for (let i = 0; i < entry.split.claims.length; i++) {
+      const key = claimDecisionKey(entry.id, i)
+      const decision = claimDecisions[key] ?? 'unreviewed'
+      const lowSignal = lowSignalClaims[key] ?? 'normal'
+      if (decision === 'unreviewed' && lowSignal === 'normal' && !skippedSplitKeys.has(key)) {
+        pendingSplits.push({ entry, claimIndex: i })
+      }
+    }
+  }
+  const totalQuestions = pendingRules.length + pendingSplits.length
+
+  function handleRuleAnswer(axiomId: string, answer: RuleAnswer) {
+    if (answer === 'yes') {
+      handleReviewAxiom(axiomId, 'confirmed')
+    } else if (answer === 'no') {
+      handleReviewAxiom(axiomId, 'rejected')
+    } else {
+      setSkippedRuleIds((current) => {
+        const next = new Set(current)
+        next.add(axiomId)
+        return next
+      })
+    }
+  }
+
+  function handleSplitAnswer(entryId: string, claimIndex: number, answer: SplitAnswer) {
+    if (answer === 'rule') {
+      handleClaimDecision(entryId, claimIndex, 'candidate_review')
+    } else if (answer === 'note') {
+      handleClaimDecision(entryId, claimIndex, 'keep_note')
+    } else if (answer === 'drop') {
+      handleClaimDecision(entryId, claimIndex, 'ignore')
+    } else if (answer === 'short') {
+      const key = claimDecisionKey(entryId, claimIndex)
+      const isLowSignal = (lowSignalClaims[key] ?? 'normal') === 'low_signal'
+      if (!isLowSignal) {
+        handleLowSignalToggle(entryId, claimIndex)
+      }
+    } else {
+      const key = claimDecisionKey(entryId, claimIndex)
+      setSkippedSplitKeys((current) => {
+        const next = new Set(current)
+        next.add(key)
+        return next
+      })
+    }
+  }
+
   return (
     <div
       style={{
@@ -330,7 +383,7 @@ export default function OntologyPage() {
         fontFamily: "Georgia, 'Times New Roman', serif",
       }}
     >
-      <div style={{ maxWidth: '960px', margin: '0 auto' }}>
+      <div style={{ maxWidth: '680px', margin: '0 auto' }}>
         <button
           type="button"
           onClick={() => router.back()}
@@ -344,603 +397,75 @@ export default function OntologyPage() {
             fontSize: '0.85rem',
             cursor: 'pointer',
             padding: 0,
-            marginBottom: '2rem',
+            marginBottom: '1.5rem',
           }}
         >
           ← Back
         </button>
 
-        <h1
-          style={{
-            fontFamily: "var(--font-bodoni-moda), Georgia, 'Times New Roman', serif",
-            fontSize: '2.25rem',
-            fontWeight: 700,
-            marginBottom: '0.5rem',
-          }}
-        >
-          Ontology status
-        </h1>
-
-        <button
-          type="button"
-          onClick={() => router.push('/ontology/trace')}
-          style={{
-            border: '1px solid rgba(147,197,253,0.35)',
-            background: 'rgba(59,130,246,0.1)',
-            color: '#bfdbfe',
-            borderRadius: '999px',
-            padding: '0.55rem 0.85rem',
-            fontSize: '0.86rem',
-            fontWeight: 700,
-            cursor: 'pointer',
-            marginBottom: '1rem',
-          }}
-        >
-          View LLM vs ontology trace
-        </button>
-
-        <div
-          style={{
-            marginBottom: '1.75rem',
-            border: `1px solid ${ontologyStatus.border}`,
-            borderRadius: '12px',
-            background: ontologyStatus.background,
-            padding: '1.25rem',
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', alignItems: 'flex-start', flexWrap: 'wrap' }}>
-            <div>
-              <p style={{ color: ontologyStatus.color, margin: '0 0 0.4rem', fontSize: '0.78rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                {ontologyStatus.label}
-              </p>
-              <h2 style={{ margin: 0, fontSize: '1.45rem', lineHeight: 1.2, fontWeight: 700 }}>
-                {ontologyStatus.headline}
-              </h2>
-            </div>
-            <div
-              style={{
-                border: `1px solid ${ontologyStatus.border}`,
-                borderRadius: '999px',
-                color: ontologyStatus.color,
-                padding: '0.4rem 0.7rem',
-                fontSize: '0.78rem',
-                fontWeight: 700,
-                whiteSpace: 'nowrap',
-              }}
-            >
-              AI use: {trustedAxiomCount > 0 ? 'governed' : 'provisional'}
-            </div>
-          </div>
-
-          <p style={{ color: 'rgba(255,255,255,0.68)', fontSize: '0.95rem', lineHeight: 1.5, margin: '0.85rem 0 0' }}>
-            {ontologyStatus.meaning}
-          </p>
-
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(135px, 1fr))',
-              gap: '0.75rem',
-              marginTop: '1rem',
-            }}
-          >
-            <OntologyStatusStat label="Trusted rules" value={trustedAxiomCount} helper="Can guide AI" tone={trustedAxiomCount > 0 ? 'good' : 'muted'} />
-            <OntologyStatusStat label="Provisional rules" value={PROVISIONAL_ONTOLOGY_RULES.length} helper="Active scaffold" tone="good" />
-            <OntologyStatusStat label="Needs review" value={reviewQueue.pendingCount} helper="Candidate rules" tone={reviewQueue.pendingCount > 0 ? 'warn' : 'muted'} />
-            <OntologyStatusStat label="Draft claims" value={draftClaimCount} helper="Not trusted yet" tone={draftClaimCount > 0 ? 'warn' : 'muted'} />
-            <OntologyStatusStat label="Semantic check" value={semanticReport.validation.valid ? 'Pass' : 'Review'} helper="Export health" tone={semanticReport.validation.valid ? 'good' : 'warn'} />
-          </div>
-
-          <div
-            style={{
-              marginTop: '1rem',
-              borderTop: '1px solid rgba(255,255,255,0.1)',
-              paddingTop: '0.9rem',
-              display: 'grid',
-              gap: '0.45rem',
-              color: 'rgba(255,255,255,0.62)',
-              fontSize: '0.9rem',
-              lineHeight: 1.45,
-            }}
-          >
-            <p style={{ margin: 0 }}>
-              <strong style={{ color: 'rgba(255,255,255,0.86)' }}>Next:</strong> {ontologyStatus.nextStep}
-            </p>
-            <p style={{ margin: 0 }}>
-              <strong style={{ color: 'rgba(255,255,255,0.86)' }}>Rule:</strong> confirmed rules override provisional rules. Draft claims and candidates cannot control answers until you confirm them.
-            </p>
-          </div>
-        </div>
-
-        <section
-          style={{
-            background: 'rgba(59,130,246,0.07)',
-            border: '1px solid rgba(147,197,253,0.2)',
-            borderRadius: '12px',
-            padding: '1.25rem',
-            marginBottom: '1.75rem',
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', alignItems: 'flex-start', flexWrap: 'wrap' }}>
-            <div>
-              <p style={{ color: '#93c5fd', margin: '0 0 0.35rem', fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                Complete test scaffold
-              </p>
-              <h2 style={{ margin: 0, fontSize: '1.25rem', lineHeight: 1.25, fontWeight: 700 }}>
-                The guessed ontology is active now.
-              </h2>
-            </div>
-            <span style={{ color: '#bfdbfe', border: '1px solid rgba(147,197,253,0.3)', borderRadius: '999px', padding: '0.35rem 0.65rem', fontSize: '0.74rem', whiteSpace: 'nowrap' }}>
-              {provisionalCoverage.coveredDomains.length}/{LIFE_DOMAINS.length} domains covered
-            </span>
-          </div>
-          <p style={{ color: 'rgba(255,255,255,0.68)', margin: '0.75rem 0 0', fontSize: '0.92rem', lineHeight: 1.45 }}>
-            This is not the final truth. It is a working set of hypotheses so journal notes, Connections, purchases, health records, and fitness records can shape answers now.
-          </p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '0.75rem', marginTop: '1rem' }}>
-            <OntologyStatusStat label="Prompt status" value="Active" helper="Used as provisional" tone="good" />
-            <OntologyStatusStat label="Version" value="v0" helper={PROVISIONAL_ONTOLOGY_VERSION} tone="muted" />
-            <OntologyStatusStat label="Missing domains" value={provisionalCoverage.missingDomains.length} helper={provisionalCoverage.missingDomains.length ? provisionalCoverage.missingDomains.join(', ') : 'None'} tone={provisionalCoverage.missingDomains.length ? 'warn' : 'good'} />
-          </div>
-          <div style={{ marginTop: '1rem', display: 'grid', gap: '0.65rem' }}>
-            {PROVISIONAL_ONTOLOGY_RULES.slice(0, 8).map((rule) => (
-              <ProvisionalRuleRow key={rule.id} rule={rule} />
-            ))}
-          </div>
-          <p style={{ color: 'rgba(255,255,255,0.36)', fontSize: '0.74rem', margin: '0.85rem 0 0', lineHeight: 1.4 }}>
-            Done means: this page loads, the scaffold reaches prompts, confirmed rules override it, and weak guesses can be replaced after testing.
-          </p>
-        </section>
-
         {loading && <p style={{ color: 'rgba(255,255,255,0.5)' }}>Loading…</p>}
+
         {error && (
           <p style={{ color: '#f87171', marginBottom: '1.5rem' }}>
             {error}
             <span style={{ display: 'block', color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem', marginTop: '0.5rem' }}>
-              If this is the first setup, run <code style={{ color: 'rgba(255,255,255,0.6)' }}>database-migrations-ontology.sql</code> in the Supabase SQL editor.
+              First-time setup needs <code style={{ color: 'rgba(255,255,255,0.6)' }}>database-migrations-ontology.sql</code> in Supabase.
             </span>
           </p>
         )}
+
         {reviewError && (
-          <p style={{ color: '#f87171', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
-            {reviewError}
-          </p>
+          <p style={{ color: '#f87171', marginBottom: '1.5rem', fontSize: '0.9rem' }}>{reviewError}</p>
         )}
 
-        {!loading && (
-          <>
-            <section
-              style={{
-                background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,255,255,0.08)',
-                borderRadius: '12px',
-                padding: '1.5rem',
-                marginBottom: '2rem',
-              }}
-            >
-              <h2 style={{ fontSize: '1.25rem', marginBottom: '0.35rem', fontWeight: 600 }}>Candidate review queue</h2>
-              <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.82rem', marginBottom: '1.25rem', lineHeight: 1.45 }}>
-                AI can propose growth, but only your confirmed personal axioms govern prompts and the graph.
-              </p>
-              {reviewQueue.pendingCount === 0 ? (
-                <p style={{ color: 'rgba(255,255,255,0.45)', margin: 0 }}>No candidate axioms waiting for review.</p>
-              ) : (
-                <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  {reviewQueue.pendingCandidates.map((axiom) => (
-                    <li
-                      key={axiom.id}
-                      style={{
-                        border: '1px solid rgba(134,239,172,0.22)',
-                        borderRadius: '10px',
-                        padding: '1rem',
-                        background: 'rgba(134,239,172,0.06)',
-                      }}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', alignItems: 'flex-start' }}>
-                        <h3 style={{ fontSize: '1rem', fontWeight: 600, margin: 0 }}>{axiom.name}</h3>
-                        <div style={{ display: 'flex', gap: '0.45rem', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                          <span style={{ color: '#fde68a', fontSize: '0.72rem', whiteSpace: 'nowrap', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                            review
-                          </span>
-                          <span style={{ color: '#4ade80', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>
-                            {(axiom.confidence * 100).toFixed(0)}%
-                          </span>
-                        </div>
-                      </div>
-                      <ProvenanceSourceBadge descriptor={normalizeProvenanceSource(axiom.provenance)} />
-                      <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.85rem', marginTop: '0.5rem', marginBottom: 0 }}>
-                        {axiom.description}
-                      </p>
-                      <div style={{ marginTop: '0.75rem', fontSize: '0.8rem', lineHeight: 1.5 }}>
-                        <p style={{ color: 'rgba(255,255,255,0.45)', margin: '0 0 0.25rem' }}>
-                          <strong style={{ color: 'rgba(255,255,255,0.65)' }}>If</strong> {axiom.antecedent}
-                        </p>
-                        <p style={{ color: 'rgba(255,255,255,0.45)', margin: 0 }}>
-                          <strong style={{ color: 'rgba(255,255,255,0.65)' }}>Then</strong> {axiom.consequent}
-                        </p>
-                      </div>
-                      <div style={{ marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-                        <p style={{ color: 'rgba(255,255,255,0.35)', margin: 0, fontSize: '0.74rem', lineHeight: 1.45 }}>
-                          Scope: {axiom.scope.replace('_', ' ')} · Relation: {axiom.relationshipType.replace(/_/g, ' ')} · Evidence:{' '}
-                          {axiom.evidenceCount || axiom.evidenceEntryIds.length || 'not counted yet'}
-                        </p>
-                        <p style={{ color: 'rgba(255,255,255,0.35)', margin: 0, fontSize: '0.74rem', lineHeight: 1.45 }}>
-                          Provenance: {getAxiomProvenanceLabel(axiom.provenance)}
-                        </p>
-                      </div>
-                      <EvidenceDirectionSummary summary={summarizeAxiomEvidence(axiom)} />
-                      <div style={{ marginTop: '0.9rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                        <button
-                          type="button"
-                          disabled={isReviewing}
-                          onClick={() => handleReviewAxiom(axiom.id, 'confirmed')}
-                          style={{
-                            border: '1px solid rgba(74,222,128,0.45)',
-                            background: 'rgba(74,222,128,0.12)',
-                            color: '#86efac',
-                            borderRadius: '999px',
-                            padding: '0.4rem 0.75rem',
-                            fontSize: '0.75rem',
-                            cursor: isReviewing ? 'not-allowed' : 'pointer',
-                          }}
-                        >
-                          Confirm
-                        </button>
-                        <button
-                          type="button"
-                          disabled={isReviewing}
-                          onClick={() => handleReviewAxiom(axiom.id, 'rejected')}
-                          style={{
-                            border: '1px solid rgba(248,113,113,0.45)',
-                            background: 'rgba(248,113,113,0.1)',
-                            color: '#fca5a5',
-                            borderRadius: '999px',
-                            padding: '0.4rem 0.75rem',
-                            fontSize: '0.75rem',
-                            cursor: isReviewing ? 'not-allowed' : 'pointer',
-                          }}
-                        >
-                          Reject
-                        </button>
-                        <span style={{ alignSelf: 'center', color: 'rgba(255,255,255,0.35)', fontSize: '0.75rem' }}>
-                          Leave candidate by taking no action.
-                        </span>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </section>
-
-            <section
-              style={{
-                background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,255,255,0.08)',
-                borderRadius: '12px',
-                padding: '1.5rem',
-                marginBottom: '2rem',
-              }}
-            >
-              <h2 style={{ fontSize: '1.25rem', marginBottom: '0.35rem', fontWeight: 600 }}>Split-claim review</h2>
-              <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.82rem', marginBottom: '1.25rem', lineHeight: 1.45 }}>
-                Recent bundled entries are split into proposed claims before ontology review. Triage is saved in this browser only: no axiom is created, confirmed, or given confidence here.
-              </p>
-              {splitEntries.length === 0 ? (
-                <p style={{ color: 'rgba(255,255,255,0.45)', margin: 0 }}>No recent multi-claim entries found.</p>
-              ) : (
-                <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  {splitEntries.slice(0, 5).map((entry) => (
-                    <li
-                      key={entry.id}
-                      style={{
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        borderRadius: '10px',
-                        padding: '1rem',
-                      }}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', alignItems: 'flex-start' }}>
-                        <div>
-                          <h3 style={{ fontSize: '1rem', fontWeight: 600, margin: 0 }}>{entry.headline}</h3>
-                          <p style={{ color: 'rgba(255,255,255,0.35)', margin: '0.35rem 0 0', fontSize: '0.74rem' }}>
-                            {entry.entryType} · {entry.domains.length ? entry.domains.join(', ') : 'No domains detected yet'} · {entry.createdAt.toLocaleDateString()}
-                          </p>
-                        </div>
-                        <span style={{ color: '#fde68a', fontSize: '0.72rem', whiteSpace: 'nowrap', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                          {entry.split.claims.length} claims
-                        </span>
-                      </div>
-                      <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.8rem', lineHeight: 1.45, marginTop: '0.75rem' }}>
-                        {entry.rawText.slice(0, 220)}{entry.rawText.length > 220 ? '...' : ''}
-                      </p>
-                      <ol style={{ margin: '0.9rem 0 0', paddingLeft: '1.1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                        {entry.split.claims.map((claim, index) => {
-                          const key = claimDecisionKey(entry.id, index)
-                          const decision = claimDecisions[key] ?? 'unreviewed'
-                          const lowSignalDecision = lowSignalClaims[key] ?? 'normal'
-                          const editableClaimText = claimTexts[key] ?? claim.claimText
-                          const provenanceDescriptor = getProvenanceSourceDescriptor(claim.provenance)
-                          return (
-                            <li
-                              key={`${entry.id}-${index}`}
-                              style={{
-                                color: 'rgba(255,255,255,0.72)',
-                                paddingLeft: '0.25rem',
-                                opacity: lowSignalDecision === 'low_signal' ? 0.72 : 1,
-                              }}
-                            >
-                              <label style={{ display: 'block', color: 'rgba(255,255,255,0.38)', fontSize: '0.7rem', marginBottom: '0.3rem' }}>
-                                Editable claim text
-                              </label>
-                              <textarea
-                                value={editableClaimText}
-                                onChange={(event) => handleClaimTextChange(entry.id, index, event.target.value)}
-                                rows={2}
-                                style={{
-                                  width: '100%',
-                                  background: 'rgba(255,255,255,0.04)',
-                                  border: '1px solid rgba(255,255,255,0.12)',
-                                  borderRadius: '8px',
-                                  color: 'rgba(255,255,255,0.82)',
-                                  font: 'inherit',
-                                  fontSize: '0.86rem',
-                                  lineHeight: 1.45,
-                                  padding: '0.55rem 0.65rem',
-                                  resize: 'vertical',
-                                  outline: 'none',
-                                }}
-                              />
-                              <div style={{ display: 'flex', gap: '0.45rem', flexWrap: 'wrap', alignItems: 'center', margin: '0.45rem 0' }}>
-                                <span
-                                  title={provenanceDescriptor.description}
-                                  style={{
-                                    border: '1px solid rgba(147,197,253,0.28)',
-                                    background: 'rgba(147,197,253,0.08)',
-                                    color: '#bfdbfe',
-                                    borderRadius: '999px',
-                                    padding: '0.22rem 0.5rem',
-                                    fontSize: '0.68rem',
-                                  }}
-                                >
-                                  {provenanceDescriptor.label}
-                                </span>
-                                <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.7rem' }}>
-                                  {claim.suggestedDomains.length ? claim.suggestedDomains.join(', ') : 'No claim domains detected yet'}
-                                </span>
-                              </div>
-                              <div style={{ display: 'flex', gap: '0.45rem', flexWrap: 'wrap', alignItems: 'center' }}>
-                                <ClaimDecisionButton
-                                  active={decision === 'keep_note'}
-                                  label="Keep claim as note"
-                                  onClick={() => handleClaimDecision(entry.id, index, 'keep_note')}
-                                />
-                                <ClaimDecisionButton
-                                  active={decision === 'candidate_review'}
-                                  label="Mark for candidate review"
-                                  onClick={() => handleClaimDecision(entry.id, index, 'candidate_review')}
-                                  disabled={lowSignalDecision === 'low_signal'}
-                                />
-                                <ClaimDecisionButton
-                                  active={decision === 'ignore'}
-                                  label="Ignore claim"
-                                  onClick={() => handleClaimDecision(entry.id, index, 'ignore')}
-                                />
-                                <ClaimDecisionButton
-                                  active={lowSignalDecision === 'low_signal'}
-                                  label="Low-signal fragment"
-                                  onClick={() => handleLowSignalToggle(entry.id, index)}
-                                />
-                                <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.72rem' }}>
-                                  {formatClaimDecision(decision, lowSignalDecision)}
-                                </span>
-                              </div>
-                            </li>
-                          )
-                        })}
-                      </ol>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </section>
-
-            <OntologyConnectionsIntakeSection />
-
-            <section
-              style={{
-                background: 'rgba(34,197,94,0.06)',
-                border: '1px solid rgba(34,197,94,0.18)',
-                borderRadius: '12px',
-                padding: '1.5rem',
-                marginBottom: '2rem',
-              }}
-            >
-              <h2 style={{ fontSize: '1.25rem', marginBottom: '0.35rem', fontWeight: 600 }}>Semantic check</h2>
-              <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.82rem', marginBottom: '1rem', lineHeight: 1.45 }}>
-                Confirmed personal axioms are exported to Turtle, checked against required semantic predicates, and mapped to competency-query templates.
-              </p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '0.75rem' }}>
-                <SemanticStat label="Exported axioms" value={semanticReport.exportedAxiomCount} />
-                <SemanticStat label="Validated subjects" value={semanticReport.validation.checkedSubjects} />
-                <SemanticStat label="Validation" value={semanticReport.validation.valid ? 'Pass' : 'Review'} tone={semanticReport.validation.valid ? 'good' : 'warn'} />
-                <SemanticStat label="SPARQL templates" value={semanticReport.queryTemplateCount} />
-              </div>
-              {semanticReport.validation.issues.length > 0 && (
-                <ul style={{ margin: '0.75rem 0 0', paddingLeft: '1.1rem', color: 'rgba(248,113,113,0.85)', fontSize: '0.78rem' }}>
-                  {semanticReport.validation.issues.map((issue) => (
-                    <li key={issue.subject}>
-                      {issue.subject}: missing {issue.missingPredicates.join(', ')}
-                    </li>
-                  ))}
-                </ul>
-              )}
-              <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.72rem', margin: '0.85rem 0 0', lineHeight: 1.45 }}>
-                Query layer: {semanticReport.queryNames.join(' · ')}
-              </p>
-              <p style={{ color: 'rgba(255,255,255,0.32)', fontSize: '0.7rem', margin: '0.45rem 0 0', lineHeight: 1.45 }}>
-                Version: {semanticReport.vocabularyVersion} · {semanticReport.appVersion}
-              </p>
-            </section>
-
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr',
-                gap: '2rem',
-              }}
-              className="ontology-grid"
-            >
-              <style jsx>{`
-                @media (min-width: 900px) {
-                  .ontology-grid {
-                    grid-template-columns: 1fr 1fr !important;
-                  }
-                }
-              `}</style>
-
-              <section
-                style={{
-                  background: 'rgba(255,255,255,0.04)',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  borderRadius: '12px',
-                  padding: '1.5rem',
-                }}
-              >
-                <h2 style={{ fontSize: '1.25rem', marginBottom: '0.35rem', fontWeight: 600 }}>Other ontology material</h2>
-                <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.82rem', marginBottom: '1.25rem', lineHeight: 1.45 }}>
-                  Confirmed rules can govern prompts and graphs. Rejected, retired, demo, and starter rows remain visible history.
-                </p>
-                {reviewQueue.reviewedAxioms.length === 0 ? (
-                  <p style={{ color: 'rgba(255,255,255,0.45)' }}>No other ontology material in the database yet.</p>
-                ) : (
-                  <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                    {reviewQueue.reviewedAxioms.map((axiom) => (
-                      <li
-                        key={axiom.id}
-                        style={{
-                          border: '1px solid rgba(255,255,255,0.1)',
-                          borderRadius: '8px',
-                          padding: '1rem',
-                        }}
-                      >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', alignItems: 'flex-start' }}>
-                          <h3 style={{ fontSize: '1rem', fontWeight: 600, margin: 0 }}>{axiom.name}</h3>
-                          <div style={{ display: 'flex', gap: '0.45rem', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                            <span style={{ color: axiom.status === 'confirmed' ? '#4ade80' : 'rgba(255,255,255,0.5)', fontSize: '0.72rem', whiteSpace: 'nowrap', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                              {axiom.status}
-                            </span>
-                            <span style={{ color: '#4ade80', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>
-                              {(axiom.confidence * 100).toFixed(0)}%
-                            </span>
-                          </div>
-                        </div>
-                        <ProvenanceSourceBadge descriptor={normalizeProvenanceSource(axiom.provenance)} />
-                        <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.85rem', marginTop: '0.5rem', marginBottom: 0 }}>
-                          {axiom.description}
-                        </p>
-                        <div style={{ marginTop: '0.75rem', fontSize: '0.8rem', lineHeight: 1.5 }}>
-                          <p style={{ color: 'rgba(255,255,255,0.45)', margin: '0 0 0.25rem' }}>
-                            <strong style={{ color: 'rgba(255,255,255,0.65)' }}>If</strong> {axiom.antecedent}
-                          </p>
-                          <p style={{ color: 'rgba(255,255,255,0.45)', margin: 0 }}>
-                            <strong style={{ color: 'rgba(255,255,255,0.65)' }}>Then</strong> {axiom.consequent}
-                          </p>
-                        </div>
-                        <div style={{ marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-                          <p style={{ color: 'rgba(255,255,255,0.35)', margin: 0, fontSize: '0.74rem', lineHeight: 1.45 }}>
-                            Scope: {axiom.scope.replace('_', ' ')} · Relation: {axiom.relationshipType.replace(/_/g, ' ')} · Evidence:{' '}
-                            {axiom.evidenceCount || axiom.evidenceEntryIds.length || 'not counted yet'}
-                          </p>
-                          {Object.keys(axiom.provenance).length > 0 && (
-                            <p style={{ color: 'rgba(255,255,255,0.35)', margin: 0, fontSize: '0.74rem', lineHeight: 1.45 }}>
-                              Provenance: {getAxiomProvenanceLabel(axiom.provenance)}
-                            </p>
-                          )}
-                        </div>
-                        <EvidenceDirectionSummary summary={summarizeAxiomEvidence(axiom)} />
-                        {axiom.status === 'confirmed' && axiom.scope === 'personal' && (
-                          <div style={{ marginTop: '0.9rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                            <RetirementReadinessNotice
-                              readiness={evaluateAxiomRetirementReadiness(
-                                {
-                                  status: axiom.status,
-                                  confidence: axiom.confidence,
-                                  confirmedAt: axiom.confirmedAt?.toISOString() ?? null,
-                                  retiredAt: axiom.retiredAt?.toISOString() ?? null,
-                                  evidenceEntryIds: axiom.evidenceEntryIds,
-                                  evidenceCount: axiom.evidenceCount,
-                                  provenance: axiom.provenance,
-                                },
-                                new Date().toISOString()
-                              )}
-                            />
-                            <button
-                              type="button"
-                              disabled={isReviewing}
-                              onClick={() => handleReviewAxiom(axiom.id, 'retired')}
-                              style={{
-                                border: '1px solid rgba(255,255,255,0.18)',
-                                background: 'rgba(255,255,255,0.05)',
-                                color: 'rgba(255,255,255,0.65)',
-                                borderRadius: '999px',
-                                padding: '0.4rem 0.75rem',
-                                fontSize: '0.75rem',
-                                cursor: isReviewing ? 'not-allowed' : 'pointer',
-                              }}
-                            >
-                              Retire axiom
-                            </button>
-                          </div>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </section>
-
-            <section
-              style={{
-                background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,255,255,0.08)',
-                borderRadius: '12px',
-                padding: '1.5rem',
-              }}
-            >
-              <h2 style={{ fontSize: '1.25rem', marginBottom: '0.35rem', fontWeight: 600 }}>Stored summaries</h2>
-              <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.82rem', marginBottom: '1.25rem', lineHeight: 1.45 }}>
-                Longer “so what” blurbs saved to the DB—not the same as the quick tags on each capture.
-              </p>
-              {insights.length === 0 ? (
-                <p style={{ color: 'rgba(255,255,255,0.45)' }}>
-                  Nothing here yet. That is expected until a job or API writes rows into{' '}
-                  <code style={{ color: 'rgba(255,255,255,0.6)' }}>inferred_insights</code>.
-                </p>
-              ) : (
-                <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  {insights.map((insight) => (
-                    <li
-                      key={insight.id}
-                      style={{
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        borderRadius: '8px',
-                        padding: '1rem',
-                      }}
-                    >
-                      <p style={{ color: 'rgba(255,255,255,0.85)', margin: 0, fontSize: '0.95rem' }}>{insight.insightText}</p>
-                      <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.75rem', marginTop: '0.75rem', marginBottom: 0 }}>
-                        Confidence: {(insight.confidence * 100).toFixed(0)}%
-                      </p>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </section>
+        {!loading && totalQuestions === 0 && (
+          <div
+            style={{
+              border: '1px solid rgba(134,239,172,0.3)',
+              background: 'rgba(34,197,94,0.08)',
+              borderRadius: '12px',
+              padding: '1.5rem',
+              marginBottom: '1.5rem',
+              color: '#86efac',
+            }}
+          >
+            <p style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600 }}>You&apos;re caught up.</p>
+            <p style={{ margin: '0.45rem 0 0', fontSize: '0.9rem', color: 'rgba(255,255,255,0.55)' }}>
+              Nothing to look at right now.
+            </p>
           </div>
-          </>
         )}
+
+        {!loading && pendingRules.map((axiom, i) => (
+          <RuleGuessCard
+            key={axiom.id}
+            axiom={axiom}
+            step={i + 1}
+            total={totalQuestions}
+            disabled={isReviewing}
+            onAnswer={(answer) => handleRuleAnswer(axiom.id, answer)}
+          />
+        ))}
+
+        {!loading && pendingSplits.map(({ entry, claimIndex }, i) => {
+          const claim = entry.split.claims[claimIndex]
+          return (
+            <SplitPieceCard
+              key={`${entry.id}-${claimIndex}`}
+              entry={entry}
+              claim={claim}
+              step={pendingRules.length + i + 1}
+              total={totalQuestions}
+              onAnswer={(answer) => handleSplitAnswer(entry.id, claimIndex, answer)}
+            />
+          )
+        })}
+
       </div>
     </div>
   )
 }
+
 
 function mapSplitReviewEntry(row: EntryRow): SplitReviewEntry {
   const rawText = stripHtml(row.content)
@@ -1319,5 +844,205 @@ function EvidenceBadge({
     >
       {label}: {count}
     </span>
+  )
+}
+
+type RuleAnswer = 'yes' | 'no' | 'skip'
+type SplitAnswer = 'rule' | 'note' | 'drop' | 'short' | 'skip'
+
+function pickRuleGuessDefault(axiom: OntologyAxiom): RuleAnswer {
+  if (axiom.confidence >= 0.7) return 'yes'
+  if (axiom.confidence < 0.4) return 'no'
+  return 'skip'
+}
+
+function pickSplitPieceDefault(claim: ClaimSplitResult['claims'][number]): SplitAnswer {
+  const text = claim.claimText.trim()
+  if (text.length < 25) return 'short'
+  if (/\b(always|never|usually|tend to|every time|whenever|i always|i never)\b/i.test(text)) return 'rule'
+  return 'note'
+}
+
+const cardStyle: React.CSSProperties = {
+  background: 'rgba(255,255,255,0.04)',
+  border: '1px solid rgba(255,255,255,0.1)',
+  borderRadius: '12px',
+  padding: '1.25rem',
+  marginBottom: '1.25rem',
+}
+
+const stepStyle: React.CSSProperties = {
+  color: 'rgba(255,255,255,0.4)',
+  margin: 0,
+  fontSize: '0.72rem',
+  textTransform: 'uppercase',
+  letterSpacing: '0.08em',
+  fontWeight: 700,
+}
+
+const leadStyle: React.CSSProperties = {
+  margin: '0.55rem 0 0.5rem',
+  fontSize: '0.92rem',
+  color: 'rgba(255,255,255,0.6)',
+}
+
+const quoteStyle: React.CSSProperties = {
+  margin: 0,
+  padding: '0.85rem 1rem',
+  background: 'rgba(0,0,0,0.3)',
+  borderLeft: '3px solid rgba(147,197,253,0.5)',
+  borderRadius: '0 8px 8px 0',
+  fontSize: '1rem',
+  lineHeight: 1.5,
+  color: 'rgba(255,255,255,0.92)',
+  fontStyle: 'italic',
+}
+
+const ruleBoxStyle: React.CSSProperties = {
+  margin: 0,
+  padding: '0.85rem 1rem',
+  background: 'rgba(0,0,0,0.3)',
+  borderLeft: '3px solid rgba(134,239,172,0.5)',
+  borderRadius: '0 8px 8px 0',
+  fontSize: '0.95rem',
+  lineHeight: 1.55,
+  color: 'rgba(255,255,255,0.9)',
+}
+
+const fieldLabelStyle: React.CSSProperties = {
+  display: 'block',
+  margin: '1rem 0 0.4rem',
+  fontSize: '0.78rem',
+  color: 'rgba(255,255,255,0.55)',
+  textTransform: 'uppercase',
+  letterSpacing: '0.06em',
+  fontWeight: 700,
+}
+
+const selectStyle: React.CSSProperties = {
+  width: '100%',
+  background: 'rgba(255,255,255,0.08)',
+  color: '#fff',
+  border: '1px solid rgba(255,255,255,0.2)',
+  borderRadius: '8px',
+  padding: '0.7rem 0.8rem',
+  fontSize: '0.95rem',
+  font: 'inherit',
+  cursor: 'pointer',
+  outline: 'none',
+}
+
+const helpStyle: React.CSSProperties = {
+  margin: '0.6rem 0 0',
+  fontSize: '0.82rem',
+  color: 'rgba(255,255,255,0.55)',
+}
+
+const exampleListStyle: React.CSSProperties = {
+  margin: '0.8rem 0 0',
+  padding: 0,
+  listStyle: 'none',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '0.3rem',
+  fontSize: '0.8rem',
+  color: 'rgba(255,255,255,0.5)',
+}
+
+function RuleGuessCard({
+  axiom,
+  step,
+  total,
+  disabled,
+  onAnswer,
+}: {
+  axiom: OntologyAxiom
+  step: number
+  total: number
+  disabled: boolean
+  onAnswer: (answer: RuleAnswer) => void
+}) {
+  const [choice, setChoice] = useState<RuleAnswer>(pickRuleGuessDefault(axiom))
+
+  function handleChange(event: React.ChangeEvent<HTMLSelectElement>) {
+    const next = event.target.value as RuleAnswer
+    setChoice(next)
+    onAnswer(next)
+  }
+
+  return (
+    <div style={cardStyle}>
+      <p style={stepStyle}>{step} of {total}</p>
+      <p style={leadStyle}>We think this rule fits you:</p>
+      <div style={ruleBoxStyle}>
+        <p style={{ margin: 0 }}>
+          <strong style={{ color: '#bbf7d0' }}>When:</strong> {axiom.antecedent}
+        </p>
+        <p style={{ margin: '0.4rem 0 0' }}>
+          <strong style={{ color: '#bbf7d0' }}>Then:</strong> {axiom.consequent}
+        </p>
+      </div>
+      <label style={fieldLabelStyle}>Your answer</label>
+      <select value={choice} onChange={handleChange} disabled={disabled} style={selectStyle}>
+        <option value="yes">Yes — keep this rule</option>
+        <option value="no">No — drop this rule</option>
+        <option value="skip">Skip — not sure yet</option>
+      </select>
+      <p style={helpStyle}>Pick yes if this sounds like you.</p>
+      <ul style={exampleListStyle}>
+        <li>✓ Yes — sounds like what you do</li>
+        <li>✗ No — sounds like the opposite</li>
+        <li>○ Skip — you&apos;re not sure</li>
+      </ul>
+    </div>
+  )
+}
+
+function SplitPieceCard({
+  entry,
+  claim,
+  step,
+  total,
+  onAnswer,
+}: {
+  entry: SplitReviewEntry
+  claim: ClaimSplitResult['claims'][number]
+  step: number
+  total: number
+  onAnswer: (answer: SplitAnswer) => void
+}) {
+  const [choice, setChoice] = useState<SplitAnswer>(pickSplitPieceDefault(claim))
+
+  function handleChange(event: React.ChangeEvent<HTMLSelectElement>) {
+    const next = event.target.value as SplitAnswer
+    setChoice(next)
+    onAnswer(next)
+  }
+
+  return (
+    <div style={cardStyle}>
+      <p style={stepStyle}>{step} of {total}</p>
+      <p style={leadStyle}>We pulled this idea out of something you wrote:</p>
+      <p style={quoteStyle}>&ldquo;{claim.claimText}&rdquo;</p>
+      <p style={{ margin: '0.6rem 0 0', fontSize: '0.78rem', color: 'rgba(255,255,255,0.4)' }}>
+        From: {entry.headline}
+      </p>
+      <label style={fieldLabelStyle}>Your answer</label>
+      <select value={choice} onChange={handleChange} style={selectStyle}>
+        <option value="rule">Make it a rule</option>
+        <option value="note">Keep as a note</option>
+        <option value="drop">Drop it</option>
+        <option value="short">Too short to use</option>
+        <option value="skip">Skip — not sure yet</option>
+      </select>
+      <p style={helpStyle}>Pick what fits the idea best.</p>
+      <ul style={exampleListStyle}>
+        <li>✓ Rule — says what you usually do</li>
+        <li>✓ Note — a one-time fact</li>
+        <li>✗ Drop — wrong or useless</li>
+        <li>○ Short — only a few words</li>
+        <li>○ Skip — you&apos;re not sure</li>
+      </ul>
+    </div>
   )
 }

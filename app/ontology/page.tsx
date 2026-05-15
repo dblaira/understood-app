@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
-import { updateOntologyAxiomStatus } from '@/app/actions/ontology'
+import { keepSplitClaimAsNote, updateOntologyAxiomStatus } from '@/app/actions/ontology'
 import { evaluateAxiomRetirementReadiness, type AxiomRetirementReadiness } from '@/lib/ontology/axiom-review'
 import { splitEntryIntoClaims, type ClaimSplitResult } from '@/lib/ontology/claim-splitting'
 import { summarizeAxiomEvidence, type AxiomEvidenceSummary } from '@/lib/ontology/evidence'
@@ -396,13 +396,25 @@ export default function OntologyPage() {
     }
   }
 
-  function handleSplitAnswer(entryId: string, claimIndex: number, answer: SplitAnswer) {
+  async function handleSplitAnswer(entry: SplitReviewEntry, claimIndex: number, answer: SplitAnswer) {
+    const entryId = entry.id
     if (answer === 'rule') {
       handleClaimDecision(entryId, claimIndex, 'candidate_review')
       showSaved('Saved ✓ Marked as a rule.')
     } else if (answer === 'note') {
+      setReviewError(null)
+      const claimText = claimTexts[claimDecisionKey(entryId, claimIndex)] ?? entry.split.claims[claimIndex]?.claimText ?? ''
+      const result = await keepSplitClaimAsNote({
+        sourceEntryId: entryId,
+        claimText,
+      })
+      if (result.error) {
+        setReviewError(result.error)
+        showSaved('Could not save note.')
+        return
+      }
       handleClaimDecision(entryId, claimIndex, 'keep_note')
-      showSaved('Saved ✓ Kept as a note.')
+      showSaved(result.duplicate ? 'Saved ✓ Note already exists.' : 'Saved ✓ Kept as a note.')
     } else if (answer === 'drop') {
       handleClaimDecision(entryId, claimIndex, 'ignore')
       showSaved('Saved ✓ Dropped.')
@@ -516,7 +528,7 @@ export default function OntologyPage() {
               claim={claim}
               step={answeredInBatch + visibleRules.length + i + 1}
               total={batchSize}
-              onAnswer={(answer) => handleSplitAnswer(entry.id, claimIndex, answer)}
+              onAnswer={(answer) => handleSplitAnswer(entry, claimIndex, answer)}
             />
           )
         })}
@@ -1078,14 +1090,23 @@ function SplitPieceCard({
   claim: ClaimSplitResult['claims'][number]
   step: number
   total: number
-  onAnswer: (answer: SplitAnswer) => void
+  onAnswer: (answer: SplitAnswer) => void | Promise<void>
 }) {
   const [choice, setChoice] = useState<SplitAnswer>(pickSplitPieceDefault(claim))
+  const [saving, setSaving] = useState(false)
 
   function handleChange(event: React.ChangeEvent<HTMLSelectElement>) {
     const next = event.target.value as SplitAnswer
     setChoice(next)
-    onAnswer(next)
+  }
+
+  async function handleSave() {
+    setSaving(true)
+    try {
+      await onAnswer(choice)
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -1104,6 +1125,24 @@ function SplitPieceCard({
         <option value="short">Too short to use</option>
         <option value="skip">Skip — not sure yet</option>
       </select>
+      <button
+        type="button"
+        onClick={handleSave}
+        disabled={saving}
+        style={{
+          marginTop: '0.75rem',
+          border: '1px solid rgba(134,239,172,0.45)',
+          background: saving ? 'rgba(255,255,255,0.05)' : 'rgba(134,239,172,0.14)',
+          color: saving ? 'rgba(255,255,255,0.45)' : '#bbf7d0',
+          borderRadius: '999px',
+          padding: '0.55rem 0.85rem',
+          fontSize: '0.82rem',
+          fontWeight: 700,
+          cursor: saving ? 'not-allowed' : 'pointer',
+        }}
+      >
+        {saving ? 'Saving...' : 'Save choice'}
+      </button>
       <p style={helpStyle}>Pick what fits the idea best.</p>
       <ul style={exampleListStyle}>
         <li>✓ Rule — says what you usually do</li>

@@ -9,6 +9,83 @@ import {
 } from '@/lib/ontology/connections-intake'
 import { parseOntologyAxiomScope, parseOntologyAxiomStatus, type OntologyAxiomStatus } from '@/types/ontology'
 
+export async function keepSplitClaimAsNote({
+  sourceEntryId,
+  claimText,
+}: {
+  sourceEntryId: string
+  claimText: string
+}) {
+  const text = claimText.trim()
+  if (!sourceEntryId || text.length === 0) {
+    return { error: 'Missing note text' }
+  }
+
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    return { error: 'Unauthorized' }
+  }
+
+  const { data: sourceEntry, error: sourceError } = await supabase
+    .from('entries')
+    .select('id, headline, category, life_domains')
+    .eq('id', sourceEntryId)
+    .eq('user_id', user.id)
+    .single()
+
+  if (sourceError || !sourceEntry) {
+    return { error: 'Source entry not found' }
+  }
+
+  const { data: existing, error: existingError } = await supabase
+    .from('entries')
+    .select('id')
+    .eq('user_id', user.id)
+    .eq('source_entry_id', sourceEntryId)
+    .eq('entry_type', 'note')
+    .eq('content', text)
+    .maybeSingle()
+
+  if (existingError) {
+    return { error: existingError.message }
+  }
+
+  if (existing) {
+    revalidatePath('/')
+    revalidatePath('/ontology')
+    return { data: existing, duplicate: true }
+  }
+
+  const { data, error } = await supabase
+    .from('entries')
+    .insert({
+      user_id: user.id,
+      headline: text.length > 80 ? `${text.slice(0, 77)}...` : text,
+      subheading: `Kept from: ${sourceEntry.headline}`,
+      content: text,
+      category: sourceEntry.category ?? 'Business',
+      entry_type: 'note',
+      source_entry_id: sourceEntryId,
+      life_domains: sourceEntry.life_domains ?? [],
+      versions: null,
+      generating_versions: false,
+    })
+    .select('id')
+    .single()
+
+  if (error) {
+    return { error: error.message }
+  }
+
+  revalidatePath('/')
+  revalidatePath('/ontology')
+  return { data, duplicate: false }
+}
+
 const REVIEWABLE_STATUSES = new Set<OntologyAxiomStatus>(['confirmed', 'rejected', 'retired'])
 
 export async function updateOntologyAxiomStatus(axiomId: string, rawStatus: OntologyAxiomStatus) {

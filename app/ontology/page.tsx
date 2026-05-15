@@ -3,7 +3,11 @@
 import { useEffect, useMemo, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
-import { keepSplitClaimAsNote, updateOntologyAxiomStatus } from '@/app/actions/ontology'
+import {
+  createCandidateAxiomsFromSplitClaims,
+  keepSplitClaimAsNote,
+  updateOntologyAxiomStatus,
+} from '@/app/actions/ontology'
 import { evaluateAxiomRetirementReadiness, type AxiomRetirementReadiness } from '@/lib/ontology/axiom-review'
 import { splitEntryIntoClaims, type ClaimSplitResult } from '@/lib/ontology/claim-splitting'
 import { summarizeAxiomEvidence, type AxiomEvidenceSummary } from '@/lib/ontology/evidence'
@@ -163,6 +167,7 @@ export default function OntologyPage() {
   const [todayBatch, setTodayBatch] = useState<string[] | null>(null)
   const [savedMessage, setSavedMessage] = useState<string | null>(null)
   const [batchVersion, setBatchVersion] = useState(0)
+  const [isCreatingRuleCandidates, setIsCreatingRuleCandidates] = useState(false)
   const [isReviewing, startReviewTransition] = useTransition()
   const reviewQueue = buildOntologyReviewQueue(axioms)
   const semanticReport = useMemo(() => buildOntologySemanticReport(axioms, {
@@ -436,6 +441,84 @@ export default function OntologyPage() {
     }
   }
 
+  async function handleCreateRuleCandidates() {
+    setReviewError(null)
+    setIsCreatingRuleCandidates(true)
+    try {
+      const markedClaims = await collectMarkedRuleClaims()
+      if (markedClaims.length === 0) {
+        showSaved('No marked rules found.')
+        return
+      }
+
+      const result = await createCandidateAxiomsFromSplitClaims(markedClaims)
+      if (result.error) {
+        setReviewError(result.error)
+        showSaved('Could not create rule candidates.')
+        return
+      }
+
+      if (result.data?.length) {
+        setAxioms((current) => [
+          ...(result.data as AxiomRow[]).map(mapAxiom),
+          ...current,
+        ])
+      }
+
+      setTodayBatch(null)
+      setBatchVersion((v) => v + 1)
+      showSaved(`Created ${result.created ?? 0} rule candidates. ${result.skipped ?? 0} skipped.`)
+    } finally {
+      setIsCreatingRuleCandidates(false)
+    }
+  }
+
+  async function collectMarkedRuleClaims() {
+    const marked = Object.entries(claimDecisions)
+      .filter(([, decision]) => decision === 'candidate_review')
+      .map(([key]) => {
+        const [entryId, rawClaimIndex] = key.split(':')
+        return {
+          key,
+          entryId,
+          claimIndex: Number(rawClaimIndex),
+        }
+      })
+      .filter((item) => item.entryId && Number.isInteger(item.claimIndex))
+
+    const entryById = new Map(splitEntries.map((entry) => [entry.id, entry]))
+    const missingEntryIds = [...new Set(marked.map((item) => item.entryId).filter((entryId) => !entryById.has(entryId)))]
+
+    if (missingEntryIds.length > 0) {
+      const { data, error: fetchError } = await supabase
+        .from('entries')
+        .select('id, headline, content, entry_type, life_domains, created_at')
+        .in('id', missingEntryIds)
+
+      if (fetchError) {
+        setReviewError(fetchError.message)
+      } else {
+        for (const row of ((data as EntryRow[] | null) ?? [])) {
+          const entry = mapSplitReviewEntry(row)
+          if (entry.split.claims.length > 0) {
+            entryById.set(entry.id, entry)
+          }
+        }
+      }
+    }
+
+    return marked.flatMap((item) => {
+      const entry = entryById.get(item.entryId)
+      const claim = entry?.split.claims[item.claimIndex]
+      if (!entry || !claim) return []
+      return [{
+        sourceEntryId: entry.id,
+        claimText: claimTexts[item.key] ?? claim.claimText,
+        suggestedDomains: claim.suggestedDomains,
+      }]
+    })
+  }
+
   function startNextBatch() {
     setTodayBatch(null)
     setBatchVersion((v) => v + 1)
@@ -496,6 +579,42 @@ export default function OntologyPage() {
         )}
 
         {!loading && savedMessage && <SavedToast text={savedMessage} />}
+
+        {!loading && markedDraftCount > 0 && (
+          <div
+            style={{
+              border: '1px solid rgba(134,239,172,0.24)',
+              background: 'rgba(34,197,94,0.08)',
+              borderRadius: '12px',
+              padding: '1rem',
+              marginBottom: '1.25rem',
+            }}
+          >
+            <p style={{ margin: '0 0 0.35rem', color: '#bbf7d0', fontSize: '1rem', fontWeight: 700 }}>
+              {markedDraftCount} marked for rule creation
+            </p>
+            <p style={{ margin: '0 0 0.85rem', color: 'rgba(255,255,255,0.58)', fontSize: '0.84rem', lineHeight: 1.45 }}>
+              This turns your “Make it a rule” answers into candidate rules. They still need review before they can govern AI answers.
+            </p>
+            <button
+              type="button"
+              onClick={handleCreateRuleCandidates}
+              disabled={isCreatingRuleCandidates}
+              style={{
+                border: '1px solid rgba(134,239,172,0.5)',
+                background: isCreatingRuleCandidates ? 'rgba(255,255,255,0.05)' : 'rgba(134,239,172,0.16)',
+                color: isCreatingRuleCandidates ? 'rgba(255,255,255,0.45)' : '#bbf7d0',
+                borderRadius: '999px',
+                padding: '0.55rem 0.85rem',
+                fontSize: '0.84rem',
+                fontWeight: 700,
+                cursor: isCreatingRuleCandidates ? 'not-allowed' : 'pointer',
+              }}
+            >
+              {isCreatingRuleCandidates ? 'Creating...' : 'Create rule candidates'}
+            </button>
+          </div>
+        )}
 
         {!loading && totalPendingAll === 0 && lifetimeAnswered === 0 && (
           <CaughtUpPanel headline="Nothing to answer yet." sub="Write a few entries first, then come back." />

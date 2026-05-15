@@ -1,4 +1,5 @@
 import { LIFE_DOMAINS, type OntologyAxiomScope, type OntologyAxiomStatus } from '@/types/ontology'
+import { isUnsafePlaceholderRule } from '@/lib/ontology/rule-quality'
 
 export type OntologyAxiomPromptRow = {
   antecedent: string
@@ -6,6 +7,7 @@ export type OntologyAxiomPromptRow = {
   confidence: number | string
   status?: OntologyAxiomStatus | string | null
   scope?: OntologyAxiomScope | string | null
+  provenance?: Record<string, unknown> | null
 }
 
 export interface OntologyPromptSectionOptions {
@@ -25,6 +27,7 @@ export function buildOntologyPromptSection(
       axiom.scope === 'personal' &&
       axiom.antecedent.trim().length > 0 &&
       axiom.consequent.trim().length > 0 &&
+      !isUnsafePlaceholderRule(axiom) &&
       confidence >= confidenceGate
     )
   })

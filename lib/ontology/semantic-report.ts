@@ -9,6 +9,7 @@ import {
   buildProvenanceSourceQuery,
   buildRelationSemanticsQuery,
 } from '@/lib/ontology/sparql-queries'
+import { isUnsafePlaceholderRule } from '@/lib/ontology/rule-quality'
 
 export interface OntologySemanticReport {
   exportedAxiomCount: number
@@ -38,7 +39,11 @@ export function buildOntologySemanticReport(
   ]
 
   return {
-    exportedAxiomCount: axioms.filter((axiom) => axiom.status === 'confirmed' && axiom.scope === 'personal').length,
+    exportedAxiomCount: axioms.filter((axiom) => (
+      axiom.status === 'confirmed' &&
+      axiom.scope === 'personal' &&
+      !isUnsafePlaceholderRule(axiom)
+    )).length,
     vocabularyVersion,
     appVersion,
     turtle,

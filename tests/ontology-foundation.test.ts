@@ -41,6 +41,7 @@ import {
   buildRelationSemanticsQuery,
 } from '../lib/ontology/sparql-queries'
 import { buildOntologyReviewQueue, getAxiomProvenanceLabel } from '../lib/ontology/review-queue'
+import { getRuleSafetyIssue } from '../lib/ontology/rule-quality'
 import { getProvenanceSourceDescriptor, normalizeProvenanceSource } from '../lib/ontology/provenance'
 import {
   buildPublicOntologyGuardrailSection,
@@ -141,6 +142,14 @@ describe('ontology prompt section', () => {
         status: 'confirmed',
         scope: 'personal',
       },
+      {
+        antecedent: 'Create a template for the Adam Pattern',
+        consequent: 'Needs rewrite before the app can use it as a rule',
+        confidence: 0.9,
+        status: 'confirmed',
+        scope: 'personal',
+        provenance: { parser: 'claim_as_pattern' },
+      },
     ])
 
     assert.match(section, /High Learning/)
@@ -150,6 +159,18 @@ describe('ontology prompt section', () => {
     assert.doesNotMatch(section, /Starter Hypothesis Pattern/)
     assert.doesNotMatch(section, /Low Confidence Pattern/)
     assert.doesNotMatch(section, /Malformed rows/)
+    assert.doesNotMatch(section, /Adam Pattern/)
+  })
+
+  it('flags placeholder ideas that need rewrite before they can be trusted rules', () => {
+    const issue = getRuleSafetyIssue({
+      antecedent: 'Create a template for the Adam Pattern',
+      consequent: 'Needs rewrite before the app can use it as a rule',
+      provenance: { parser: 'claim_as_pattern', claimText: 'Create a template for the Adam Pattern' },
+    })
+
+    assert.equal(issue?.kind, 'needs_rewrite')
+    assert.equal(issue?.originalText, 'Create a template for the Adam Pattern')
   })
 })
 

@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase/client'
 import {
   createCandidateAxiomsFromSplitClaims,
   keepSplitClaimAsNote,
+  removeUnsafePlaceholderRules,
   updateOntologyAxiomStatus,
 } from '@/app/actions/ontology'
 import { evaluateAxiomRetirementReadiness, type AxiomRetirementReadiness } from '@/lib/ontology/axiom-review'
@@ -14,6 +15,7 @@ import { summarizeAxiomEvidence, type AxiomEvidenceSummary } from '@/lib/ontolog
 import { buildOntologySemanticReport } from '@/lib/ontology/semantic-report'
 import { getProvenanceSourceDescriptor, normalizeProvenanceSource, type ProvenanceSourceDescriptor } from '@/lib/ontology/provenance'
 import { buildOntologyReviewQueue, getAxiomProvenanceLabel } from '@/lib/ontology/review-queue'
+import { getRuleSafetyIssue, isUnsafePlaceholderRule } from '@/lib/ontology/rule-quality'
 import {
   getProvisionalOntologyCoverage,
   PROVISIONAL_ONTOLOGY_RULES,
@@ -168,6 +170,7 @@ export default function OntologyPage() {
   const [savedMessage, setSavedMessage] = useState<string | null>(null)
   const [batchVersion, setBatchVersion] = useState(0)
   const [isCreatingRuleCandidates, setIsCreatingRuleCandidates] = useState(false)
+  const [isRemovingUnsafeRules, setIsRemovingUnsafeRules] = useState(false)
   const [isReviewing, startReviewTransition] = useTransition()
   const reviewQueue = buildOntologyReviewQueue(axioms)
   const semanticReport = useMemo(() => buildOntologySemanticReport(axioms, {
@@ -181,6 +184,12 @@ export default function OntologyPage() {
   const markedDraftCount = useMemo(() => {
     return Object.values(claimDecisions).filter((decision) => decision === 'candidate_review').length
   }, [claimDecisions])
+  const unsafeRules = useMemo(() => {
+    return axioms.filter((axiom) =>
+      (axiom.status === 'candidate' || axiom.status === 'confirmed') && isUnsafePlaceholderRule(axiom)
+    )
+  }, [axioms])
+  const unsafeTrustedCount = unsafeRules.filter((axiom) => axiom.status === 'confirmed').length
   const ontologyStatus = buildOntologyStatusCopy({
     trustedAxiomCount,
     pendingCandidateCount: reviewQueue.pendingCount,
@@ -267,29 +276,28 @@ export default function OntologyPage() {
     })
   }, [claimDecisions, claimTexts, lowSignalClaims, splitTriageLoaded])
 
-  function handleReviewAxiom(axiomId: string, status: OntologyAxiomStatus) {
+  async function reviewAxiom(axiomId: string, status: OntologyAxiomStatus): Promise<boolean> {
     setReviewError(null)
-    startReviewTransition(async () => {
-      const result = await updateOntologyAxiomStatus(axiomId, status)
-      if (result.error) {
-        setReviewError(result.error)
-        return
-      }
+    const result = await updateOntologyAxiomStatus(axiomId, status)
+    if (result.error) {
+      setReviewError(result.error)
+      return false
+    }
 
-      setAxioms((current) =>
-        current.map((axiom) =>
-          axiom.id === axiomId
-            ? {
-                ...axiom,
-                status,
-                confirmedAt: status === 'confirmed' ? new Date() : null,
-                rejectedAt: status === 'rejected' ? new Date() : null,
-                retiredAt: status === 'retired' ? new Date() : null,
-              }
-            : axiom
-        )
+    setAxioms((current) =>
+      current.map((axiom) =>
+        axiom.id === axiomId
+          ? {
+              ...axiom,
+              status,
+              confirmedAt: status === 'confirmed' ? new Date() : null,
+              rejectedAt: status === 'rejected' ? new Date() : null,
+              retiredAt: status === 'retired' ? new Date() : null,
+            }
+          : axiom
       )
-    })
+    )
+    return true
   }
 
   function handleClaimDecision(entryId: string, claimIndex: number, decision: ClaimDecision) {
@@ -386,11 +394,15 @@ export default function OntologyPage() {
 
   function handleRuleAnswer(axiom: OntologyAxiom, answer: RuleAnswer) {
     if (answer === 'yes') {
-      handleReviewAxiom(axiom.id, 'confirmed')
-      showSaved(`Saved ✓ Kept rule: "${axiom.name}"`)
+      startReviewTransition(async () => {
+        const saved = await reviewAxiom(axiom.id, 'confirmed')
+        if (saved) showSaved(`Saved ✓ Kept rule: "${axiom.name}"`)
+      })
     } else if (answer === 'no') {
-      handleReviewAxiom(axiom.id, 'rejected')
-      showSaved(`Saved ✓ Dropped rule: "${axiom.name}"`)
+      startReviewTransition(async () => {
+        const saved = await reviewAxiom(axiom.id, 'rejected')
+        if (saved) showSaved(`Saved ✓ Dropped rule: "${axiom.name}"`)
+      })
     } else {
       setSkippedRuleIds((current) => {
         const next = new Set(current)
@@ -470,6 +482,37 @@ export default function OntologyPage() {
       showSaved(`Created ${result.created ?? 0} possible rules. ${result.skipped ?? 0} skipped.`)
     } finally {
       setIsCreatingRuleCandidates(false)
+    }
+  }
+
+  async function handleRemoveUnsafeRules() {
+    setIsRemovingUnsafeRules(true)
+    setReviewError(null)
+    try {
+      const result = await removeUnsafePlaceholderRules()
+      if (result.error) {
+        setReviewError(result.error)
+        return
+      }
+
+      const removedIds = new Set(((result.data ?? []) as Array<{ id: string | null }>).map((row) => row.id).filter(Boolean))
+      setAxioms((current) =>
+        current.map((axiom) => {
+          if (!removedIds.has(axiom.id)) return axiom
+          const nextStatus = axiom.status === 'confirmed' ? 'retired' : 'rejected'
+          return {
+            ...axiom,
+            status: nextStatus,
+            rejectedAt: nextStatus === 'rejected' ? new Date() : axiom.rejectedAt,
+            retiredAt: nextStatus === 'retired' ? new Date() : axiom.retiredAt,
+          }
+        })
+      )
+      setTodayBatch(null)
+      setBatchVersion((v) => v + 1)
+      showSaved(`Removed ${result.removed ?? 0} unsafe ${result.removed === 1 ? 'rule' : 'rules'} from use.`)
+    } finally {
+      setIsRemovingUnsafeRules(false)
     }
   }
 
@@ -579,6 +622,15 @@ export default function OntologyPage() {
         )}
 
         {!loading && savedMessage && <SavedToast text={savedMessage} />}
+
+        {!loading && unsafeRules.length > 0 && (
+          <UnsafeRulesPanel
+            count={unsafeRules.length}
+            trustedCount={unsafeTrustedCount}
+            disabled={isRemovingUnsafeRules}
+            onRemove={handleRemoveUnsafeRules}
+          />
+        )}
 
         {!loading && markedDraftCount > 0 && (
           <div
@@ -1173,7 +1225,8 @@ function RuleGuessCard({
   disabled: boolean
   onAnswer: (answer: RuleAnswer) => void
 }) {
-  const [choice, setChoice] = useState<RuleAnswer>(pickRuleGuessDefault(axiom))
+  const safetyIssue = getRuleSafetyIssue(axiom)
+  const [choice, setChoice] = useState<RuleAnswer>(safetyIssue ? 'no' : pickRuleGuessDefault(axiom))
 
   function handleChange(event: React.ChangeEvent<HTMLSelectElement>) {
     const next = event.target.value as RuleAnswer
@@ -1184,24 +1237,41 @@ function RuleGuessCard({
   return (
     <div style={cardStyle}>
       <p style={stepStyle}>{step} of {total}</p>
-      <p style={leadStyle}>We think this rule fits you:</p>
-      <div style={ruleBoxStyle}>
-        <p style={{ margin: 0 }}>
-          <strong style={{ color: '#bbf7d0' }}>When:</strong> {axiom.antecedent}
-        </p>
-        <p style={{ margin: '0.4rem 0 0' }}>
-          <strong style={{ color: '#bbf7d0' }}>Then:</strong> {axiom.consequent}
-        </p>
-      </div>
+      {safetyIssue ? (
+        <>
+          <p style={leadStyle}>{safetyIssue.title}</p>
+          <div style={{ ...ruleBoxStyle, borderLeftColor: 'rgba(251,191,36,0.65)' }}>
+            <p style={{ margin: 0, color: '#fde68a', fontWeight: 700 }}>{safetyIssue.plainReason}</p>
+            <p style={{ margin: '0.55rem 0 0' }}>
+              <strong style={{ color: '#fde68a' }}>Idea:</strong> {safetyIssue.originalText}
+            </p>
+            <p style={{ margin: '0.55rem 0 0', color: 'rgba(255,255,255,0.62)' }}>
+              Drop this for now. Later it needs to be rewritten as: “When this happens, then that usually follows.”
+            </p>
+          </div>
+        </>
+      ) : (
+        <>
+          <p style={leadStyle}>We think this rule fits you:</p>
+          <div style={ruleBoxStyle}>
+            <p style={{ margin: 0 }}>
+              <strong style={{ color: '#bbf7d0' }}>When:</strong> {axiom.antecedent}
+            </p>
+            <p style={{ margin: '0.4rem 0 0' }}>
+              <strong style={{ color: '#bbf7d0' }}>Then:</strong> {axiom.consequent}
+            </p>
+          </div>
+        </>
+      )}
       <label style={fieldLabelStyle}>Your answer</label>
       <select value={choice} onChange={handleChange} disabled={disabled} style={selectStyle}>
-        <option value="yes">Yes — keep this rule</option>
+        {!safetyIssue && <option value="yes">Yes — keep this rule</option>}
         <option value="no">No — drop this rule</option>
         <option value="skip">Skip — not sure yet</option>
       </select>
-      <p style={helpStyle}>Pick yes if this sounds like you.</p>
+      <p style={helpStyle}>{safetyIssue ? 'This cannot be saved as a trusted rule until it is rewritten.' : 'Pick yes if this sounds like you.'}</p>
       <ul style={exampleListStyle}>
-        <li>✓ Yes — sounds like what you do</li>
+        {!safetyIssue && <li>✓ Yes — sounds like what you do</li>}
         <li>✗ No — sounds like the opposite</li>
         <li>○ Skip — you&apos;re not sure</li>
       </ul>
@@ -1438,6 +1508,55 @@ function CaughtUpPanel({
           Test in app
         </a>
       </div>
+    </div>
+  )
+}
+
+function UnsafeRulesPanel({
+  count,
+  trustedCount,
+  disabled,
+  onRemove,
+}: {
+  count: number
+  trustedCount: number
+  disabled: boolean
+  onRemove: () => void
+}) {
+  return (
+    <div
+      style={{
+        border: '1px solid rgba(251,191,36,0.4)',
+        background: 'rgba(251,191,36,0.08)',
+        borderRadius: '12px',
+        padding: '1rem',
+        marginBottom: '1.25rem',
+      }}
+    >
+      <p style={{ margin: 0, color: '#fde68a', fontSize: '1rem', fontWeight: 700 }}>
+        {count} {count === 1 ? 'idea needs' : 'ideas need'} cleanup
+      </p>
+      <p style={{ margin: '0.45rem 0 0', color: 'rgba(255,255,255,0.62)', fontSize: '0.88rem', lineHeight: 1.45 }}>
+        These are ideas the app could not turn into real When/Then rules. {trustedCount > 0 ? `${trustedCount} may already be saved.` : 'None are saved yet.'}
+      </p>
+      <button
+        type="button"
+        onClick={onRemove}
+        disabled={disabled}
+        style={{
+          marginTop: '0.85rem',
+          border: '1px solid rgba(251,191,36,0.55)',
+          background: disabled ? 'rgba(255,255,255,0.05)' : 'rgba(251,191,36,0.14)',
+          color: disabled ? 'rgba(255,255,255,0.45)' : '#fde68a',
+          borderRadius: '999px',
+          padding: '0.55rem 0.85rem',
+          fontSize: '0.84rem',
+          fontWeight: 700,
+          cursor: disabled ? 'not-allowed' : 'pointer',
+        }}
+      >
+        {disabled ? 'Removing...' : 'Remove unsafe rules'}
+      </button>
     </div>
   )
 }

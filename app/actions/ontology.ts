@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { buildAxiomReviewUpdate, canReviewAxiomScope } from '@/lib/ontology/axiom-review'
+import { isUnsafePlaceholderRule } from '@/lib/ontology/rule-quality'
 import {
   buildCandidateAxiomFromConnection,
   type ConnectionOntologyIntakeItem,
@@ -264,10 +265,10 @@ function parseSplitClaimRule(claimText: string): {
   }
 
   return {
-    antecedent: `Adam treats this as a reusable pattern: ${trimSentence(text)}`,
-    consequent: 'future reasoning should consider this pattern only after human confirmation',
+    antecedent: trimSentence(text),
+    consequent: 'Needs rewrite before the app can use it as a rule',
     relationshipType: 'supports',
-    confidence: 0.42,
+    confidence: 0.2,
     parser: 'claim_as_pattern',
   }
 }
@@ -323,7 +324,7 @@ export async function updateOntologyAxiomStatus(axiomId: string, rawStatus: Onto
 
   const { data: currentAxiom, error: fetchError } = await supabase
     .from('ontology_axioms')
-    .select('id, status, scope, confirmed_at, rejected_at, retired_at')
+    .select('id, antecedent, consequent, provenance, status, scope, confirmed_at, rejected_at, retired_at')
     .eq('id', axiomId)
     .eq('user_id', user.id)
     .single()
@@ -334,6 +335,12 @@ export async function updateOntologyAxiomStatus(axiomId: string, rawStatus: Onto
 
   if (!canReviewAxiomScope(parseOntologyAxiomScope(currentAxiom.scope))) {
     return { error: 'Only personal axioms can be reviewed' }
+  }
+
+  if (status === 'confirmed' && isUnsafePlaceholderRule(currentAxiom)) {
+    return {
+      error: 'This is only an idea, not a rule yet. Drop it or rewrite it as a clear When/Then rule first.',
+    }
   }
 
   const update = buildAxiomReviewUpdate(
@@ -365,6 +372,65 @@ export async function updateOntologyAxiomStatus(axiomId: string, rawStatus: Onto
 
   revalidatePath('/ontology')
   return { data }
+}
+
+export async function removeUnsafePlaceholderRules() {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    return { error: 'Unauthorized' }
+  }
+
+  const { data: rows, error: fetchError } = await supabase
+    .from('ontology_axioms')
+    .select('id, antecedent, consequent, provenance, status')
+    .eq('user_id', user.id)
+    .in('status', ['candidate', 'confirmed'])
+
+  if (fetchError) {
+    return { error: fetchError.message }
+  }
+
+  const now = new Date().toISOString()
+  const unsafeRows = ((rows ?? []) as Array<{
+    id: string
+    antecedent: string
+    consequent: string
+    provenance?: Record<string, unknown> | null
+    status: OntologyAxiomStatus | string
+  }>).filter(isUnsafePlaceholderRule)
+
+  if (unsafeRows.length === 0) {
+    return { data: [], removed: 0 }
+  }
+
+  const updates = await Promise.all(
+    unsafeRows.map((row) => {
+      const nextStatus: OntologyAxiomStatus = row.status === 'confirmed' ? 'retired' : 'rejected'
+      return supabase
+        .from('ontology_axioms')
+        .update({
+          status: nextStatus,
+          rejected_at: nextStatus === 'rejected' ? now : null,
+          retired_at: nextStatus === 'retired' ? now : null,
+        })
+        .eq('id', row.id)
+        .eq('user_id', user.id)
+        .select('id, status, confirmed_at, rejected_at, retired_at')
+        .single()
+    })
+  )
+
+  const failed = updates.find((result) => result.error)
+  if (failed?.error) {
+    return { error: failed.error.message }
+  }
+
+  revalidatePath('/ontology')
+  return { data: updates.map((result) => result.data), removed: unsafeRows.length }
 }
 
 export async function createCandidateAxiomFromConnection(item: ConnectionOntologyIntakeItem) {

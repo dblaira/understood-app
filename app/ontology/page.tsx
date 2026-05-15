@@ -160,6 +160,9 @@ export default function OntologyPage() {
   const [reviewError, setReviewError] = useState<string | null>(null)
   const [skippedRuleIds, setSkippedRuleIds] = useState<Set<string>>(new Set())
   const [skippedSplitKeys, setSkippedSplitKeys] = useState<Set<string>>(new Set())
+  const [todayBatch, setTodayBatch] = useState<string[] | null>(null)
+  const [savedMessage, setSavedMessage] = useState<string | null>(null)
+  const [batchVersion, setBatchVersion] = useState(0)
   const [isReviewing, startReviewTransition] = useTransition()
   const reviewQueue = buildOntologyReviewQueue(axioms)
   const semanticReport = useMemo(() => buildOntologySemanticReport(axioms, {
@@ -334,35 +337,82 @@ export default function OntologyPage() {
       }
     }
   }
-  const totalQuestions = pendingRules.length + pendingSplits.length
+  const totalPendingAll = pendingRules.length + pendingSplits.length
 
-  function handleRuleAnswer(axiomId: string, answer: RuleAnswer) {
+  const lifetimeAnsweredRules = axioms.filter(
+    (a) => a.status === 'confirmed' || a.status === 'rejected' || a.status === 'retired'
+  ).length
+  const lifetimeAnsweredSplitKeys = new Set<string>()
+  for (const [k, d] of Object.entries(claimDecisions)) {
+    if (d !== 'unreviewed') lifetimeAnsweredSplitKeys.add(k)
+  }
+  for (const [k, d] of Object.entries(lowSignalClaims)) {
+    if (d === 'low_signal') lifetimeAnsweredSplitKeys.add(k)
+  }
+  const lifetimeAnswered = lifetimeAnsweredRules + lifetimeAnsweredSplitKeys.size
+
+  const BATCH_SIZE = 10
+
+  useEffect(() => {
+    if (loading) return
+    if (todayBatch !== null) return
+    const ids: string[] = []
+    for (const axiom of pendingRules) ids.push(`rule:${axiom.id}`)
+    for (const p of pendingSplits) ids.push(`split:${p.entry.id}:${p.claimIndex}`)
+    if (ids.length > 0) setTodayBatch(ids.slice(0, BATCH_SIZE))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, batchVersion])
+
+  const batchSet = useMemo(() => new Set(todayBatch ?? []), [todayBatch])
+  const visibleRules = pendingRules.filter((a) => batchSet.has(`rule:${a.id}`))
+  const visibleSplits = pendingSplits.filter((p) => batchSet.has(`split:${p.entry.id}:${p.claimIndex}`))
+  const visibleCount = visibleRules.length + visibleSplits.length
+  const batchSize = todayBatch?.length ?? 0
+  const answeredInBatch = Math.max(0, batchSize - visibleCount)
+  const batchDone = todayBatch !== null && batchSize > 0 && visibleCount === 0
+  const remainingAfterBatch = Math.max(0, totalPendingAll - visibleCount)
+
+  function showSaved(text: string) {
+    setSavedMessage(text)
+    window.setTimeout(() => {
+      setSavedMessage((current) => (current === text ? null : current))
+    }, 2200)
+  }
+
+  function handleRuleAnswer(axiom: OntologyAxiom, answer: RuleAnswer) {
     if (answer === 'yes') {
-      handleReviewAxiom(axiomId, 'confirmed')
+      handleReviewAxiom(axiom.id, 'confirmed')
+      showSaved(`Saved ✓ Kept rule: "${axiom.name}"`)
     } else if (answer === 'no') {
-      handleReviewAxiom(axiomId, 'rejected')
+      handleReviewAxiom(axiom.id, 'rejected')
+      showSaved(`Saved ✓ Dropped rule: "${axiom.name}"`)
     } else {
       setSkippedRuleIds((current) => {
         const next = new Set(current)
-        next.add(axiomId)
+        next.add(axiom.id)
         return next
       })
+      showSaved('Saved ✓ Set aside for now.')
     }
   }
 
   function handleSplitAnswer(entryId: string, claimIndex: number, answer: SplitAnswer) {
     if (answer === 'rule') {
       handleClaimDecision(entryId, claimIndex, 'candidate_review')
+      showSaved('Saved ✓ Marked as a rule.')
     } else if (answer === 'note') {
       handleClaimDecision(entryId, claimIndex, 'keep_note')
+      showSaved('Saved ✓ Kept as a note.')
     } else if (answer === 'drop') {
       handleClaimDecision(entryId, claimIndex, 'ignore')
+      showSaved('Saved ✓ Dropped.')
     } else if (answer === 'short') {
       const key = claimDecisionKey(entryId, claimIndex)
       const isLowSignal = (lowSignalClaims[key] ?? 'normal') === 'low_signal'
       if (!isLowSignal) {
         handleLowSignalToggle(entryId, claimIndex)
       }
+      showSaved('Saved ✓ Marked too short.')
     } else {
       const key = claimDecisionKey(entryId, claimIndex)
       setSkippedSplitKeys((current) => {
@@ -370,7 +420,13 @@ export default function OntologyPage() {
         next.add(key)
         return next
       })
+      showSaved('Saved ✓ Set aside for now.')
     }
+  }
+
+  function startNextBatch() {
+    setTodayBatch(null)
+    setBatchVersion((v) => v + 1)
   }
 
   return (
@@ -418,48 +474,61 @@ export default function OntologyPage() {
           <p style={{ color: '#f87171', marginBottom: '1.5rem', fontSize: '0.9rem' }}>{reviewError}</p>
         )}
 
-        {!loading && totalQuestions === 0 && (
-          <div
-            style={{
-              border: '1px solid rgba(134,239,172,0.3)',
-              background: 'rgba(34,197,94,0.08)',
-              borderRadius: '12px',
-              padding: '1.5rem',
-              marginBottom: '1.5rem',
-              color: '#86efac',
-            }}
-          >
-            <p style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600 }}>You&apos;re caught up.</p>
-            <p style={{ margin: '0.45rem 0 0', fontSize: '0.9rem', color: 'rgba(255,255,255,0.55)' }}>
-              Nothing to look at right now.
-            </p>
-          </div>
+        {!loading && batchSize > 0 && (
+          <ProgressStrip
+            answered={answeredInBatch}
+            batchSize={batchSize}
+            lifetimeAnswered={lifetimeAnswered}
+            remainingAfterBatch={remainingAfterBatch}
+          />
         )}
 
-        {!loading && pendingRules.map((axiom, i) => (
+        {!loading && savedMessage && <SavedToast text={savedMessage} />}
+
+        {!loading && totalPendingAll === 0 && lifetimeAnswered === 0 && (
+          <CaughtUpPanel headline="Nothing to answer yet." sub="Write a few entries first, then come back." />
+        )}
+
+        {!loading && totalPendingAll === 0 && lifetimeAnswered > 0 && (
+          <CaughtUpPanel
+            headline={`You've answered ${lifetimeAnswered}. The AI knows you better.`}
+            sub="No questions left right now."
+          />
+        )}
+
+        {!loading && !batchDone && visibleRules.map((axiom, i) => (
           <RuleGuessCard
             key={axiom.id}
             axiom={axiom}
-            step={i + 1}
-            total={totalQuestions}
+            step={answeredInBatch + i + 1}
+            total={batchSize}
             disabled={isReviewing}
-            onAnswer={(answer) => handleRuleAnswer(axiom.id, answer)}
+            onAnswer={(answer) => handleRuleAnswer(axiom, answer)}
           />
         ))}
 
-        {!loading && pendingSplits.map(({ entry, claimIndex }, i) => {
+        {!loading && !batchDone && visibleSplits.map(({ entry, claimIndex }, i) => {
           const claim = entry.split.claims[claimIndex]
           return (
             <SplitPieceCard
               key={`${entry.id}-${claimIndex}`}
               entry={entry}
               claim={claim}
-              step={pendingRules.length + i + 1}
-              total={totalQuestions}
+              step={answeredInBatch + visibleRules.length + i + 1}
+              total={batchSize}
               onAnswer={(answer) => handleSplitAnswer(entry.id, claimIndex, answer)}
             />
           )
         })}
+
+        {!loading && batchDone && (
+          <BatchDonePanel
+            batchSize={batchSize}
+            lifetimeAnswered={lifetimeAnswered}
+            remaining={remainingAfterBatch}
+            onNext={startNextBatch}
+          />
+        )}
 
       </div>
     </div>
@@ -1043,6 +1112,175 @@ function SplitPieceCard({
         <li>○ Short — only a few words</li>
         <li>○ Skip — you&apos;re not sure</li>
       </ul>
+    </div>
+  )
+}
+
+function ProgressStrip({
+  answered,
+  batchSize,
+  lifetimeAnswered,
+  remainingAfterBatch,
+}: {
+  answered: number
+  batchSize: number
+  lifetimeAnswered: number
+  remainingAfterBatch: number
+}) {
+  const slots = Array.from({ length: batchSize }, (_, i) => i < answered)
+  const justFilled = answered > 0 ? answered - 1 : -1
+
+  return (
+    <div
+      style={{
+        background: 'rgba(134,239,172,0.06)',
+        border: '1px solid rgba(134,239,172,0.25)',
+        borderRadius: '12px',
+        padding: '1.1rem 1.25rem',
+        marginBottom: '1.25rem',
+      }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '1rem', flexWrap: 'wrap' }}>
+        <p style={{ margin: 0, fontSize: '1.15rem', fontWeight: 700, color: '#bbf7d0' }}>
+          {answered} of {batchSize} this round
+        </p>
+        <p style={{ margin: 0, fontSize: '0.85rem', color: 'rgba(255,255,255,0.55)' }}>
+          {lifetimeAnswered} answered total
+        </p>
+      </div>
+
+      <div style={{ display: 'flex', gap: '4px', marginTop: '0.85rem', height: '14px' }}>
+        {slots.map((filled, i) => (
+          <div
+            key={i}
+            style={{
+              flex: 1,
+              borderRadius: '4px',
+              background: filled ? '#4ade80' : 'rgba(255,255,255,0.08)',
+              border: filled ? '1px solid rgba(134,239,172,0.5)' : '1px solid rgba(255,255,255,0.1)',
+              transform: i === justFilled ? 'scaleY(1.25)' : 'scaleY(1)',
+              transition: 'background 0.3s, transform 0.3s, border-color 0.3s',
+            }}
+          />
+        ))}
+      </div>
+
+      <p style={{ margin: '0.85rem 0 0', fontSize: '0.85rem', color: 'rgba(255,255,255,0.65)' }}>
+        Each answer helps your AI know you better.
+      </p>
+      {remainingAfterBatch > 0 && (
+        <p style={{ margin: '0.3rem 0 0', fontSize: '0.78rem', color: 'rgba(255,255,255,0.4)' }}>
+          {remainingAfterBatch} more after this round — no rush.
+        </p>
+      )}
+    </div>
+  )
+}
+
+function SavedToast({ text }: { text: string }) {
+  return (
+    <div
+      style={{
+        position: 'sticky',
+        top: '0.5rem',
+        zIndex: 50,
+        background: 'rgba(34,197,94,0.18)',
+        border: '1px solid rgba(134,239,172,0.55)',
+        color: '#bbf7d0',
+        borderRadius: '999px',
+        padding: '0.6rem 1rem',
+        fontSize: '0.88rem',
+        fontWeight: 600,
+        marginBottom: '1rem',
+        textAlign: 'center',
+        animation: 'savedToastIn 0.25s ease-out',
+        boxShadow: '0 6px 24px rgba(0,0,0,0.4)',
+      }}
+    >
+      <style>{`
+        @keyframes savedToastIn {
+          from { opacity: 0; transform: translateY(-6px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
+      {text}
+    </div>
+  )
+}
+
+function CaughtUpPanel({ headline, sub }: { headline: string; sub: string }) {
+  return (
+    <div
+      style={{
+        border: '1px solid rgba(134,239,172,0.3)',
+        background: 'rgba(34,197,94,0.08)',
+        borderRadius: '12px',
+        padding: '1.5rem',
+        marginBottom: '1.5rem',
+        color: '#86efac',
+      }}
+    >
+      <p style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600 }}>{headline}</p>
+      <p style={{ margin: '0.45rem 0 0', fontSize: '0.9rem', color: 'rgba(255,255,255,0.55)' }}>{sub}</p>
+    </div>
+  )
+}
+
+function BatchDonePanel({
+  batchSize,
+  lifetimeAnswered,
+  remaining,
+  onNext,
+}: {
+  batchSize: number
+  lifetimeAnswered: number
+  remaining: number
+  onNext: () => void
+}) {
+  return (
+    <div
+      style={{
+        background: 'linear-gradient(135deg, rgba(134,239,172,0.18), rgba(59,130,246,0.12))',
+        border: '1px solid rgba(134,239,172,0.5)',
+        borderRadius: '14px',
+        padding: '1.75rem',
+        marginBottom: '1.5rem',
+        textAlign: 'center',
+      }}
+    >
+      <p style={{ margin: 0, fontSize: '1.6rem', fontWeight: 700, color: '#bbf7d0' }}>
+        🎉 {batchSize} done.
+      </p>
+      <p style={{ margin: '0.75rem 0 0', fontSize: '1rem', color: 'rgba(255,255,255,0.85)' }}>
+        Congratulations on taking another step toward an AI that knows you.
+      </p>
+      <p style={{ margin: '0.85rem 0 0', fontSize: '0.88rem', color: 'rgba(255,255,255,0.55)' }}>
+        Total answered: {lifetimeAnswered}
+      </p>
+
+      {remaining > 0 ? (
+        <button
+          type="button"
+          onClick={onNext}
+          style={{
+            marginTop: '1.25rem',
+            background: '#22c55e',
+            color: '#052e16',
+            border: 'none',
+            borderRadius: '999px',
+            padding: '0.75rem 1.5rem',
+            fontSize: '0.95rem',
+            fontWeight: 700,
+            cursor: 'pointer',
+          }}
+        >
+          Show next 10
+        </button>
+      ) : (
+        <p style={{ margin: '1.1rem 0 0', fontSize: '0.9rem', color: 'rgba(255,255,255,0.7)' }}>
+          You&apos;re completely caught up. Nothing left to answer.
+        </p>
+      )}
     </div>
   )
 }

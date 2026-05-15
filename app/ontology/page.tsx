@@ -361,6 +361,24 @@ export default function OntologyPage() {
           Ontology status
         </h1>
 
+        <button
+          type="button"
+          onClick={() => router.push('/ontology/trace')}
+          style={{
+            border: '1px solid rgba(147,197,253,0.35)',
+            background: 'rgba(59,130,246,0.1)',
+            color: '#bfdbfe',
+            borderRadius: '999px',
+            padding: '0.55rem 0.85rem',
+            fontSize: '0.86rem',
+            fontWeight: 700,
+            cursor: 'pointer',
+            marginBottom: '1rem',
+          }}
+        >
+          View LLM vs ontology trace
+        </button>
+
         <div
           style={{
             marginBottom: '1.75rem',

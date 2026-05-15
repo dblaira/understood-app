@@ -274,8 +274,8 @@ function parseSplitClaimRule(claimText: string): {
 
 function relationForVerb(verb: string): OntologyRelationshipType {
   const normalized = verb.toLowerCase()
-  if (normalized === 'causes' || normalized === 'creates' || normalized === 'makes' || normalized === 'drives') return 'causes'
-  if (normalized === 'prevents') return 'prevents'
+  if (normalized === 'causes' || normalized === 'creates' || normalized === 'makes' || normalized === 'drives') return 'predicts'
+  if (normalized === 'prevents') return 'inhibits'
   if (normalized === 'reduces') return 'inhibits'
   if (normalized === 'helps' || normalized === 'improves') return 'supports'
   return 'predicts'

@@ -237,7 +237,7 @@ export default function OntologyPage() {
         }
       } catch (e) {
         if (!cancelled) {
-          setError(e instanceof Error ? e.message : 'Failed to load ontology')
+          setError(e instanceof Error ? e.message : 'Failed to load rules')
         }
       } finally {
         if (!cancelled) setLoading(false)
@@ -454,7 +454,7 @@ export default function OntologyPage() {
       const result = await createCandidateAxiomsFromSplitClaims(markedClaims)
       if (result.error) {
         setReviewError(result.error)
-        showSaved('Could not create rule candidates.')
+        showSaved('Could not create possible rules.')
         return
       }
 
@@ -467,7 +467,7 @@ export default function OntologyPage() {
 
       setTodayBatch(null)
       setBatchVersion((v) => v + 1)
-      showSaved(`Created ${result.created ?? 0} rule candidates. ${result.skipped ?? 0} skipped.`)
+      showSaved(`Created ${result.created ?? 0} possible rules. ${result.skipped ?? 0} skipped.`)
     } finally {
       setIsCreatingRuleCandidates(false)
     }
@@ -594,7 +594,7 @@ export default function OntologyPage() {
               {markedDraftCount} marked for rule creation
             </p>
             <p style={{ margin: '0 0 0.85rem', color: 'rgba(255,255,255,0.58)', fontSize: '0.84rem', lineHeight: 1.45 }}>
-              This turns your “Make it a rule” answers into candidate rules. They still need review before they can govern AI answers.
+              This turns your “Make it a rule” answers into possible rules. You still choose which ones the app can use.
             </p>
             <button
               type="button"
@@ -611,18 +611,18 @@ export default function OntologyPage() {
                 cursor: isCreatingRuleCandidates ? 'not-allowed' : 'pointer',
               }}
             >
-              {isCreatingRuleCandidates ? 'Creating...' : 'Create rule candidates'}
+              {isCreatingRuleCandidates ? 'Creating...' : 'Create possible rules'}
             </button>
           </div>
         )}
 
         {!loading && totalPendingAll === 0 && lifetimeAnswered === 0 && (
           <CaughtUpPanel
-            headline="No ontology review items on this browser."
-            sub="This page is the intake queue, not the final test. New entries create claims here; your answers turn claims into candidate rules; confirmed rules then guide AI answers."
+            headline="No review items on this browser."
+            sub="This page is the sorting line, not the final test. New entries create small ideas here; your answers turn some of them into rules the app can use."
             notes={[
               'If you answered on lab.understood.app, open that same domain. Vercel preview URLs cannot see browser-saved review answers.',
-              'If there are no review cards here, test the ontology by asking questions in the app chat or use the trace view for side-by-side comparison.',
+              'If there are no review cards here, test the rules by asking questions in the app chat or use the trace view for side-by-side comparison.',
             ]}
           />
         )}
@@ -630,10 +630,10 @@ export default function OntologyPage() {
         {!loading && totalPendingAll === 0 && lifetimeAnswered > 0 && (
           <CaughtUpPanel
             headline={`You've answered ${lifetimeAnswered}. The review queue is empty.`}
-            sub="Next, test whether confirmed rules improve answers. Ask real questions in chat, then compare whether the response uses your rules, notes, and graph instead of generic advice."
+            sub="Next, test whether your saved rules improve answers. Ask real questions in chat, then check whether the answer uses your rules, notes, and links instead of generic advice."
             notes={[
-              'If you marked items as rules, use “Create rule candidates” on the same browser/domain where you answered.',
-              'Done looks like better retrieval, better constraints, and visible reasons for why an answer used your data.',
+              'If you marked items as rules, use “Create possible rules” on the same browser/domain where you answered.',
+              'Done looks like better memory, clearer limits, and visible reasons for why an answer used your data.',
             ]}
           />
         )}
@@ -715,9 +715,9 @@ function buildOntologyStatusCopy({
   if (!semanticValid) {
     return {
       label: 'Needs attention',
-      headline: 'The ontology data needs a semantic check before you trust it.',
-      meaning: 'The page loaded, but the export/validation layer found something that should be reviewed.',
-      nextStep: 'Fix the semantic check before relying on ontology-guided answers.',
+      headline: 'The rule data needs a check before you trust it.',
+      meaning: 'The page loaded, but one check found something that should be reviewed.',
+      nextStep: 'Fix the check before relying on rule-guided answers.',
       color: '#fde68a',
       border: 'rgba(253,230,138,0.38)',
       background: 'rgba(253,230,138,0.07)',
@@ -727,10 +727,10 @@ function buildOntologyStatusCopy({
   if (trustedAxiomCount > 0) {
     return {
       label: 'Working',
-      headline: 'Confirmed rules are available to guide AI answers.',
-      meaning: `${trustedAxiomCount} trusted ${trustedAxiomCount === 1 ? 'rule is' : 'rules are'} eligible for prompts, graph export, and semantic checks.`,
+      headline: 'Saved rules are ready to guide AI answers.',
+      meaning: `${trustedAxiomCount} trusted ${trustedAxiomCount === 1 ? 'rule is' : 'rules are'} ready to help answer your questions.`,
       nextStep: pendingCandidateCount > 0
-        ? 'Review the candidate rules below.'
+        ? 'Review the possible rules below.'
         : 'Ask the app a question, then check whether the answer cites the right memory.',
       color: '#86efac',
       border: 'rgba(134,239,172,0.38)',
@@ -741,8 +741,8 @@ function buildOntologyStatusCopy({
   if (provisionalRuleCount > 0) {
     return {
       label: 'Testable',
-      headline: 'A complete provisional ontology is active for testing.',
-      meaning: `${provisionalRuleCount} guessed rules can shape answers as hypotheses. They are not final truth, and confirmed rules will override them.`,
+      headline: 'A complete test set is active.',
+      meaning: `${provisionalRuleCount} guessed rules can shape answers while you test. They are not final truth, and your saved rules will override them.`,
       nextStep: pendingCandidateCount > 0
         ? 'Test the answers, then confirm only the rules that actually hold up.'
         : draftClaimCount > 0
@@ -756,10 +756,10 @@ function buildOntologyStatusCopy({
 
   if (pendingCandidateCount > 0) {
     return {
-      label: 'Not governing yet',
-      headline: 'Candidate rules exist, but none are trusted yet.',
-      meaning: 'AI can show these as review material, but they cannot control answers until you confirm them.',
-      nextStep: 'Confirm useful candidates or reject weak ones.',
+      label: 'Not used yet',
+      headline: 'Possible rules exist, but none are trusted yet.',
+      meaning: 'The app can show these for review, but it cannot use them in answers until you choose Yes.',
+      nextStep: 'Keep useful rules or drop weak ones.',
       color: '#fde68a',
       border: 'rgba(253,230,138,0.38)',
       background: 'rgba(253,230,138,0.07)',
@@ -769,9 +769,9 @@ function buildOntologyStatusCopy({
   if (draftClaimCount > 0) {
     return {
       label: 'Draft only',
-      headline: 'The ontology has draft claims, but no trusted rules yet.',
-      meaning: `${draftClaimCount} draft ${draftClaimCount === 1 ? 'claim has' : 'claims have'} been found. ${markedDraftCount} ${markedDraftCount === 1 ? 'is' : 'are'} marked for candidate review. Drafts are not allowed to govern AI answers.`,
-      nextStep: 'Turn one useful draft claim into a candidate rule, then confirm it only if you trust it.',
+      headline: 'The app found draft ideas, but no trusted rules yet.',
+      meaning: `${draftClaimCount} draft ${draftClaimCount === 1 ? 'idea has' : 'ideas have'} been found. ${markedDraftCount} ${markedDraftCount === 1 ? 'is' : 'are'} marked as possible rules. Drafts are not used in answers.`,
+      nextStep: 'Turn one useful draft idea into a possible rule, then keep it only if you trust it.',
       color: '#fbbf24',
       border: 'rgba(251,191,36,0.38)',
       background: 'rgba(251,191,36,0.07)',
@@ -780,9 +780,9 @@ function buildOntologyStatusCopy({
 
   return {
     label: 'Empty',
-    headline: 'No trusted ontology rules exist yet.',
-    meaning: 'Nothing is broken. The app needs reviewed patterns before the ontology can guide answers.',
-    nextStep: 'Capture more entries or Connections, then create one candidate rule from a real pattern.',
+    headline: 'No trusted rules exist yet.',
+    meaning: 'Nothing is broken. The app needs reviewed patterns before it can guide answers.',
+    nextStep: 'Capture more entries or Connections, then create one possible rule from a real pattern.',
     color: 'rgba(255,255,255,0.62)',
     border: 'rgba(255,255,255,0.16)',
     background: 'rgba(255,255,255,0.04)',
@@ -873,7 +873,7 @@ function formatClaimDecision(decision: ClaimDecision, lowSignalDecision: LowSign
       : decision === 'keep_note'
         ? 'Keep claim as note'
         : decision === 'candidate_review'
-          ? 'Marked for candidate review'
+          ? 'Marked as possible rule'
           : 'Ignored claim'
 
   return lowSignalDecision === 'low_signal' ? `${base} · low-signal` : base
@@ -928,7 +928,7 @@ function RetirementReadinessNotice({ readiness }: { readiness: AxiomRetirementRe
     >
       <strong>Review for retirement:</strong> {readiness.reason}
       <span style={{ display: 'block', color: 'rgba(255,255,255,0.45)', marginTop: '0.25rem' }}>
-        Signals: {readiness.signals.map((signal) => signal.replace(/_/g, ' ')).join(', ')}. Status stays confirmed until you retire it.
+        Signs: {readiness.signals.map((signal) => signal.replace(/_/g, ' ')).join(', ')}. This rule stays saved until you remove it.
       </span>
     </div>
   )

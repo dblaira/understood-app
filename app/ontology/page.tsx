@@ -617,13 +617,24 @@ export default function OntologyPage() {
         )}
 
         {!loading && totalPendingAll === 0 && lifetimeAnswered === 0 && (
-          <CaughtUpPanel headline="Nothing to answer yet." sub="Write a few entries first, then come back." />
+          <CaughtUpPanel
+            headline="No ontology review items on this browser."
+            sub="This page is the intake queue, not the final test. New entries create claims here; your answers turn claims into candidate rules; confirmed rules then guide AI answers."
+            notes={[
+              'If you answered on lab.understood.app, open that same domain. Vercel preview URLs cannot see browser-saved review answers.',
+              'If there are no review cards here, test the ontology by asking questions in the app chat or use the trace view for side-by-side comparison.',
+            ]}
+          />
         )}
 
         {!loading && totalPendingAll === 0 && lifetimeAnswered > 0 && (
           <CaughtUpPanel
-            headline={`You've answered ${lifetimeAnswered}. The AI knows you better.`}
-            sub="No questions left right now."
+            headline={`You've answered ${lifetimeAnswered}. The review queue is empty.`}
+            sub="Next, test whether confirmed rules improve answers. Ask real questions in chat, then compare whether the response uses your rules, notes, and graph instead of generic advice."
+            notes={[
+              'If you marked items as rules, use “Create rule candidates” on the same browser/domain where you answered.',
+              'Done looks like better retrieval, better constraints, and visible reasons for why an answer used your data.',
+            ]}
           />
         )}
 
@@ -1366,7 +1377,15 @@ function SavedToast({ text }: { text: string }) {
   )
 }
 
-function CaughtUpPanel({ headline, sub }: { headline: string; sub: string }) {
+function CaughtUpPanel({
+  headline,
+  sub,
+  notes = [],
+}: {
+  headline: string
+  sub: string
+  notes?: string[]
+}) {
   return (
     <div
       style={{
@@ -1380,6 +1399,45 @@ function CaughtUpPanel({ headline, sub }: { headline: string; sub: string }) {
     >
       <p style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600 }}>{headline}</p>
       <p style={{ margin: '0.45rem 0 0', fontSize: '0.9rem', color: 'rgba(255,255,255,0.55)' }}>{sub}</p>
+      {notes.length > 0 && (
+        <ul style={{ margin: '1rem 0 0', paddingLeft: '1.1rem', color: 'rgba(255,255,255,0.62)', fontSize: '0.86rem', lineHeight: 1.45 }}>
+          {notes.map((note) => (
+            <li key={note} style={{ marginBottom: '0.4rem' }}>{note}</li>
+          ))}
+        </ul>
+      )}
+      <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap', marginTop: '1.1rem' }}>
+        <a
+          href="/ontology/trace"
+          style={{
+            border: '1px solid rgba(147,197,253,0.36)',
+            background: 'rgba(59,130,246,0.12)',
+            color: '#bfdbfe',
+            borderRadius: '999px',
+            padding: '0.5rem 0.78rem',
+            fontSize: '0.8rem',
+            fontWeight: 700,
+            textDecoration: 'none',
+          }}
+        >
+          Open trace view
+        </a>
+        <a
+          href="/"
+          style={{
+            border: '1px solid rgba(134,239,172,0.36)',
+            background: 'rgba(34,197,94,0.12)',
+            color: '#bbf7d0',
+            borderRadius: '999px',
+            padding: '0.5rem 0.78rem',
+            fontSize: '0.8rem',
+            fontWeight: 700,
+            textDecoration: 'none',
+          }}
+        >
+          Test in app
+        </a>
+      </div>
     </div>
   )
 }

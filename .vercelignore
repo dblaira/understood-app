@@ -1,0 +1,16 @@
+.git
+.next
+.vercel
+node_modules
+
+Feb_Metadata
+
+coverage
+dist
+build
+out
+playwright-report
+test-results
+*.log
+*.tsbuildinfo
+.DS_Store

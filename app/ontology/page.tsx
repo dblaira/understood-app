@@ -7,9 +7,12 @@ import {
   createCandidateAxiomsFromSplitClaims,
   keepSplitClaimAsNote,
   removeUnsafePlaceholderRules,
+  proposeBeliefDumpRules,
+  saveTrustedBeliefRules,
   updateOntologyAxiomStatus,
 } from '@/app/actions/ontology'
 import { evaluateAxiomRetirementReadiness, type AxiomRetirementReadiness } from '@/lib/ontology/axiom-review'
+import type { BeliefDumpRuleDraft } from '@/lib/ontology/belief-dump'
 import { splitEntryIntoClaims, type ClaimSplitResult } from '@/lib/ontology/claim-splitting'
 import { summarizeAxiomEvidence, type AxiomEvidenceSummary } from '@/lib/ontology/evidence'
 import { buildOntologySemanticReport } from '@/lib/ontology/semantic-report'
@@ -161,6 +164,11 @@ export default function OntologyPage() {
   const [claimTexts, setClaimTexts] = useState<Record<string, string>>({})
   const [lowSignalClaims, setLowSignalClaims] = useState<Record<string, LowSignalDecision>>({})
   const [splitTriageLoaded, setSplitTriageLoaded] = useState(false)
+  const [beliefDumpText, setBeliefDumpText] = useState('')
+  const [beliefRuleDrafts, setBeliefRuleDrafts] = useState<BeliefDumpRuleDraft[]>([])
+  const [selectedBeliefRuleIds, setSelectedBeliefRuleIds] = useState<Record<string, boolean>>({})
+  const [beliefRuleMessage, setBeliefRuleMessage] = useState<string | null>(null)
+  const [beliefRuleError, setBeliefRuleError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [reviewError, setReviewError] = useState<string | null>(null)
@@ -172,6 +180,8 @@ export default function OntologyPage() {
   const [isCreatingRuleCandidates, setIsCreatingRuleCandidates] = useState(false)
   const [isRemovingUnsafeRules, setIsRemovingUnsafeRules] = useState(false)
   const [isReviewing, startReviewTransition] = useTransition()
+  const [isBuildingBeliefRules, startBeliefRuleTransition] = useTransition()
+  const [isSavingBeliefRules, startBeliefSaveTransition] = useTransition()
   const reviewQueue = buildOntologyReviewQueue(axioms)
   const semanticReport = useMemo(() => buildOntologySemanticReport(axioms, {
     appVersion: process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA ?? 'local',
@@ -298,6 +308,73 @@ export default function OntologyPage() {
       )
     )
     return true
+  }
+
+  function handleCreateBeliefRules() {
+    setBeliefRuleError(null)
+    setBeliefRuleMessage(null)
+    startBeliefRuleTransition(async () => {
+      const result = await proposeBeliefDumpRules(beliefDumpText)
+      if (result.error) {
+        setBeliefRuleError(result.error)
+        return
+      }
+
+      const drafts = result.data ?? []
+      setBeliefRuleDrafts(drafts)
+      setSelectedBeliefRuleIds(Object.fromEntries(drafts.map((rule) => [rule.id, true])))
+      setBeliefRuleMessage(
+        drafts.length
+          ? result.warning ?? `Created ${drafts.length} possible rules. Edit anything weird, then save the checked ones.`
+          : 'No clean rules came out of that dump yet. Try using one belief or preference per line.'
+      )
+    })
+  }
+
+  function handleBeliefRuleChange(
+    ruleId: string,
+    field: 'name' | 'antecedent' | 'consequent' | 'sourceText' | 'rationale',
+    value: string
+  ) {
+    setBeliefRuleDrafts((current) =>
+      current.map((rule) => rule.id === ruleId ? { ...rule, [field]: value } : rule)
+    )
+  }
+
+  function handleBeliefRuleSelected(ruleId: string, selected: boolean) {
+    setSelectedBeliefRuleIds((current) => ({
+      ...current,
+      [ruleId]: selected,
+    }))
+  }
+
+  function handleSaveTrustedBeliefRules() {
+    setBeliefRuleError(null)
+    setBeliefRuleMessage(null)
+    const selectedRules = beliefRuleDrafts.filter((rule) => selectedBeliefRuleIds[rule.id])
+
+    startBeliefSaveTransition(async () => {
+      const result = await saveTrustedBeliefRules(selectedRules)
+      if (result.error) {
+        setBeliefRuleError(result.error)
+        return
+      }
+
+      const createdRows = (result.data as AxiomRow[] | null | undefined) ?? []
+      if (createdRows.length) {
+        setAxioms((current) => [...createdRows.map(mapAxiom), ...current])
+      }
+
+      const created = result.created ?? createdRows.length
+      const skipped = result.skipped ?? 0
+      setBeliefRuleMessage(
+        created > 0
+          ? `Saved ${created} trusted ${created === 1 ? 'rule' : 'rules'}${skipped ? `; skipped ${skipped} duplicate${skipped === 1 ? '' : 's'}.` : '.'}`
+          : skipped
+            ? `No new rules saved; ${skipped} selected ${skipped === 1 ? 'rule was' : 'rules were'} already present.`
+            : 'No new rules saved.'
+      )
+    })
   }
 
   function handleClaimDecision(entryId: string, claimIndex: number, decision: ClaimDecision) {
@@ -644,6 +721,151 @@ export default function OntologyPage() {
           />
         )}
 
+        {!loading && (
+          <section
+            style={{
+              background: 'rgba(147,197,253,0.06)',
+              border: '1px solid rgba(147,197,253,0.2)',
+              borderRadius: '12px',
+              padding: '1.5rem',
+              marginBottom: '1.25rem',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+              <div>
+                <h2 style={{ fontSize: '1.25rem', margin: '0 0 0.35rem', fontWeight: 700 }}>Belief dump → trusted rules</h2>
+                <p style={{ color: 'rgba(255,255,255,0.54)', fontSize: '0.84rem', margin: 0, lineHeight: 1.45 }}>
+                  Paste beliefs, preferences, boundaries, or what good advice looks like. The app drafts the When/Then rules; you only correct the list.
+                </p>
+              </div>
+              <div style={{ display: 'flex', gap: '0.45rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                <StagePill label={`${beliefDumpText.trim() ? '1' : '0'} dump`} tone={beliefDumpText.trim() ? 'active' : 'quiet'} />
+                <StagePill label={`${beliefRuleDrafts.length} possible`} tone={beliefRuleDrafts.length ? 'active' : 'quiet'} />
+                <StagePill label={`${trustedAxiomCount} trusted`} tone="trusted" />
+              </div>
+            </div>
+
+            <textarea
+              value={beliefDumpText}
+              onChange={(event) => setBeliefDumpText(event.target.value)}
+              rows={7}
+              placeholder={`I need visual contrast to understand abstract ideas.
+I hate vague advice.
+If a task has too many steps, I stall.
+I trust examples more than definitions.
+I work better when I can correct a draft instead of starting from blank.`}
+              style={{
+                width: '100%',
+                marginTop: '1rem',
+                background: 'rgba(0,0,0,0.2)',
+                border: '1px solid rgba(255,255,255,0.14)',
+                borderRadius: '10px',
+                color: 'rgba(255,255,255,0.86)',
+                font: 'inherit',
+                fontSize: '0.9rem',
+                lineHeight: 1.5,
+                padding: '0.85rem',
+                resize: 'vertical',
+                outline: 'none',
+              }}
+            />
+
+            <div style={{ marginTop: '0.9rem', display: 'flex', gap: '0.65rem', alignItems: 'center', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                disabled={isBuildingBeliefRules || beliefDumpText.trim().length < 12}
+                onClick={handleCreateBeliefRules}
+                style={{
+                  border: '1px solid rgba(147,197,253,0.45)',
+                  background: 'rgba(147,197,253,0.14)',
+                  color: '#bfdbfe',
+                  borderRadius: '999px',
+                  padding: '0.55rem 0.9rem',
+                  fontSize: '0.8rem',
+                  fontWeight: 700,
+                  cursor: isBuildingBeliefRules || beliefDumpText.trim().length < 12 ? 'not-allowed' : 'pointer',
+                }}
+              >
+                {isBuildingBeliefRules ? 'Creating rules...' : 'Create possible rules'}
+              </button>
+              {beliefRuleDrafts.length > 0 && (
+                <button
+                  type="button"
+                  disabled={isSavingBeliefRules || beliefRuleDrafts.every((rule) => !selectedBeliefRuleIds[rule.id])}
+                  onClick={handleSaveTrustedBeliefRules}
+                  style={{
+                    border: '1px solid rgba(74,222,128,0.5)',
+                    background: 'rgba(74,222,128,0.14)',
+                    color: '#86efac',
+                    borderRadius: '999px',
+                    padding: '0.55rem 0.9rem',
+                    fontSize: '0.8rem',
+                    fontWeight: 700,
+                    cursor: isSavingBeliefRules || beliefRuleDrafts.every((rule) => !selectedBeliefRuleIds[rule.id]) ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  {isSavingBeliefRules ? 'Saving...' : 'Save checked as trusted'}
+                </button>
+              )}
+              {beliefRuleMessage && (
+                <span style={{ color: 'rgba(255,255,255,0.52)', fontSize: '0.78rem', lineHeight: 1.4 }}>
+                  {beliefRuleMessage}
+                </span>
+              )}
+              {beliefRuleError && (
+                <span style={{ color: '#fca5a5', fontSize: '0.78rem', lineHeight: 1.4 }}>
+                  {beliefRuleError}
+                </span>
+              )}
+            </div>
+
+            {beliefRuleDrafts.length > 0 && (
+              <ul style={{ listStyle: 'none', margin: '1rem 0 0', padding: 0, display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                {beliefRuleDrafts.map((rule) => (
+                  <li
+                    key={rule.id}
+                    style={{
+                      border: selectedBeliefRuleIds[rule.id] ? '1px solid rgba(74,222,128,0.28)' : '1px solid rgba(255,255,255,0.1)',
+                      borderRadius: '10px',
+                      padding: '1rem',
+                      background: selectedBeliefRuleIds[rule.id] ? 'rgba(74,222,128,0.06)' : 'rgba(255,255,255,0.03)',
+                    }}
+                  >
+                    <label style={{ display: 'flex', gap: '0.55rem', alignItems: 'center', color: 'rgba(255,255,255,0.78)', fontSize: '0.86rem' }}>
+                      <input
+                        type="checkbox"
+                        checked={selectedBeliefRuleIds[rule.id] ?? false}
+                        onChange={(event) => handleBeliefRuleSelected(rule.id, event.target.checked)}
+                      />
+                      Use this rule
+                    </label>
+                    <div style={{ marginTop: '0.75rem', display: 'grid', gap: '0.65rem' }}>
+                      <RuleDraftField
+                        label="Name"
+                        value={rule.name}
+                        onChange={(value) => handleBeliefRuleChange(rule.id, 'name', value)}
+                      />
+                      <RuleDraftField
+                        label="When"
+                        value={rule.antecedent}
+                        onChange={(value) => handleBeliefRuleChange(rule.id, 'antecedent', value)}
+                      />
+                      <RuleDraftField
+                        label="Then"
+                        value={rule.consequent}
+                        onChange={(value) => handleBeliefRuleChange(rule.id, 'consequent', value)}
+                      />
+                    </div>
+                    <p style={{ color: 'rgba(255,255,255,0.34)', fontSize: '0.72rem', lineHeight: 1.45, margin: '0.7rem 0 0' }}>
+                      From: {rule.sourceText}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        )}
+
         {!loading && markedDraftCount > 0 && (
           <div
             style={{
@@ -941,6 +1163,58 @@ function formatClaimDecision(decision: ClaimDecision, lowSignalDecision: LowSign
           : 'Ignored claim'
 
   return lowSignalDecision === 'low_signal' ? `${base} · low-signal` : base
+}
+
+function StagePill({ label, tone }: { label: string; tone: 'quiet' | 'active' | 'trusted' }) {
+  const color = tone === 'trusted' ? '#86efac' : tone === 'active' ? '#bfdbfe' : 'rgba(255,255,255,0.42)'
+  return (
+    <span
+      style={{
+        border: `1px solid ${tone === 'quiet' ? 'rgba(255,255,255,0.12)' : `${color}55`}`,
+        background: tone === 'quiet' ? 'rgba(255,255,255,0.03)' : `${color}16`,
+        color,
+        borderRadius: '999px',
+        padding: '0.28rem 0.55rem',
+        fontSize: '0.72rem',
+        whiteSpace: 'nowrap',
+      }}
+    >
+      {label}
+    </span>
+  )
+}
+
+function RuleDraftField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string
+  value: string
+  onChange: (value: string) => void
+}) {
+  return (
+    <label style={{ display: 'grid', gridTemplateColumns: '4.2rem minmax(0, 1fr)', gap: '0.6rem', alignItems: 'center' }}>
+      <span style={{ color: 'rgba(255,255,255,0.42)', fontSize: '0.76rem' }}>{label}</span>
+      <input
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        style={{
+          width: '100%',
+          minWidth: 0,
+          background: 'rgba(0,0,0,0.18)',
+          border: '1px solid rgba(255,255,255,0.12)',
+          borderRadius: '8px',
+          color: 'rgba(255,255,255,0.84)',
+          font: 'inherit',
+          fontSize: '0.84rem',
+          lineHeight: 1.4,
+          padding: '0.48rem 0.6rem',
+          outline: 'none',
+        }}
+      />
+    </label>
+  )
 }
 
 function ClaimDecisionButton({

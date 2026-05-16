@@ -338,7 +338,10 @@ export default function OntologyPage() {
     })
   }
 
-  const pendingRules = reviewQueue.pendingCandidates.filter((axiom) => !skippedRuleIds.has(axiom.id))
+  const pendingRules = reviewQueue.pendingCandidates.filter((axiom) => (
+    !skippedRuleIds.has(axiom.id) &&
+    !isUnsafePlaceholderRule(axiom)
+  ))
   const pendingSplits: { entry: SplitReviewEntry; claimIndex: number }[] = []
   for (const entry of splitEntries) {
     for (let i = 0; i < entry.split.claims.length; i++) {
@@ -477,6 +480,15 @@ export default function OntologyPage() {
         ])
       }
 
+      setClaimDecisions((current) => {
+        const next = { ...current }
+        for (const [key, decision] of Object.entries(next)) {
+          if (decision === 'candidate_review') {
+            next[key] = 'keep_note'
+          }
+        }
+        return next
+      })
       setTodayBatch(null)
       setBatchVersion((v) => v + 1)
       showSaved(`Created ${result.created ?? 0} possible rules. ${result.skipped ?? 0} skipped.`)
@@ -1537,7 +1549,7 @@ function UnsafeRulesPanel({
         {count} {count === 1 ? 'idea needs' : 'ideas need'} cleanup
       </p>
       <p style={{ margin: '0.45rem 0 0', color: 'rgba(255,255,255,0.62)', fontSize: '0.88rem', lineHeight: 1.45 }}>
-        These are ideas the app could not turn into real When/Then rules. {trustedCount > 0 ? `${trustedCount} may already be saved.` : 'None are saved yet.'}
+        These are ideas the app could not turn into real When/Then rules. {trustedCount > 0 ? `${trustedCount} may already be trusted.` : 'None are trusted yet.'}
       </p>
       <button
         type="button"

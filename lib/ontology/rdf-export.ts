@@ -1,5 +1,6 @@
 import type { OntologyAxiomScope, OntologyAxiomStatus, OntologyRelationshipType } from '@/types/ontology'
 import { getRelationSemanticPolicy } from '@/lib/ontology/mid-level-reference'
+import { isUnsafePlaceholderRule } from '@/lib/ontology/rule-quality'
 
 const BASE_IRI = 'https://understood.app/ontology'
 export const ONTOLOGY_VOCAB_VERSION = 'understood-ontology-v1'
@@ -28,7 +29,7 @@ export function exportAxiomsToTurtle(
   metadata: RdfExportMetadata = {}
 ): string {
   const confirmedPersonalAxioms = axioms.filter((axiom) => {
-    return axiom.status === 'confirmed' && axiom.scope === 'personal'
+    return axiom.status === 'confirmed' && axiom.scope === 'personal' && !isUnsafePlaceholderRule(axiom)
   })
 
   const sections = [

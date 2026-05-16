@@ -62,6 +62,12 @@ import {
   MID_LEVEL_ONTOLOGY_PROFILES,
   RELATION_SEMANTIC_POLICIES,
 } from '../lib/ontology/mid-level-reference'
+import {
+  buildFallbackBeliefDumpRules,
+  parseBeliefDumpRulesFromJson,
+  sanitizeBeliefDumpRuleDrafts,
+} from '../lib/ontology/belief-dump'
+import { getRuleSafetyIssue } from '../lib/ontology/rule-quality'
 
 describe('standard ontology vocabulary', () => {
   it('keeps neutral product vocabulary separate from Adam example axioms', () => {
@@ -136,6 +142,14 @@ describe('ontology prompt section', () => {
         status: 'confirmed',
         scope: 'personal',
       },
+      {
+        antecedent: 'Adam treats this as a reusable pattern: Create a template for the Adam Pattern',
+        consequent: 'future reasoning should consider this pattern only after human confirmation',
+        confidence: 0.9,
+        status: 'confirmed',
+        scope: 'personal',
+        provenance: { parser: 'claim_as_pattern', claimText: 'Create a template for the Adam Pattern' },
+      },
     ])
 
     assert.match(section, /High Learning/)
@@ -145,6 +159,58 @@ describe('ontology prompt section', () => {
     assert.doesNotMatch(section, /Starter Hypothesis Pattern/)
     assert.doesNotMatch(section, /Low Confidence Pattern/)
     assert.doesNotMatch(section, /Malformed rows/)
+    assert.doesNotMatch(section, /Adam Pattern/)
+  })
+
+  it('flags placeholder ideas that need rewrite before they can be trusted rules', () => {
+    const issue = getRuleSafetyIssue({
+      antecedent: 'Adam treats this as a reusable pattern: Create a template for the Adam Pattern',
+      consequent: 'future reasoning should consider this pattern only after human confirmation',
+      provenance: { parser: 'claim_as_pattern', claimText: 'Create a template for the Adam Pattern' },
+    })
+
+    assert.equal(issue?.kind, 'needs_rewrite')
+    assert.equal(issue?.originalText, 'Create a template for the Adam Pattern')
+  })
+})
+
+describe('belief dump rule builder', () => {
+  it('turns plain belief lines into editable possible rules', () => {
+    const rules = buildFallbackBeliefDumpRules(`
+      I need visual contrast to understand abstract ideas.
+      I hate vague advice.
+      I trust examples more than definitions.
+    `)
+
+    assert.equal(rules.length, 3)
+    assert.equal(rules[0].antecedent, 'the user is trying to understand abstract ideas')
+    assert.equal(rules[0].consequent, 'provide visual contrast')
+    assert.equal(rules[1].consequent, 'avoid vague advice')
+    assert.equal(rules[2].consequent, 'show examples before definitions')
+  })
+
+  it('parses and deduplicates AI JSON rule drafts', () => {
+    const rules = parseBeliefDumpRulesFromJson(JSON.stringify({
+      rules: [
+        {
+          sourceText: 'If a task has too many steps, I stall.',
+          name: 'Too many steps',
+          antecedent: 'a task has too many steps',
+          consequent: 'give one next action',
+          rationale: 'The user stalls when the task is too large.',
+        },
+        {
+          sourceText: 'If a task has too many steps, I stall.',
+          name: 'Duplicate',
+          antecedent: 'a task has too many steps',
+          consequent: 'give one next action',
+          rationale: 'Same rule.',
+        },
+      ],
+    }))
+
+    assert.equal(rules.length, 2)
+    assert.equal(sanitizeBeliefDumpRuleDrafts(rules).length, 1)
   })
 })
 

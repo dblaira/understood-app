@@ -4,6 +4,8 @@ import { Extraction, ExtractionWithEntryDate } from '@/types/extraction'
 import { ExtractionsReview } from '@/components/extractions-review'
 import { aggregateExtractions, aggregateByOntology } from '@/lib/extractions/aggregate'
 
+export const dynamic = 'force-dynamic'
+
 interface BatchInfo {
   batch_id: string
   created_at: string

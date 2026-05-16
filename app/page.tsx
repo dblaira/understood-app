@@ -4,6 +4,8 @@ import { JournalPageClient } from '@/components/journal-page-client'
 import { Entry, WeeklyTheme } from '@/types'
 import { getCurrentWeeklyTheme, getLatestEntryPerCategory, getLatestEntries, getPinnedEntries } from '@/app/actions/entries'
 
+export const dynamic = 'force-dynamic'
+
 async function getEntries(userId: string): Promise<Entry[]> {
   const supabase = await createClient()
   const { data, error } = await supabase

@@ -3,6 +3,8 @@ import { redirect } from 'next/navigation'
 import { Extraction } from '@/types/extraction'
 import { CorrelationsView } from '@/components/correlations-view'
 
+export const dynamic = 'force-dynamic'
+
 async function fetchAllExtractions(supabase: Awaited<ReturnType<typeof createClient>>, userId: string): Promise<Extraction[]> {
   const all: Extraction[] = []
   let offset = 0

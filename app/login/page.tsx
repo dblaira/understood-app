@@ -2,6 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { AuthForm } from '@/components/auth-form'
 
+export const dynamic = 'force-dynamic'
+
 export default async function LoginPage() {
   const supabase = await createClient()
   const {
@@ -15,4 +17,3 @@ export default async function LoginPage() {
 
   return <AuthForm />
 }
-

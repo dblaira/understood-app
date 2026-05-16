@@ -4,6 +4,8 @@ import { OntologyReview } from '@/components/ontology-review'
 import { AxiomReviewList, type AxiomReviewItem } from '@/components/axiom-review-list'
 import { parseOntologyAxiomStatus } from '@/types/ontology'
 
+export const dynamic = 'force-dynamic'
+
 export default async function OntologyPage() {
   const supabase = await createClient()
   const {

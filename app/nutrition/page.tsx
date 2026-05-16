@@ -8,6 +8,8 @@ import { C } from "@/lib/nutrition/colors";
 
 const fontFamily = `'Outfit', 'Avenir Next', 'Helvetica Neue', sans-serif`;
 
+export const dynamic = "force-dynamic";
+
 /* ═══════════════════════════════════════════════════════════ */
 
 /* ── Massive Calorie Ring — Optimism Sun Poster Style ── */

@@ -90,3 +90,61 @@
 :Adam :prefersUI :PreFilledAnswer .
 :Adam :prefersUI :Dropdown .
 :Adam :prefersUI :ProgressVisual .
+
+# --- Additions from full JOCRF report (Aptitudes_Adam.pdf) ---
+
+:Adam :hasLow :NumberMemory .
+:NumberMemory :percentile "5"^^xsd:integer .
+:Adam :cannotRecall :PreviouslyReferencedNumbers .
+
+:Adam :hasLow :Silograms .
+:Silograms :percentile "10"^^xsd:integer .
+:Adam :strugglesWith :LearningNewWords .
+:Adam :strugglesWith :LearningJargon .
+:Adam :strugglesWith :ForeignVocabulary .
+
+:Adam :hasLow :ColorDiscrimination .
+:ColorDiscrimination :percentile "5"^^xsd:integer .
+:Adam :doesNotJudge :SubtleColorDifferences .
+
+:Adam :hasLow :VisualDesignsI .
+:Adam :hasLow :VisualDesignsII .
+:Adam :hasNonArtistPreference :CleanVsComplex .
+:Adam :hasNonArtistPreference :SymmetricVsAsymmetric .
+
+:Adam :hasMidHigh :InductiveReasoning .
+:InductiveReasoning :percentile "60"^^xsd:integer .
+:InductiveReasoning :fitsRole :EmergencyMedicine .
+:InductiveReasoning :fitsRole :CrisisCounseling .
+:InductiveReasoning :fitsRole :DiagnosticTriage .
+
+:Adam :hasMid :MemoryForDesign .
+:MemoryForDesign :percentile "50"^^xsd:integer .
+:MemoryForDesign :supports :RememberingCharts, :RememberingGraphs, :RememberingTimelines .
+
+:Adam :hasMid :Observation .
+:Observation :percentile "55"^^xsd:integer .
+
+:Adam :hasMid :Ideaphoria .
+:Ideaphoria :percentile "45"^^xsd:integer .
+
+:Adam :hasPersonality :Objective .
+:Objective :means :NaturalCollaborator .
+:Adam :isType :Generalist .
+:Adam :prefersScope :BigPicture .
+:Adam :feelsBoxedIn :NarrowRole .
+:Adam :prefers :MultipleHats .
+:Adam :delegates :SmallDetails .
+:Adam :energizedBy :TeamPresence .
+:Adam :prefersRole :Coordinator .
+:Adam :prefersRole :Facilitator .
+:Adam :prefersRole :Liaison .
+:Adam :prefersAudience :Large .
+
+:Adam :nonSpatialThinker true .
+:Adam :prefersDomain :PeopleIdeasSystems .
+:Adam :avoidsDomain :TechnicalProblems .
+
+:Adam :recommendedStrategy :UsePreBuiltSystems .
+:Adam :recommendedStrategy :BuyDayPlanner .
+:Adam :recommendedStrategy :OutlineBeforeWriting .

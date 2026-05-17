@@ -1,0 +1,92 @@
+# Adam — starter knowledge graph (RDF/Turtle)
+# Source: Connections page on lab.understood.app + aptitude profile.
+# Status: DRAFT. Adam approves each before it can guide the AI.
+
+@prefix : <https://understood.app/adam/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+:Adam a :Person ;
+  rdfs:label "Adam Blair" .
+
+# --- Triples sourced from Connections (journal-written principles) ---
+
+:Adam :avoids :Regret .
+:Regret :causedBy :ContextWithoutConviction .
+
+:Adam :delegatesUsing :ThreePartFormat .
+:ThreePartFormat :has :Intent, :PreferredApproach, :DoneCondition .
+
+:Adam :enemyOfPotential :UnexaminedDay .
+
+:Adam :prefers :ComputeOverCleverness .
+:Adam :avoids :HandCraftedSolutions .
+:HandCraftedSolutions :outcome :Plateau .
+
+:Adam :equates :Writing :Thinking .
+
+:AnticipatoryAnxiety :is :Lie .
+:Feelings :are :NotFacts .
+
+:Adam :prefers :CaptureFirst .
+:Adam :defers :Structuring .
+
+:Adam :prefers :StructuralEdge .
+:Adam :avoids :Outworking .
+:Adam :builds :SimplestSystem .
+:SimplestSystem :behavior :Compounds .
+
+:Adam :asksPatternInterrupt :DoesThisCapturePotentialThatWouldSlipAway .
+:Adam :asksPatternInterrupt :AmIBuildingSystemOrDoingTask .
+
+:Insight :emergesFrom :Engagement .
+:Insight :doesNotEmergeFrom :SeparateAnalysis .
+
+:Adam :valueSignal :Momentum .
+:Adam :avoidSignal :Stagnation .
+
+:Adam :hasStrong :Judgment .
+:Adam :gap :Vocabulary .
+:Vocabulary :isNot :DecisionAbility .
+
+:Adam :focusesOn :WhatHeCanDo .
+:Adam :defers :Rest .
+
+# --- Triples sourced from aptitude profile (Johnson O'Connor) ---
+
+:Adam :hasHigh :NumberFacility .
+:NumberFacility :percentile "85"^^xsd:integer .
+
+:Adam :hasHigh :Graphoria .
+:Graphoria :percentile "70"^^xsd:integer .
+
+:Adam :hasHigh :InductiveReasoning .
+:Adam :hasHigh :PatternRecognition .
+
+:Adam :hasLow :StructuralVisualization .
+:StructuralVisualization :percentile "5"^^xsd:integer .
+
+:Adam :hasLow :AnalyticalReasoning .
+:AnalyticalReasoning :percentile "13"^^xsd:integer .
+
+:Adam :hasLow :Vocabulary .
+:Vocabulary :percentile "20"^^xsd:integer .
+
+:Adam :prefersFormat :Visual .
+:Adam :prefersFormat :Scannable .
+:Adam :prefersFormat :BulletOutline .
+:Adam :prefersFormat :MindMap .
+
+:Adam :avoidsFormat :ProseWall .
+:Adam :avoidsFormat :LongLogicalSequence .
+:Adam :avoidsFormat :BlankPageWork .
+
+:Adam :prefersInteraction :EditExistingDraft .
+:Adam :avoidsInteraction :BuildFromScratch .
+
+:Adam :prefersExplanation :ExampleBeforeDefinition .
+
+:Adam :prefersUI :PreFilledAnswer .
+:Adam :prefersUI :Dropdown .
+:Adam :prefersUI :ProgressVisual .

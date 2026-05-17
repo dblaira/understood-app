@@ -94,10 +94,12 @@ export function DesktopSidebar({
 
   const isRouteActive = (href: string) => {
     if (href === '/ontology') return pathname === '/ontology'
+    if (href === '/beliefs') return pathname === '/beliefs'
     return pathname === href || pathname.startsWith(`${href}/`)
   }
 
   const workspaceNavItems = [
+    { href: '/beliefs', label: 'Beliefs', icon: '✦' },
     { href: '/ontology', label: 'Ontology', icon: '◇' },
   ] as const
 

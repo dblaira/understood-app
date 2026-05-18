@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Personal + Public Ontology · Mind map</title>
+  <style>
+    :root {
+      --canvas: #0c0c0e;
+      --grid: rgba(255, 255, 255, 0.03);
+      --ink: #f5f5f4;
+      --muted: #a8a29e;
+      --hub: #e11d48;
+      --personal: #a78bfa;
+      --public: #2dd4bf;
+      --bfo: #fbbf24;
+      --ai: #94a3b8;
+      --conflict: #fb7185;
+      --scopes: #38bdf8;
+      --build: #4ade80;
+      --bridge: #f472b6;
+      --card-bg: rgba(28, 28, 32, 0.92);
+      --card-border: rgba(255, 255, 255, 0.12);
+      --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: var(--font);
+      background: var(--canvas);
+      color: var(--ink);
+      min-height: 100vh;
+      line-height: 1.45;
+    }
+
+    /* subtle dot grid like a canvas */
+    .page {
+      min-height: 100vh;
+      background-image: radial-gradient(var(--grid) 1px, transparent 1px);
+      background-size: 20px 20px;
+    }
+
+    .top-bar {
+      padding: 1.25rem 1.5rem 0.5rem;
+      text-align: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .top-bar h1 {
+      margin: 0;
+      font-size: clamp(1.1rem, 3vw, 1.45rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .top-bar p {
+      margin: 0.5rem auto 0;
+      max-width: 36rem;
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem 1rem;
+      justify-content: center;
+      margin-top: 0.85rem;
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+    }
+
+    .legend span::before {
+      content: '';
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 0.35rem;
+      vertical-align: middle;
+    }
+
+    .legend .l-hub::before { background: var(--hub); }
+    .legend .l-personal::before { background: var(--personal); }
+    .legend .l-public::before { background: var(--public); }
+    .legend .l-bfo::before { background: var(--bfo); }
+
+    .map-wrap {
+      position: relative;
+      width: 100%;
+      max-width: 1100px;
+      margin: 0 auto;
+      min-height: min(92vh, 820px);
+      padding: 0.5rem 0.75rem 3rem;
+    }
+
+    #line-layer {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    #line-layer path {
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      opacity: 0.55;
+    }
+
+    .hub-node {
+      position: absolute;
+      left: 50%;
+      top: 44%;
+      transform: translate(-50%, -50%);
+      z-index: 2;
+      width: min(220px, 42vw);
+      padding: 1rem 1.1rem;
+      background: linear-gradient(145deg, rgba(225, 29, 72, 0.25), rgba(28, 28, 32, 0.95));
+      border: 2px solid var(--hub);
+      border-radius: 18px;
+      text-align: center;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+      cursor: default;
+    }
+
+    .hub-node strong {
+      display: block;
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #fda4af;
+      margin-bottom: 0.35rem;
+    }
+
+    .hub-node .hook {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin: 0.5rem 0 0;
+    }
+
+    .hub-node .triad {
+      margin: 0.65rem 0 0;
+      font-size: 0.72rem;
+      line-height: 1.5;
+      text-align: left;
+    }
+
+    .hub-node .triad em { font-style: normal; font-weight: 700; }
+    .hub-node .triad .t-per { color: var(--personal); }
+    .hub-node .triad .t-pub { color: var(--public); }
+    .hub-node .triad .t-bfo { color: var(--bfo); }
+
+    .branch-node {
+      position: absolute;
+      z-index: 2;
+      width: min(200px, 38vw);
+      padding: 0.65rem 0.75rem;
+      background: var(--card-bg);
+      border: 2px solid var(--accent, var(--card-border));
+      border-radius: 14px;
+      font-size: 0.78rem;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+    }
+
+    .branch-node:hover,
+    .branch-node:focus-visible {
+      transform: scale(1.02);
+      box-shadow: 0 14px 40px rgba(0, 0, 0, 0.5);
+      outline: none;
+    }
+
+    .branch-node.selected {
+      border-color: var(--ink);
+      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.35), 0 14px 40px rgba(0, 0, 0, 0.5);
+    }
+
+    .branch-node h3 {
+      margin: 0 0 0.35rem;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--accent, var(--ink));
+    }
+
+    .branch-node .kids {
+      margin: 0.35rem 0 0;
+      padding-left: 1rem;
+      font-size: 0.68rem;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    .branch-node .kids li { margin: 0.15rem 0; }
+
+    .branch-node .hint {
+      margin: 0.4rem 0 0;
+      font-size: 0.62rem;
+      color: rgba(168, 162, 158, 0.7);
+    }
+
+    /* radial positions — desktop */
+    .pos-bfo { --accent: var(--bfo); left: 50%; top: 6%; transform: translate(-50%, 0); }
+    .pos-public { --accent: var(--public); right: 4%; top: 18%; left: auto; transform: none; }
+    .pos-ai { --accent: var(--ai); right: 3%; top: 46%; left: auto; transform: translate(0, -50%); }
+    .pos-conflict { --accent: var(--conflict); right: 8%; bottom: 12%; top: auto; left: auto; }
+    .pos-build { --accent: var(--build); left: 50%; bottom: 4%; top: auto; transform: translate(-50%, 0); }
+    .pos-scopes { --accent: var(--scopes); left: 8%; bottom: 14%; top: auto; }
+    .pos-personal { --accent: var(--personal); left: 4%; top: 34%; }
+    .pos-bridges { --accent: var(--bridge); left: 6%; top: 12%; }
+
+    @media (max-width: 720px) {
+      .map-wrap {
+        min-height: auto;
+        padding-bottom: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        align-items: stretch;
+      }
+
+      #line-layer { display: none; }
+
+      .hub-node {
+        position: relative;
+        left: auto;
+        top: auto;
+        transform: none;
+        width: 100%;
+        max-width: 420px;
+        margin: 0.5rem auto 0;
+      }
+
+      .branch-node {
+        position: relative !important;
+        left: auto !important;
+        right: auto !important;
+        top: auto !important;
+        bottom: auto !important;
+        transform: none !important;
+        width: 100%;
+        max-width: 420px;
+        margin: 0 auto;
+      }
+    }
+
+    .drawer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      max-height: 46vh;
+      overflow-y: auto;
+      background: rgba(18, 18, 22, 0.97);
+      border-top: 1px solid rgba(255, 255, 255, 0.12);
+      padding: 1rem 1.25rem 1.25rem;
+      z-index: 10;
+      transform: translateY(100%);
+      transition: transform 0.28s ease;
+      font-size: 0.84rem;
+    }
+
+    .drawer.open {
+      transform: translateY(0);
+    }
+
+    .drawer h4 {
+      margin: 0 0 0.5rem;
+      font-size: 0.9rem;
+    }
+
+    .drawer .close {
+      float: right;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: var(--ink);
+      border-radius: 8px;
+      padding: 0.25rem 0.55rem;
+      font-size: 0.75rem;
+      cursor: pointer;
+    }
+
+    .drawer table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.75rem;
+      margin-top: 0.5rem;
+    }
+
+    .drawer th, .drawer td {
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 0.4rem 0.5rem;
+      text-align: left;
+    }
+
+    .drawer th { background: rgba(255, 255, 255, 0.04); }
+
+    footer {
+      text-align: center;
+      padding: 1rem;
+      font-size: 0.7rem;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="top-bar">
+      <h1>Personal ontology + public ontology</h1>
+      <p>Trusted memory and formal standards as <strong>two layers</strong>—not one merged truth system. Tap a branch for detail.</p>
+      <div class="legend">
+        <span class="l-hub">Center · architecture</span>
+        <span class="l-personal">Personal · intimacy</span>
+        <span class="l-public">Public · discipline</span>
+        <span class="l-bfo">BFO · skeleton</span>
+      </div>
+    </header>
+
+    <div class="map-wrap" id="map-wrap">
+      <svg id="line-layer" aria-hidden="true"></svg>
+
+      <div class="hub-node" id="hub" role="img" aria-label="Central architecture thesis">
+        <strong>Core thesis</strong>
+        Two authorities. One assistant. Crisp boundaries.
+        <p class="hook">Do not merge subjective beliefs and external standards into a single “truth layer.”</p>
+        <div class="triad">
+          <span class="t-per">Personal → intimacy</span><br />
+          <span class="t-pub">Public → discipline</span><br />
+          <span class="t-bfo">BFO → skeleton</span>
+        </div>
+      </div>
+
+      <button type="button" class="branch-node pos-bfo" data-key="bfo" aria-expanded="false">
+        <h3>BFO · upper ontology</h3>
+        Continuant, occurrent, process, quality, role… shared categories—not your whole product.
+        <ul class="kids">
+          <li>Aligns terms across systems</li>
+          <li>Domain ontologies specialize under it</li>
+        </ul>
+        <p class="hint">Tap for layer stack + caution</p>
+      </button>
+
+      <button type="button" class="branch-node pos-public" data-key="public" aria-expanded="false">
+        <h3>Public / domain</h3>
+        Nutrition, health, code, clinical vocab—<strong>imported &amp; auditable</strong>.
+        <ul class="kids">
+          <li>Scope: <code style="color:var(--public)">public_reference</code></li>
+          <li>Also: <code style="color:var(--public)">domain_reference</code></li>
+        </ul>
+        <p class="hint">Tap for authority table</p>
+      </button>
+
+      <button type="button" class="branch-node pos-personal" data-key="personal" aria-expanded="false">
+        <h3>Personal ontology</h3>
+        Entries, Connections, confirmed if→then rules—<strong>you steward</strong>.
+        <ul class="kids">
+          <li>Scope: <code style="color:var(--personal)">personal</code></li>
+          <li>Confidence = usefulness to you</li>
+        </ul>
+        <p class="hint">Tap for personal vs public questions</p>
+      </button>
+
+      <button type="button" class="branch-node pos-bridges" data-key="bridges" aria-expanded="false">
+        <h3>First bridges</h3>
+        Few links, not bulk import.
+        <ul class="kids">
+          <li>Sleep <code>mapsTo</code> public:Sleep</li>
+          <li>Sensitivity <code>relatesTo</code> public:Caffeine</li>
+          <li>Rule <code>constrainedBy</code> health caution</li>
+        </ul>
+        <p class="hint">Tap for caffeine / sleep conflict example</p>
+      </button>
+
+      <button type="button" class="branch-node pos-ai" data-key="ai" aria-expanded="false">
+        <h3>AI assistant</h3>
+        Uses <strong>both</strong> layers; owns <strong>neither</strong>.
+        <ul class="kids">
+          <li>Reasons inside policies</li>
+          <li>High-risk domains → surface limits</li>
+        </ul>
+        <p class="hint">Tap for flow: BFO → domain → personal → behavior</p>
+      </button>
+
+      <button type="button" class="branch-node pos-conflict" data-key="conflict" aria-expanded="false">
+        <h3>Conflict handling</h3>
+        Personal habit ≠ universal medicine.
+        <ul class="kids">
+          <li>Name both layers</li>
+          <li>Don’t blindly follow either</li>
+          <li>Surface tension; escalate when needed</li>
+        </ul>
+        <p class="hint">Tap for step-by-step flow</p>
+      </button>
+
+      <button type="button" class="branch-node pos-scopes" data-key="scopes" aria-expanded="false">
+        <h3>Ontology scopes</h3>
+        Keep DB / agent boundaries explicit.
+        <ul class="kids">
+          <li><code>personal</code> · <code>public_reference</code></li>
+          <li><code>domain_reference</code> · <code>starter_hypothesis</code></li>
+          <li><code>demo</code></li>
+        </ul>
+        <p class="hint">Tap for full scope notes</p>
+      </button>
+
+      <button type="button" class="branch-node pos-build" data-key="build" aria-expanded="false">
+        <h3>Build sequence</h3>
+        Personal memory first; then scope; then BFO alignment; then <strong>one</strong> domain.
+        <ul class="kids">
+          <li>Map a few concepts → measure → expand</li>
+        </ul>
+        <p class="hint">Tap for ordered checklist</p>
+      </button>
+    </div>
+
+    <div class="drawer" id="drawer" role="region" aria-label="Branch details" aria-hidden="true">
+      <button type="button" class="close" id="drawer-close">Close</button>
+      <div id="drawer-body"></div>
+    </div>
+
+    <footer>Understood · conceptual architecture · mind map</footer>
+  </div>
+
+  <script>
+    (function () {
+      var strokeByKey = {
+        bfo: '#fbbf24',
+        public: '#2dd4bf',
+        personal: '#a78bfa',
+        bridges: '#f472b6',
+        ai: '#94a3b8',
+        conflict: '#fb7185',
+        scopes: '#38bdf8',
+        build: '#4ade80'
+      }
+
+      var content = {
+        bfo: '<h4>BFO as skeleton</h4><p>Upper ontology gives shared categories (continuant / occurrent / process / quality / role). Domain ontologies hang under it. Your <strong>personal ontology</strong> holds instances and commitments. None of these should silently overwrite each other.</p><p><strong>Caution:</strong> Do not import “all public ontologies” on day one—start with conceptual alignment, then one domain.</p>',
+        public: '<h4>Public / domain claims</h4><table><tr><th></th><th>Public</th></tr><tr><td>Source</td><td>Ontology, standard, trusted reference</td></tr><tr><td>Scope</td><td><code>public_reference</code> / <code>domain_reference</code></td></tr><tr><td>Role</td><td>Discipline: definitions others can audit</td></tr></table><p>Never auto-promote imported material to personal <code>confirmed</code> without explicit human review.</p>',
+        personal: '<h4>Personal vs public — question lens</h4><table><tr><th>Question</th><th>Personal</th><th>Public</th></tr><tr><td>What matters to Adam?</td><td>Yes</td><td>No</td></tr><tr><td>Formal meaning of “sleep”?</td><td>Maybe</td><td>Yes</td></tr><tr><td>Medically safe claim?</td><td>No</td><td>Better + sources</td></tr><tr><td>Avoid nonsense?</td><td>Partly</td><td>Yes</td></tr></table>',
+        bridges: '<h4>Example: evening caffeine</h4><p><strong>Personal:</strong> “Evening caffeine disrupts <em>my</em> sleep.”</p><p><strong>Public:</strong> Caffeine is a stimulant; sleep and diet advice can be sensitive; individual variation exists.</p><p><strong>Assistant:</strong> Acknowledge both; do not treat your habit as universal truth or erase your experience with generic advice; surface tension; suggest professional input when risk is high.</p>',
+        ai: '<h4>Architecture map</h4><p style="line-height:1.7"><strong>BFO</strong> (upper categories)<br /> ↓ <br /><strong>Domain ontologies</strong> (health, food, code…)<br /> ↓ <br /><strong>Personal ontology</strong> (entries, Connections, confirmed rules)<br /> ↓ <br /><strong>AI assistant</strong> — constrained behavior, owns neither authority</p>',
+        conflict: '<h4>Conflict resolution flow</h4><ol style="margin:0.5rem 0 0 1.1rem;line-height:1.65;font-size:0.82rem"><li><strong>Recognize</strong> personal pattern vs public facts / caution.</li><li><strong>Neither blind follow</strong> — no purely personal-as-universal; no overwriting lived experience.</li><li><strong>Surface</strong> the tension; flag uncertainty; escalate in high-risk domains.</li></ol>',
+        scopes: '<h4>Suggested scopes</h4><ul style="line-height:1.65;font-size:0.82rem"><li><code>personal</code> — stewarded beliefs &amp; patterns</li><li><code>public_reference</code> — broad shared definitions</li><li><code>domain_reference</code> — field-specific import (e.g. health)</li><li><code>starter_hypothesis</code> — not governing</li><li><code>demo</code> — illustration only</li></ul>',
+        build: '<h4>Build sequence</h4><ol style="margin:0.5rem 0 0 1.1rem;line-height:1.65;font-size:0.82rem"><li>Strengthen personal trusted-memory layer.</li><li>Add explicit scope boundaries.</li><li>Add BFO as conceptual alignment (not the whole product).</li><li>Pick <strong>one</strong> domain ontology (e.g. nutrition or health).</li><li>Map a handful of concepts; measure answer quality.</li><li>Expand only when value is clear.</li></ol>'
+      }
+
+      function drawLines() {
+        var wrap = document.getElementById('map-wrap')
+        var svg = document.getElementById('line-layer')
+        var hub = document.getElementById('hub')
+        if (!wrap || !svg || !hub || window.innerWidth <= 720) {
+          svg.innerHTML = ''
+          return
+        }
+
+        var w = wrap.clientWidth
+        var h = wrap.clientHeight
+        svg.setAttribute('viewBox', '0 0 ' + w + ' ' + h)
+        svg.innerHTML = ''
+
+        var hubRect = hub.getBoundingClientRect()
+        var wrapRect = wrap.getBoundingClientRect()
+        var hx = hubRect.left - wrapRect.left + hubRect.width / 2
+        var hy = hubRect.top - wrapRect.top + hubRect.height / 2
+
+        var branches = document.querySelectorAll('.branch-node')
+        for (var i = 0; i < branches.length; i++) {
+          var b = branches[i]
+          var key = b.getAttribute('data-key')
+          var r = b.getBoundingClientRect()
+          var bx = r.left - wrapRect.left + r.width / 2
+          var by = r.top - wrapRect.top + r.height / 2
+          var mx = (hx + bx) / 2
+          var my = (hy + by) / 2
+          var d = 'M ' + hx + ' ' + hy + ' Q ' + mx + ' ' + my + ' ' + bx + ' ' + by
+          var path = document.createElementNS('http://www.w3.org/2000/svg', 'path')
+          path.setAttribute('d', d)
+          path.setAttribute('stroke', strokeByKey[key] || '#666')
+          svg.appendChild(path)
+        }
+      }
+
+      var drawer = document.getElementById('drawer')
+      var drawerBody = document.getElementById('drawer-body')
+      var closeBtn = document.getElementById('drawer-close')
+      var branches = document.querySelectorAll('.branch-node')
+
+      function openDrawer(key) {
+        drawerBody.innerHTML = content[key] || '<p>No detail for this branch.</p>'
+        drawer.classList.add('open')
+        drawer.setAttribute('aria-hidden', 'false')
+        for (var i = 0; i < branches.length; i++) {
+          branches[i].classList.toggle('selected', branches[i].getAttribute('data-key') === key)
+          branches[i].setAttribute('aria-expanded', branches[i].getAttribute('data-key') === key ? 'true' : 'false')
+        }
+      }
+
+      function closeDrawer() {
+        drawer.classList.remove('open')
+        drawer.setAttribute('aria-hidden', 'true')
+        for (var i = 0; i < branches.length; i++) {
+          branches[i].classList.remove('selected')
+          branches[i].setAttribute('aria-expanded', 'false')
+        }
+      }
+
+      for (var j = 0; j < branches.length; j++) {
+        branches[j].addEventListener('click', function () {
+          openDrawer(this.getAttribute('data-key'))
+        })
+      }
+
+      closeBtn.addEventListener('click', closeDrawer)
+
+      window.addEventListener('resize', function () {
+        drawLines()
+      })
+
+      window.addEventListener('load', drawLines)
+      if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(drawLines)
+      }
+    })()
+  </script>
+</body>
+</html>

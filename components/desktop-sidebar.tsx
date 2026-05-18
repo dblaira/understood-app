@@ -96,11 +96,13 @@ export function DesktopSidebar({
     if (href === '/ontology') return pathname === '/ontology'
     if (href === '/beliefs') return pathname === '/beliefs'
     if (href === '/pipeline') return pathname === '/pipeline'
+    if (href === '/leverage-proof') return pathname === '/leverage-proof'
     return pathname === href || pathname.startsWith(`${href}/`)
   }
 
   const workspaceNavItems = [
     { href: '/pipeline', label: 'Pipeline', icon: '→' },
+    { href: '/leverage-proof', label: 'Leverage Proof', icon: '△' },
     { href: '/beliefs', label: 'Beliefs', icon: '✦' },
     { href: '/ontology', label: 'Ontology', icon: '◇' },
   ] as const

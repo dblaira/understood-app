@@ -1,5 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { runClaudeWithPresentationGuardrail } from '@/lib/ai/presentation-pipeline.server'
+import { routeFormatFromQuery } from '@/lib/ai/format-intent-router'
+import {
+  parseSearchChatPayload,
+  SEARCH_CHAT_DISPLAY_PROMPT,
+  validateSearchChatResponse,
+} from '@/lib/ai/search-chat-display'
 import { buildOntologyPromptSection } from '@/lib/ontology/build-prompt-section'
 import { buildLayeredOntologyPromptContext } from '@/lib/ontology/prompt-context'
 
@@ -118,9 +125,14 @@ export async function POST(request: NextRequest) {
       })
     )
 
+    const formatRoute = routeFormatFromQuery(query)
+
     const systemPrompt = `You are a helpful search assistant for a personal journal app called "Understood." The user has journal entries of four types: stories (reflections), notes (reference info), actions (tasks), and connections (user-authored principles).
 
-Your job is to help the user find specific entries by analyzing their natural language query against the entry index below. Be conversational, warm, and concise.
+Your job is to help the user find specific entries by analyzing their natural language query against the entry index below. Be direct — no essay, no markdown.
+
+${formatRoute.promptBlock}
+Research note (${formatRoute.intent}): ${formatRoute.researchNote}
 
 ${ontologyMemorySection}${ontologyPromptContext.connectionPrinciplesSection}${ontologyPromptContext.provisionalOntologySection}${ontologyPromptContext.productPrinciplesSection}${ontologyPromptContext.publicOntologyGuardrailSection}
 
@@ -129,14 +141,7 @@ When using the memory context above, distinguish confirmed ontology axioms from 
 ## ENTRY INDEX (${entries.length} entries total):
 ${entryIndex}
 
-## RESPONSE FORMAT:
-1. Provide a brief, natural response to the user's query
-2. Reference specific entries by their index number [N] when relevant
-3. At the end of your response, include a JSON block with the IDs of relevant entries:
-
-\`\`\`json
-{"entry_ids": ["id1", "id2"], "relevance_notes": {"id1": "brief reason", "id2": "brief reason"}}
-\`\`\`
+${SEARCH_CHAT_DISPLAY_PROMPT}
 
 ## GUIDELINES:
 - Search across ALL entry types (stories, notes, actions) unless the user specifies one
@@ -145,72 +150,65 @@ ${entryIndex}
 - If no entries match, say so honestly and suggest what to search for instead
 - Show at most 10 most relevant entries
 - When discussing time periods, use the entry dates to determine relevance
-- Be conversational but efficient - users want quick answers`
+- Put all visible structure in display.table / display.tree / display.matrix — the app renders it`
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 1024,
+    let assistantMessage: string
+    let presentationTrace
+    try {
+      const result = await runClaudeWithPresentationGuardrail({
+        supabase,
+        userId: user.id,
+        apiKey,
+        maxTokens: 2048,
         system: systemPrompt,
         messages: [
-          ...previousMessages,
+          ...previousMessages.map((m) => ({
+            role: m.role as 'user' | 'assistant',
+            content: m.content,
+          })),
           { role: 'user', content: query },
         ],
-      }),
-    })
-
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error('Anthropic API error:', response.status, errorText)
+        validate: validateSearchChatResponse,
+      })
+      assistantMessage = result.text || 'Sorry, I could not process your query.'
+      presentationTrace = result.presentation
+    } catch (claudeError) {
+      console.error('Anthropic API error:', claudeError)
       return NextResponse.json(
-        { error: `AI service error: ${response.status}` },
+        { error: 'AI service error' },
         { status: 502 }
       )
     }
 
-    const aiResponse = await response.json()
-    const assistantMessage = aiResponse.content?.[0]?.text || 'Sorry, I could not process your query.'
-
-    // Parse out the entry IDs from the JSON block
+    const payload = parseSearchChatPayload(assistantMessage)
     let referencedEntries: EntryReference[] = []
-    const jsonMatch = assistantMessage.match(/```json\s*\n?([\s\S]*?)\n?\s*```/)
-    if (jsonMatch) {
-      try {
-        const parsed = JSON.parse(jsonMatch[1])
-        const entryIds: string[] = parsed.entry_ids || []
-        const relevanceNotes: Record<string, string> = parsed.relevance_notes || {}
-
-        referencedEntries = entryIds
-          .map((id: string) => {
-            const entry = entries.find((e) => e.id === id)
-            if (!entry) return null
-            return {
-              id: entry.id,
-              headline: entry.headline,
-              category: entry.category,
-              entry_type: entry.entry_type || 'story',
-              created_at: entry.created_at,
-              relevance_note: relevanceNotes[id] || '',
-            }
-          })
-          .filter(Boolean) as EntryReference[]
-      } catch (parseError) {
-        console.error('Failed to parse entry IDs from AI response:', parseError)
-      }
+    if (payload) {
+      referencedEntries = payload.entry_ids
+        .map((id: string) => {
+          const entry = entries.find((e) => e.id === id)
+          if (!entry) return null
+          return {
+            id: entry.id,
+            headline: entry.headline,
+            category: entry.category,
+            entry_type: entry.entry_type || 'story',
+            created_at: entry.created_at,
+            relevance_note: payload.relevance_notes?.[id] || '',
+          }
+        })
+        .filter(Boolean) as EntryReference[]
     }
 
-    // Clean the response text (remove the JSON block for display)
-    const cleanResponse = assistantMessage.replace(/```json[\s\S]*?```/, '').trim()
-
     return NextResponse.json({
-      response: cleanResponse,
+      response: payload?.display.lead ?? '',
+      display: payload?.display ?? null,
+      format_route: {
+        intent: formatRoute.intent,
+        primary: formatRoute.primary,
+        research_note: formatRoute.researchNote,
+      },
       entries: referencedEntries,
+      presentation: presentationTrace,
       memory_context: {
         confirmed_axioms: confirmedAxiomCount,
         connection_principles: ontologyPromptContext.connectionPrincipleCount,

@@ -47,8 +47,13 @@ export async function middleware(request: NextRequest) {
       error,
     } = await supabase.auth.getUser()
 
+    const isPresentationLab =
+      process.env.NODE_ENV !== 'production' &&
+      request.nextUrl.pathname.startsWith('/lab/presentation')
+
     // Always allow access to login page, auth callback, debug pages, prototypes, and playground
-    if (request.nextUrl.pathname === '/login' || 
+    if (isPresentationLab ||
+        request.nextUrl.pathname === '/login' || 
         request.nextUrl.pathname.startsWith('/auth/') ||
         request.nextUrl.pathname === '/debug-auth' || 
         request.nextUrl.pathname === '/debug-photo' ||

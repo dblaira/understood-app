@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { runClaudeWithPresentationGuardrail } from '@/lib/ai/presentation-pipeline.server'
 import { Extraction } from '@/types/extraction'
 import { buildWeeklyMatrix } from '@/lib/correlations/matrix'
 import {
@@ -200,38 +201,33 @@ export async function POST(request: Request) {
 
     console.log('Calling Claude for interpretation...')
 
-    const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 120000)
-
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: 'claude-opus-4-7',
-        max_tokens: 4000,
-        messages: [{ role: 'user', content: prompt }],
-      }),
-      signal: controller.signal,
-    })
-
-    clearTimeout(timeoutId)
-
-    if (!response.ok) {
-      const errText = await response.text()
-      console.error('Claude API error:', errText)
+    let rawText: string
+    let presentationTrace
+    try {
+      const guarded = await Promise.race([
+        runClaudeWithPresentationGuardrail({
+          supabase,
+          userId: user.id,
+          apiKey,
+          model: 'claude-opus-4-7',
+          maxTokens: 4000,
+          messages: [{ role: 'user', content: prompt }],
+          system:
+            'Return ONLY valid JSON. Every narrative field must use bullet lines or markdown tables — no prose paragraphs.',
+        }),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('Analysis timed out after 120s')), 120000)
+        ),
+      ])
+      rawText = guarded.text
+      presentationTrace = guarded.presentation
+    } catch (claudeErr) {
+      console.error('Claude API error:', claudeErr)
       return NextResponse.json(
-        { error: 'Claude API error: ' + response.status },
+        { error: 'Claude API error' },
         { status: 500 }
       )
     }
-
-    const result = await response.json()
-    const rawText =
-      result.content?.[0]?.text || result.content?.[0]?.value || ''
 
     console.log('Claude response received, parsing...')
 
@@ -274,6 +270,7 @@ export async function POST(request: Request) {
         stats,
         saved: false,
         error: saveError.message,
+        presentation: presentationTrace,
       })
     }
 
@@ -288,6 +285,7 @@ export async function POST(request: Request) {
       totalWeeks: matrix.weeks.length,
       totalExtractions: matrix.totalExtractions,
       saved: true,
+      presentation: presentationTrace,
     })
   } catch (err) {
     console.error('Correlation analysis error:', err)

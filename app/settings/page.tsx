@@ -46,6 +46,24 @@ export default function SettingsPage() {
         </h1>
 
         <NotificationSettings />
+
+        <section style={{ marginTop: '2.5rem' }}>
+          <h2 style={{ fontSize: '1.1rem', marginBottom: '0.75rem' }}>AI presentation</h2>
+          <button
+            type="button"
+            onClick={() => router.push('/settings/presentation')}
+            style={{
+              padding: '0.75rem 1rem',
+              background: 'rgba(220,20,60,0.15)',
+              border: '1px solid #DC143C',
+              color: '#fff',
+              cursor: 'pointer',
+              fontSize: '0.9rem',
+            }}
+          >
+            Open guardrail graph →
+          </button>
+        </section>
       </div>
     </div>
   )

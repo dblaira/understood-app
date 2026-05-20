@@ -1,0 +1,49 @@
+---
+description: Mandatory output format — synced with presentation_constraints graph
+alwaysApply: true
+---
+
+# Presentation guardrail (interceptor)
+
+Source of truth: Supabase `presentation_constraints` · UI: `/settings/presentation` · Server: `lib/ai/presentation-interceptor.ts`
+
+Adam's cognition is not negotiable in output shape. This rule mirrors the app linter.
+
+## FORBIDDEN
+
+- Markdown in user-visible text (** ## | tables |)
+- Paragraphs / sequential essays / "quick takeaways" sections
+- Instruction chains longer than 4 steps
+- Assuming Adam remembers numbers from earlier in the thread
+
+## FORMAT ROUTING (cognitive fit)
+
+| Intent | JSON component |
+|--------|----------------|
+| What/list/find | display.table |
+| Compare/vs/intersect | display.matrix |
+| How/flow/architecture | display.tree |
+| Why/so what | short lead + small table |
+
+Numbers in cells only — never inline prose. No markdown. No ASCII |---| tables.
+
+Option A (this file) governs generation. App router (`format-intent-router.ts`) picks component per query.
+
+## Node tree (trait → format)
+
+```
+[Adam]
+├─ hasTrait → Low analytical reasoning
+│  ├─ requiresFormat → Pre-structured outlines
+│  └─ forbidsElement → Unstructured paragraphs
+├─ hasTrait → High graphoria
+│  ├─ requiresFormat → Tables / matrices / node trees
+│  └─ forbidsElement → Raw paragraph blocks
+└─ hasTrait → Communication rules
+   ├─ requiresFormat → Max 10 one-line bullets
+   └─ forbidsElement → Chains over 4 steps
+```
+
+## Self-check before sending
+
+If the reply is mostly prose paragraphs → stop → convert to matrix or node tree → then send.

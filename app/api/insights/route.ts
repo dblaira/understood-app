@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import Anthropic from "@anthropic-ai/sdk";
 import { getUserFromRequest } from "@/lib/supabase/from-request";
 import { logServerError } from "@/lib/nutrition/server-logger";
-
-const anthropic = new Anthropic();
+import { runClaudeWithPresentationGuardrail } from "@/lib/ai/presentation-pipeline.server";
 
 const SYSTEM_PROMPT = `You are a nutrition and wellness analyst. Given a user's intake data across food, water, caffeine, and supplements for the past 7-30 days, generate actionable insights.
 
@@ -159,25 +157,32 @@ export async function POST(request: NextRequest) {
       period: `${thirtyDaysAgo} to today`,
     });
 
-    const message = await anthropic.messages.create({
-      model: "claude-sonnet-4-6",
-      max_tokens: 2048,
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) {
+      return NextResponse.json({ error: "API key not configured" }, { status: 500 });
+    }
+
+    const guarded = await runClaudeWithPresentationGuardrail({
+      supabase,
+      userId: user.id,
+      apiKey,
+      maxTokens: 2048,
       system: SYSTEM_PROMPT,
       messages: [{ role: "user", content: context }],
     });
 
-    const responseText =
-      message.content[0].type === "text" ? message.content[0].text : "";
+    const responseText = guarded.text;
 
     try {
       const cleaned = responseText
         .replace(/```json\n?/g, "")
         .replace(/```\n?/g, "")
         .trim();
-      return NextResponse.json(JSON.parse(cleaned));
+      const parsed = JSON.parse(cleaned);
+      return NextResponse.json({ ...parsed, presentation: guarded.presentation });
     } catch {
       return NextResponse.json(
-        { error: "Failed to parse insights", raw: responseText },
+        { error: "Failed to parse insights", raw: responseText, presentation: guarded.presentation },
         { status: 500 }
       );
     }

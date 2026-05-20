@@ -9,6 +9,8 @@ import { computeAllCorrelations, computeLaggedCorrelations, computeCategoryStats
 import { CATEGORY_COLORS } from '@/lib/extractions/aggregate'
 import { CorrelationNetwork } from './correlation-network'
 import { SparklineGrid } from './correlation-sparklines'
+import { PresentationTraceBadge } from './presentation-trace-badge'
+import type { PresentationTrace } from '@/types/presentation'
 
 interface CorrelationsViewProps {
   extractions: Extraction[]
@@ -52,6 +54,7 @@ export function CorrelationsView({ extractions }: CorrelationsViewProps) {
   const [insights, setInsights] = useState<any>(null)
   const [insightsLoading, setInsightsLoading] = useState(false)
   const [insightsError, setInsightsError] = useState<string | null>(null)
+  const [presentation, setPresentation] = useState<PresentationTrace | null>(null)
 
   const runAnalysis = useCallback(async () => {
     setInsightsLoading(true)
@@ -67,6 +70,7 @@ export function CorrelationsView({ extractions }: CorrelationsViewProps) {
         setInsightsError(data.error || 'Something went wrong')
       } else {
         setInsights(data.interpretation)
+        setPresentation(data.presentation ?? null)
       }
     } catch {
       setInsightsError('Failed to connect. Try again.')
@@ -197,6 +201,7 @@ export function CorrelationsView({ extractions }: CorrelationsViewProps) {
             insights={insights}
             loading={insightsLoading}
             error={insightsError}
+            presentation={presentation}
             onRun={runAnalysis}
           />
         )}
@@ -484,7 +489,19 @@ function PairRow({ pair, hoveredPair, onHover }: {
 
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function InsightsTab({ insights, loading, error, onRun }: { insights: any; loading: boolean; error: string | null; onRun: () => void }) {
+function InsightsTab({
+  insights,
+  loading,
+  error,
+  presentation,
+  onRun,
+}: {
+  insights: any
+  loading: boolean
+  error: string | null
+  presentation: PresentationTrace | null
+  onRun: () => void
+}) {
   if (!insights && !loading && !error) {
     return (
       <div style={{ textAlign: 'center', padding: '4rem 2rem' }}>
@@ -557,6 +574,11 @@ function InsightsTab({ insights, loading, error, onRun }: { insights: any; loadi
 
   return (
     <div style={{ maxWidth: '700px' }}>
+      {presentation && (
+        <div style={{ marginBottom: '1.25rem' }}>
+          <PresentationTraceBadge presentation={presentation} variant="dark" />
+        </div>
+      )}
       {insights.patterns && insights.patterns.length > 0 && (
         <div style={{ marginBottom: '2.5rem' }}>
           <h2 style={{ fontFamily: "var(--font-bodoni-moda), Georgia, serif", fontSize: '1.6rem', fontWeight: 400, color: '#E5E5E5', marginBottom: '1.5rem' }}>

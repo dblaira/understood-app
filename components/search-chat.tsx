@@ -4,12 +4,18 @@ import { useState, useRef, useEffect } from 'react'
 import { Entry } from '@/types'
 import { formatEntryDateShort } from '@/lib/utils'
 import { AiSearchIcon } from './ai-search-icon'
+import { PresentationTraceBadge } from './presentation-trace-badge'
+import { AssistantStructuredMessage } from './assistant-structured-message'
+import type { SearchChatDisplay } from '@/types/search-chat-display'
+import type { PresentationTrace } from '@/types/presentation'
 
 interface ChatMessage {
   role: 'user' | 'assistant'
   content: string
   entries?: EntryReference[]
   memoryContext?: MemoryContext
+  presentation?: PresentationTrace
+  display?: SearchChatDisplay | null
   isLoading?: boolean
 }
 
@@ -122,8 +128,10 @@ export function SearchChat({ userId, entries, onClose, onViewEntry }: SearchChat
         {
           role: 'assistant',
           content: data.response,
+          display: data.display,
           entries: data.entries,
           memoryContext: data.memory_context,
+          presentation: data.presentation,
         },
       ])
     } catch (error: any) {
@@ -258,42 +266,41 @@ export function SearchChat({ userId, entries, onClose, onViewEntry }: SearchChat
                       <span style={{ animation: 'pulse 1.5s infinite 0.3s', opacity: 0.4 }}>●</span>
                       <span style={{ animation: 'pulse 1.5s infinite 0.6s', opacity: 0.4 }}>●</span>
                     </div>
+                  ) : message.role === 'assistant' && message.display ? (
+                    <AssistantStructuredMessage display={message.display} />
+                  ) : message.role === 'assistant' ? (
+                    <span style={{ color: '#6B7280', fontSize: '0.85rem' }}>
+                      {message.content || 'No structured display returned.'}
+                    </span>
                   ) : (
                     message.content
                   )}
                 </div>
               </div>
 
+              {message.presentation && (
+                <PresentationTraceBadge presentation={message.presentation} />
+              )}
+
               {/* Memory context */}
               {message.memoryContext && (
-                <div
+                <details
                   style={{
                     marginTop: '0.5rem',
                     marginLeft: '0.5rem',
                     maxWidth: '85%',
-                    padding: '0.55rem 0.7rem',
-                    borderRadius: '8px',
-                    border: '1px solid #E5E7EB',
-                    background: '#FFFBEB',
-                    color: '#92400E',
-                    fontSize: '0.72rem',
-                    lineHeight: 1.4,
+                    fontSize: '0.68rem',
+                    color: '#6B7280',
                   }}
                 >
-                  <div style={{ fontWeight: 700, marginBottom: '0.15rem' }}>
-                    Memory context
-                  </div>
-                  <div>
-                    {message.memoryContext.confirmed_axioms} confirmed axioms ·{' '}
-                    {message.memoryContext.connection_principles} Connection principles
-                    {typeof message.memoryContext.public_guardrails === 'number'
-                      ? ` · ${message.memoryContext.public_guardrails} public guardrails`
-                      : ''}
-                  </div>
-                  <div style={{ color: '#B45309', marginTop: '0.15rem' }}>
+                  <summary style={{ cursor: 'pointer', fontWeight: 600 }}>
+                    Memory: {message.memoryContext.confirmed_axioms} axioms ·{' '}
+                    {message.memoryContext.connection_principles} connections
+                  </summary>
+                  <p style={{ margin: '0.35rem 0 0', lineHeight: 1.4 }}>
                     {message.memoryContext.note}
-                  </div>
-                </div>
+                  </p>
+                </details>
               )}
 
               {/* Entry cards */}

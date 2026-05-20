@@ -1,0 +1,36 @@
+@prefix tennis: <https://understood.local/ontology/tennis#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+tennis:PlayerShape a sh:NodeShape ;
+  sh:targetClass tennis:Player ;
+  sh:property [
+    sh:path tennis:hasPlayingStyle ;
+    sh:minCount 1 ;
+    sh:message "Every player should have at least one playing style." ;
+  ] ;
+  sh:property [
+    sh:path tennis:prefersSurface ;
+    sh:minCount 1 ;
+    sh:message "Every player should have at least one preferred surface." ;
+  ] .
+
+tennis:MatchShape a sh:NodeShape ;
+  sh:targetClass tennis:Match ;
+  sh:property [
+    sh:path tennis:playedAtTournament ;
+    sh:minCount 1 ;
+    sh:message "Every match should name its tournament." ;
+  ] ;
+  sh:property [
+    sh:path tennis:playedOnSurface ;
+    sh:minCount 1 ;
+    sh:message "Every match should name its surface." ;
+  ] ;
+  sh:property [
+    sh:path tennis:year ;
+    sh:datatype xsd:gYear ;
+    sh:maxCount 1 ;
+    sh:message "Every match year should be a single xsd:gYear value." ;
+  ] .
+

@@ -1,0 +1,195 @@
+@prefix tennis: <https://understood.local/ontology/tennis#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+tennis: a owl:Ontology ;
+  rdfs:label "Tennis Ontology Mini Lab" ;
+  rdfs:comment "A small ontology for learning classes, properties, individuals, and SPARQL through tennis." .
+
+tennis:Player a owl:Class ;
+  rdfs:label "Player" .
+
+tennis:Tournament a owl:Class ;
+  rdfs:label "Tournament" .
+
+tennis:Match a owl:Class ;
+  rdfs:label "Match" .
+
+tennis:Surface a owl:Class ;
+  rdfs:label "Surface" .
+
+tennis:PlayingStyle a owl:Class ;
+  rdfs:label "Playing style" .
+
+tennis:Stroke a owl:Class ;
+  rdfs:label "Stroke" .
+
+tennis:GrandSlamTournament a owl:Class ;
+  rdfs:subClassOf tennis:Tournament ;
+  rdfs:label "Grand Slam tournament" .
+
+tennis:ClayCourtSpecialist a owl:Class ;
+  owl:equivalentClass [
+    a owl:Class ;
+    owl:intersectionOf (
+      tennis:Player
+      [ a owl:Restriction ;
+        owl:onProperty tennis:prefersSurface ;
+        owl:hasValue tennis:clay
+      ]
+      [ a owl:Restriction ;
+        owl:onProperty tennis:hasPlayingStyle ;
+        owl:hasValue tennis:baseline-defender
+      ]
+    )
+  ] ;
+  rdfs:label "Clay-court specialist" .
+
+tennis:usesStroke a owl:ObjectProperty ;
+  rdfs:domain tennis:Player ;
+  rdfs:range tennis:Stroke ;
+  rdfs:label "uses stroke" .
+
+tennis:prefersSurface a owl:ObjectProperty ;
+  rdfs:domain tennis:Player ;
+  rdfs:range tennis:Surface ;
+  rdfs:label "prefers surface" .
+
+tennis:hasPlayingStyle a owl:ObjectProperty ;
+  rdfs:domain tennis:Player ;
+  rdfs:range tennis:PlayingStyle ;
+  rdfs:label "has playing style" .
+
+tennis:playedOnSurface a owl:ObjectProperty ;
+  rdfs:domain tennis:Match ;
+  rdfs:range tennis:Surface ;
+  rdfs:label "played on surface" .
+
+tennis:playedAtTournament a owl:ObjectProperty ;
+  rdfs:domain tennis:Match ;
+  rdfs:range tennis:Tournament ;
+  rdfs:label "played at tournament" .
+
+tennis:winnerOf a owl:ObjectProperty ;
+  rdfs:domain tennis:Player ;
+  rdfs:range tennis:Match ;
+  rdfs:label "winner of" .
+
+tennis:loserOf a owl:ObjectProperty ;
+  rdfs:domain tennis:Player ;
+  rdfs:range tennis:Match ;
+  rdfs:label "loser of" .
+
+tennis:hasRival a owl:ObjectProperty, owl:SymmetricProperty ;
+  rdfs:domain tennis:Player ;
+  rdfs:range tennis:Player ;
+  rdfs:label "has rival" .
+
+tennis:score a owl:DatatypeProperty ;
+  rdfs:domain tennis:Match ;
+  rdfs:range xsd:string ;
+  rdfs:label "score" .
+
+tennis:year a owl:DatatypeProperty ;
+  rdfs:domain tennis:Match ;
+  rdfs:range xsd:gYear ;
+  rdfs:label "year" .
+
+tennis:clay a tennis:Surface ;
+  rdfs:label "Clay" .
+
+tennis:grass a tennis:Surface ;
+  rdfs:label "Grass" .
+
+tennis:hard-court a tennis:Surface ;
+  rdfs:label "Hard court" .
+
+tennis:baseline-defender a tennis:PlayingStyle ;
+  rdfs:label "Baseline defender" .
+
+tennis:serve-and-volleyer a tennis:PlayingStyle ;
+  rdfs:label "Serve-and-volleyer" .
+
+tennis:aggressive-baseliner a tennis:PlayingStyle ;
+  rdfs:label "Aggressive baseliner" .
+
+tennis:all-court-player a tennis:PlayingStyle ;
+  rdfs:label "All-court player" .
+
+tennis:one-handed-backhand a tennis:Stroke ;
+  rdfs:label "One-handed backhand" .
+
+tennis:two-handed-backhand a tennis:Stroke ;
+  rdfs:label "Two-handed backhand" .
+
+tennis:heavy-topspin-forehand a tennis:Stroke ;
+  rdfs:label "Heavy topspin forehand" .
+
+tennis:flat-power-serve a tennis:Stroke ;
+  rdfs:label "Flat power serve" .
+
+tennis:roland-garros a tennis:GrandSlamTournament ;
+  rdfs:label "Roland-Garros" .
+
+tennis:wimbledon a tennis:GrandSlamTournament ;
+  rdfs:label "Wimbledon" .
+
+tennis:us-open a tennis:GrandSlamTournament ;
+  rdfs:label "US Open" .
+
+tennis:rafael-nadal a tennis:Player ;
+  rdfs:label "Rafael Nadal" ;
+  tennis:prefersSurface tennis:clay ;
+  tennis:hasPlayingStyle tennis:baseline-defender ;
+  tennis:usesStroke tennis:heavy-topspin-forehand, tennis:two-handed-backhand ;
+  tennis:hasRival tennis:roger-federer .
+
+tennis:roger-federer a tennis:Player ;
+  rdfs:label "Roger Federer" ;
+  tennis:prefersSurface tennis:grass ;
+  tennis:hasPlayingStyle tennis:all-court-player ;
+  tennis:usesStroke tennis:one-handed-backhand ;
+  tennis:hasRival tennis:rafael-nadal .
+
+tennis:serena-williams a tennis:Player ;
+  rdfs:label "Serena Williams" ;
+  tennis:prefersSurface tennis:hard-court ;
+  tennis:hasPlayingStyle tennis:aggressive-baseliner ;
+  tennis:usesStroke tennis:flat-power-serve, tennis:two-handed-backhand .
+
+tennis:iga-swiatek a tennis:Player ;
+  rdfs:label "Iga Swiatek" ;
+  tennis:prefersSurface tennis:clay ;
+  tennis:hasPlayingStyle tennis:aggressive-baseliner ;
+  tennis:usesStroke tennis:heavy-topspin-forehand, tennis:two-handed-backhand .
+
+tennis:nadal-federer-2008-wimbledon-final a tennis:Match ;
+  rdfs:label "2008 Wimbledon final: Nadal vs Federer" ;
+  tennis:playedAtTournament tennis:wimbledon ;
+  tennis:playedOnSurface tennis:grass ;
+  tennis:score "6-4 6-4 6-7 6-7 9-7" ;
+  tennis:year "2008"^^xsd:gYear .
+
+tennis:swiatek-2022-roland-garros-final a tennis:Match ;
+  rdfs:label "2022 Roland-Garros final: Swiatek vs Gauff" ;
+  tennis:playedAtTournament tennis:roland-garros ;
+  tennis:playedOnSurface tennis:clay ;
+  tennis:score "6-1 6-3" ;
+  tennis:year "2022"^^xsd:gYear .
+
+tennis:serena-2014-us-open-final a tennis:Match ;
+  rdfs:label "2014 US Open final: Serena Williams vs Caroline Wozniacki" ;
+  tennis:playedAtTournament tennis:us-open ;
+  tennis:playedOnSurface tennis:hard-court ;
+  tennis:score "6-3 6-3" ;
+  tennis:year "2014"^^xsd:gYear .
+
+tennis:rafael-nadal tennis:winnerOf tennis:nadal-federer-2008-wimbledon-final .
+tennis:roger-federer tennis:loserOf tennis:nadal-federer-2008-wimbledon-final .
+
+tennis:iga-swiatek tennis:winnerOf tennis:swiatek-2022-roland-garros-final .
+
+tennis:serena-williams tennis:winnerOf tennis:serena-2014-us-open-final .
+

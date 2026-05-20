@@ -1,0 +1,15 @@
+PREFIX tennis: <https://understood.local/ontology/tennis#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?playerName ?matchName ?tournamentName ?year
+WHERE {
+  ?player tennis:winnerOf ?match ;
+    rdfs:label ?playerName .
+  ?match tennis:playedAtTournament ?tournament ;
+    tennis:year ?year ;
+    rdfs:label ?matchName .
+  ?tournament a tennis:GrandSlamTournament ;
+    rdfs:label ?tournamentName .
+}
+ORDER BY ?year
+

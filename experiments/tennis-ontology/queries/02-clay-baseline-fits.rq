@@ -1,0 +1,13 @@
+PREFIX tennis: <https://understood.local/ontology/tennis#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?playerName ?styleName
+WHERE {
+  ?player a tennis:Player ;
+    tennis:prefersSurface tennis:clay ;
+    tennis:hasPlayingStyle ?style ;
+    rdfs:label ?playerName .
+  ?style rdfs:label ?styleName .
+}
+ORDER BY ?playerName
+

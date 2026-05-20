@@ -1,0 +1,10 @@
+services:
+  fuseki:
+    image: stain/jena-fuseki:latest
+    platform: linux/amd64
+    container_name: tennis-fuseki
+    ports:
+      - "3030:3030"
+    environment:
+      ADMIN_PASSWORD: tennis
+      FUSEKI_DATASET_1: tennis

@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tennis Ontology Learning Trace</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #1d2430;
+        --muted: #667085;
+        --line: #d8dee8;
+        --panel: #f8fafc;
+        --accent: #1463ff;
+        --green: #107c41;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: var(--ink);
+        background: #ffffff;
+      }
+
+      main {
+        max-width: 1120px;
+        margin: 0 auto;
+        padding: 32px;
+      }
+
+      h1 {
+        margin: 0 0 8px;
+        font-size: 32px;
+        line-height: 1.15;
+        letter-spacing: 0;
+      }
+
+      .subhead {
+        max-width: 760px;
+        margin: 0 0 28px;
+        color: var(--muted);
+        font-size: 17px;
+        line-height: 1.5;
+      }
+
+      .flow {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+        margin-bottom: 24px;
+      }
+
+      .step {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 14px;
+        background: var(--panel);
+        min-height: 124px;
+      }
+
+      .step strong {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 15px;
+      }
+
+      .step code {
+        display: inline-block;
+        color: var(--accent);
+        font-size: 13px;
+        overflow-wrap: anywhere;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+
+      section {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        overflow: hidden;
+        background: #ffffff;
+      }
+
+      h2 {
+        margin: 0;
+        padding: 14px 16px;
+        font-size: 17px;
+        border-bottom: 1px solid var(--line);
+        background: var(--panel);
+      }
+
+      pre {
+        margin: 0;
+        padding: 16px;
+        overflow: auto;
+        min-height: 174px;
+        font-size: 13px;
+        line-height: 1.5;
+        background: #ffffff;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+      }
+
+      th,
+      td {
+        padding: 11px 12px;
+        border-bottom: 1px solid var(--line);
+        text-align: left;
+        vertical-align: top;
+      }
+
+      th {
+        background: var(--panel);
+      }
+
+      .success {
+        color: var(--green);
+        font-weight: 700;
+      }
+
+      @media (max-width: 800px) {
+        main {
+          padding: 18px;
+        }
+
+        .flow,
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Tennis Ontology: What Was Added</h1>
+      <p class="subhead">
+        Read this left to right. Docker starts a Fuseki server, creates a dataset named
+        <code>/tennis</code>, the loader uploads <code>tennis.ttl</code>, and SPARQL asks questions
+        against those triples.
+      </p>
+
+      <div class="flow" aria-label="Ontology loading flow">
+        <div class="step">
+          <strong>1. Docker starts Fuseki</strong>
+          <code>docker compose up -d</code>
+        </div>
+        <div class="step">
+          <strong>2. Dataset is created</strong>
+          <code>FUSEKI_DATASET_1: tennis</code>
+        </div>
+        <div class="step">
+          <strong>3. Ontology is uploaded</strong>
+          <code>POST tennis.ttl to /tennis/data?default</code>
+        </div>
+        <div class="step">
+          <strong>4. Query returns rows</strong>
+          <code>SELECT player, match, tournament, year</code>
+        </div>
+      </div>
+
+      <div class="grid">
+        <section>
+          <h2>Docker Compose: creates the local server</h2>
+          <pre><code>services:
+  fuseki:
+    image: stain/jena-fuseki:latest
+    platform: linux/amd64
+    ports:
+      - "3030:3030"
+    environment:
+      ADMIN_PASSWORD: tennis
+      FUSEKI_DATASET_1: tennis</code></pre>
+        </section>
+
+        <section>
+          <h2>Loader: puts the ontology into Fuseki</h2>
+          <pre><code>curl -u admin:tennis \
+  -X POST \
+  --data-binary @tennis.ttl \
+  -H 'Content-Type: text/turtle' \
+  'http://localhost:3030/tennis/data?default'</code></pre>
+        </section>
+
+        <section>
+          <h2>SPARQL: asks a competency question</h2>
+          <pre><code>SELECT ?playerName ?matchName ?tournamentName ?year
+WHERE {
+  ?player tennis:winnerOf ?match ;
+    rdfs:label ?playerName .
+  ?match tennis:playedAtTournament ?tournament ;
+    tennis:year ?year ;
+    rdfs:label ?matchName .
+  ?tournament a tennis:GrandSlamTournament ;
+    rdfs:label ?tournamentName .
+}</code></pre>
+        </section>
+
+        <section>
+          <h2><span class="success">Result:</span> Fuseki answered from the ontology</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Player</th>
+                <th>Match</th>
+                <th>Tournament</th>
+                <th>Year</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Rafael Nadal</td>
+                <td>2008 Wimbledon final: Nadal vs Federer</td>
+                <td>Wimbledon</td>
+                <td>2008</td>
+              </tr>
+              <tr>
+                <td>Serena Williams</td>
+                <td>2014 US Open final: Serena Williams vs Caroline Wozniacki</td>
+                <td>US Open</td>
+                <td>2014</td>
+              </tr>
+              <tr>
+                <td>Iga Swiatek</td>
+                <td>2022 Roland-Garros final: Swiatek vs Gauff</td>
+                <td>Roland-Garros</td>
+                <td>2022</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+      </div>
+    </main>
+  </body>
+</html>

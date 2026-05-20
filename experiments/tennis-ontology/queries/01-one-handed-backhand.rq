@@ -1,0 +1,11 @@
+PREFIX tennis: <https://understood.local/ontology/tennis#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?playerName
+WHERE {
+  ?player a tennis:Player ;
+    tennis:usesStroke tennis:one-handed-backhand ;
+    rdfs:label ?playerName .
+}
+ORDER BY ?playerName
+

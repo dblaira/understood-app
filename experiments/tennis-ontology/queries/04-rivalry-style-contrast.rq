@@ -1,0 +1,16 @@
+PREFIX tennis: <https://understood.local/ontology/tennis#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?playerName ?playerStyleName ?rivalName ?rivalStyleName
+WHERE {
+  ?player tennis:hasRival ?rival ;
+    tennis:hasPlayingStyle ?playerStyle ;
+    rdfs:label ?playerName .
+  ?rival tennis:hasPlayingStyle ?rivalStyle ;
+    rdfs:label ?rivalName .
+  ?playerStyle rdfs:label ?playerStyleName .
+  ?rivalStyle rdfs:label ?rivalStyleName .
+  FILTER (?playerStyle != ?rivalStyle)
+}
+ORDER BY ?playerName ?rivalName
+

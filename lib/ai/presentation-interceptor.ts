@@ -1,7 +1,11 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { DEFAULT_PRESENTATION_CONSTRAINTS } from '@/lib/ai/default-presentation-constraints'
 import { validatePresentation } from '@/lib/ai/presentation-linter'
-import type { PresentationConstraint, PresentationTrace } from '@/types/presentation'
+import type {
+  PresentationConstraint,
+  PresentationTrace,
+  PresentationValidation,
+} from '@/types/presentation'
 
 export { validatePresentation } from '@/lib/ai/presentation-linter'
 

@@ -98,8 +98,16 @@ export async function POST() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  await supabase.from('presentation_constraints').delete().eq('user_id', user.id)
   await seedPresentationConstraints(supabase, user.id)
-  const constraints = await fetchPresentationConstraints(supabase, user.id)
+  const { data: rows } = await supabase
+    .from('presentation_constraints')
+    .select(
+      'id, trait_key, trait_label, relation, target, target_label, provenance, enabled, sort_order'
+    )
+    .eq('user_id', user.id)
+    .order('sort_order', { ascending: true })
+  const constraints = (rows ?? []) as Awaited<ReturnType<typeof fetchPresentationConstraints>>
   return NextResponse.json({
     ok: true,
     constraints,

@@ -5,6 +5,7 @@ export function FormatSelectionGuide() {
   const rows = [
     ['What / list / find', 'Table', 'Categories, exact lookup'],
     ['Compare / vs / intersect', 'Matrix', 'Two axes crossing'],
+    ['Relationship / link between', 'Node tree', 'How ideas connect'],
     ['How / flow / architecture', 'Node tree', 'Parent → child logic'],
     ['Why / so what', 'Lead + small table', 'Punchline then data'],
     ['Trends over time', 'Chart (future)', 'Pattern — not exact digits'],

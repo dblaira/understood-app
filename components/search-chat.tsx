@@ -42,15 +42,6 @@ interface SearchChatProps {
   onViewEntry: (id: string) => void
 }
 
-function getEntryTypeIcon(entryType: string): string {
-  switch (entryType) {
-    case 'action': return '☑'
-    case 'note': return '📝'
-    case 'story':
-    default: return '📰'
-  }
-}
-
 export function SearchChat({ userId, entries, onClose, onViewEntry }: SearchChatProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
@@ -161,9 +152,8 @@ export function SearchChat({ userId, entries, onClose, onViewEntry }: SearchChat
         position: 'fixed',
         inset: 0,
         zIndex: 200,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
+        display: 'grid',
+        gridTemplateRows: '1fr',
       }}
     >
       {/* Backdrop */}
@@ -181,16 +171,16 @@ export function SearchChat({ userId, entries, onClose, onViewEntry }: SearchChat
       <div
         style={{
           position: 'relative',
-          width: '100%',
-          maxWidth: '640px',
-          maxHeight: '80vh',
-          margin: '1rem',
+          width: '100vw',
+          height: '100dvh',
+          maxWidth: 'none',
+          maxHeight: 'none',
           background: '#FFFFFF',
-          borderRadius: '12px',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-          display: 'flex',
-          flexDirection: 'column',
+          borderRadius: 0,
+          display: 'grid',
+          gridTemplateRows: 'auto 1fr auto',
           overflow: 'hidden',
+          minWidth: 0,
         }}
       >
         {/* Header */}
@@ -230,26 +220,35 @@ export function SearchChat({ userId, entries, onClose, onViewEntry }: SearchChat
         {/* Messages */}
         <div
           style={{
-            flex: 1,
             overflowY: 'auto',
             padding: '1rem 1.25rem',
-            display: 'flex',
-            flexDirection: 'column',
+            display: 'grid',
+            gridAutoRows: 'max-content',
             gap: '1rem',
+            minWidth: 0,
           }}
         >
-          {messages.map((message, i) => (
-            <div key={i}>
-              {/* Message bubble */}
+          {messages.map((message, i) => {
+            const isStructuredAssistant =
+              message.role === 'assistant' && Boolean(message.display)
+
+            return (
+            <div key={i} style={{ display: 'grid', gap: '0.5rem', minWidth: 0 }}>
               <div
                 style={{
-                  display: 'flex',
-                  justifyContent: message.role === 'user' ? 'flex-end' : 'flex-start',
+                  display: 'grid',
+                  justifyItems:
+                    message.role === 'user' ? 'end' : 'stretch',
+                  width: '100%',
+                  minWidth: 0,
                 }}
               >
                 <div
                   style={{
-                    maxWidth: '85%',
+                    maxWidth: isStructuredAssistant ? '100%' : '85%',
+                    width: isStructuredAssistant ? '100%' : 'auto',
+                    minWidth: 0,
+                    boxSizing: 'border-box',
                     padding: '0.75rem 1rem',
                     borderRadius: message.role === 'user'
                       ? '12px 12px 4px 12px'
@@ -340,9 +339,6 @@ export function SearchChat({ userId, entries, onClose, onViewEntry }: SearchChat
                         e.currentTarget.style.borderColor = '#E5E7EB'
                       }}
                     >
-                      <span style={{ fontSize: '1rem', flexShrink: 0, marginTop: '0.1rem' }}>
-                        {getEntryTypeIcon(entry.entry_type)}
-                      </span>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.15rem' }}>
                           <span
@@ -366,9 +362,8 @@ export function SearchChat({ userId, entries, onClose, onViewEntry }: SearchChat
                             fontSize: '0.85rem',
                             fontWeight: 600,
                             color: '#111827',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
+                            lineHeight: 1.35,
+                            overflowWrap: 'anywhere',
                           }}
                         >
                           {entry.headline}
@@ -379,26 +374,30 @@ export function SearchChat({ userId, entries, onClose, onViewEntry }: SearchChat
                               fontSize: '0.75rem',
                               color: '#6B7280',
                               marginTop: '0.25rem',
-                              fontStyle: 'italic',
+                              lineHeight: 1.4,
+                              overflowWrap: 'anywhere',
                             }}
                           >
                             {entry.relevance_note}
                           </div>
                         )}
                       </div>
-                      <span style={{ color: '#D1D5DB', fontSize: '0.85rem', flexShrink: 0, marginTop: '0.25rem' }}>
-                        ›
-                      </span>
                     </button>
                   ))}
                 </div>
               )}
             </div>
-          ))}
+          )})}
 
           {/* Suggested queries (show only at start) */}
           {messages.length === 1 && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.5rem' }}>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
+                gap: '0.5rem',
+              }}
+            >
               {suggestedQueries.map((q) => (
                 <button
                   key={q}
@@ -438,11 +437,13 @@ export function SearchChat({ userId, entries, onClose, onViewEntry }: SearchChat
         <form
           onSubmit={handleSubmit}
           style={{
-            display: 'flex',
+            display: 'grid',
+            gridTemplateColumns: '1fr auto',
             gap: '0.5rem',
             padding: '0.75rem 1.25rem',
             borderTop: '1px solid #E5E7EB',
             background: '#FAFAFA',
+            minWidth: 0,
           }}
         >
           <input

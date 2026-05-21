@@ -4,9 +4,81 @@ import type { SearchChatDisplay } from '@/types/search-chat-display'
 import { Fragment } from 'react'
 import { VisualNodeTree } from './visual-node-tree'
 
+function DisplayGridTable({
+  columns,
+  rows,
+}: {
+  columns: string[]
+  rows: string[][]
+}) {
+  const colTemplate = `repeat(${columns.length}, minmax(0, 1fr))`
+
+  return (
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: colTemplate,
+        width: '100%',
+        minWidth: 0,
+        border: '1px solid #E5E7EB',
+        borderRadius: '8px',
+        overflow: 'hidden',
+        fontSize: '0.8rem',
+        fontFamily: 'var(--font-inter), system-ui, sans-serif',
+      }}
+    >
+      {columns.map((col) => (
+        <div
+          key={col}
+          style={{
+            gridColumn: 'span 1',
+            padding: '0.5rem 0.65rem',
+            fontWeight: 700,
+            fontSize: '0.65rem',
+            letterSpacing: '0.06em',
+            textTransform: 'uppercase',
+            color: '#DC143C',
+            background: '#FAFAFA',
+            borderBottom: '2px solid #DC143C',
+          }}
+        >
+          {col}
+        </div>
+      ))}
+      {rows.map((row, ri) =>
+        row.map((cell, ci) => (
+          <div
+            key={`${ri}-${ci}`}
+            style={{
+              padding: '0.55rem 0.65rem',
+              color: ci === 0 ? '#111827' : '#4B5563',
+              fontWeight: ci === 0 ? 600 : 400,
+              lineHeight: 1.4,
+              background: ri % 2 === 0 ? '#FFFFFF' : '#FAFAFA',
+              borderBottom: '1px solid #F3F4F6',
+              minWidth: 0,
+              overflowWrap: 'anywhere',
+            }}
+          >
+            {cell}
+          </div>
+        ))
+      )}
+    </div>
+  )
+}
+
 export function AssistantStructuredMessage({ display }: { display: SearchChatDisplay }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+    <div
+      style={{
+        display: 'grid',
+        gap: '12px',
+        width: '100%',
+        minWidth: 0,
+        boxSizing: 'border-box',
+      }}
+    >
       <p
         style={{
           margin: 0,
@@ -21,63 +93,10 @@ export function AssistantStructuredMessage({ display }: { display: SearchChatDis
       </p>
 
       {display.table && display.table.columns.length > 0 && (
-        <div style={{ overflowX: 'auto', border: '1px solid #E5E7EB', borderRadius: '8px' }}>
-          <table
-            style={{
-              width: '100%',
-              borderCollapse: 'collapse',
-              fontSize: '0.8rem',
-              fontFamily: 'var(--font-inter), system-ui, sans-serif',
-            }}
-          >
-            <thead>
-              <tr style={{ background: '#FAFAFA', borderBottom: '2px solid #DC143C' }}>
-                {display.table.columns.map((col) => (
-                  <th
-                    key={col}
-                    style={{
-                      textAlign: 'left',
-                      padding: '0.5rem 0.65rem',
-                      fontWeight: 700,
-                      fontSize: '0.65rem',
-                      letterSpacing: '0.06em',
-                      textTransform: 'uppercase',
-                      color: '#DC143C',
-                    }}
-                  >
-                    {col}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {display.table.rows.map((row, ri) => (
-                <tr
-                  key={ri}
-                  style={{
-                    borderBottom: '1px solid #F3F4F6',
-                    background: ri % 2 === 0 ? '#FFFFFF' : '#FAFAFA',
-                  }}
-                >
-                  {row.map((cell, ci) => (
-                    <td
-                      key={ci}
-                      style={{
-                        padding: '0.55rem 0.65rem',
-                        color: ci === 0 ? '#111827' : '#4B5563',
-                        fontWeight: ci === 0 ? 600 : 400,
-                        verticalAlign: 'top',
-                        lineHeight: 1.4,
-                      }}
-                    >
-                      {cell}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <DisplayGridTable
+          columns={display.table.columns}
+          rows={display.table.rows}
+        />
       )}
 
       {display.matrix &&
@@ -86,8 +105,10 @@ export function AssistantStructuredMessage({ display }: { display: SearchChatDis
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: `repeat(${display.matrix.col_labels.length + 1}, minmax(72px, 1fr))`,
+              gridTemplateColumns: `repeat(${display.matrix.col_labels.length + 1}, minmax(0, 1fr))`,
               gap: '1px',
+              width: '100%',
+              minWidth: 0,
               background: '#E5E7EB',
               border: '1px solid #E5E7EB',
               borderRadius: '8px',
@@ -107,6 +128,8 @@ export function AssistantStructuredMessage({ display }: { display: SearchChatDis
                   textTransform: 'uppercase',
                   fontSize: '0.6rem',
                   letterSpacing: '0.05em',
+                  minWidth: 0,
+                  overflowWrap: 'anywhere',
                 }}
               >
                 {label}
@@ -120,6 +143,8 @@ export function AssistantStructuredMessage({ display }: { display: SearchChatDis
                     padding: '0.4rem',
                     fontWeight: 600,
                     color: '#111827',
+                    minWidth: 0,
+                    overflowWrap: 'anywhere',
                   }}
                 >
                   {rowLabel}
@@ -127,7 +152,13 @@ export function AssistantStructuredMessage({ display }: { display: SearchChatDis
                 {(display.matrix!.cells[ri] || []).map((cell, ci) => (
                   <div
                     key={`${ri}-${ci}`}
-                    style={{ background: '#FFFFFF', padding: '0.4rem', color: '#4B5563' }}
+                    style={{
+                      background: '#FFFFFF',
+                      padding: '0.4rem',
+                      color: '#4B5563',
+                      minWidth: 0,
+                      overflowWrap: 'anywhere',
+                    }}
                   >
                     {cell}
                   </div>

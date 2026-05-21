@@ -6,6 +6,7 @@
 export type PresentationFormatIntent =
   | 'overview'
   | 'cross_reference'
+  | 'relationship'
   | 'system_flow'
   | 'pure_conceptual'
 
@@ -21,6 +22,8 @@ export interface FormatRoute {
 
 const CROSS_REF =
   /\b(compare|contrast|versus|vs\.?|intersect|correlation|matrix|cross.?ref|overlap|both .+ and)\b/i
+const RELATIONSHIP =
+  /\b(relationship|relationships|relate|related|link between|connection between|ties between|between .+ and|how .+ (and|&) .+)\b/i
 const SYSTEM_FLOW =
   /\b(how (does|do|it|this)|architecture|flow|pipeline|depend|connects?|wiring|stack|pathway|taxonomy|hierarchy|decision tree|system)\b/i
 const CONCEPTUAL =
@@ -38,6 +41,16 @@ export function routeFormatFromQuery(query: string): FormatRoute {
       allowProse: false,
       researchNote: 'Multi-axis intersection — matrix (Samuel et al., 2022)',
       promptBlock: `FORMAT ROUTE: cross_reference → use display.matrix (row_labels × col_labels × cells). Set display.table and display.tree to null.`,
+    }
+  }
+
+  if (RELATIONSHIP.test(q)) {
+    return {
+      intent: 'relationship',
+      primary: 'tree',
+      allowProse: false,
+      researchNote: 'Linked concepts — hierarchical node tree (Mayer & Moreno, 2003)',
+      promptBlock: `FORMAT ROUTE: relationship → use display.tree (root + nodes with children showing how concepts connect). Set display.table and display.matrix to null.`,
     }
   }
 

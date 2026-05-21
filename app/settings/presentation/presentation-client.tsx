@@ -204,6 +204,12 @@ export function PresentationClient() {
                     <td style={{ padding: '0.5rem', color: '#86EFAC' }}>BLOCKED ✓</td>
                   </tr>
                   <tr>
+                    <td style={{ padding: '0.5rem' }}>“Relationship between learning and social”</td>
+                    <td style={{ padding: '0.5rem', color: '#86EFAC' }}>
+                      → {routeFormatFromQuery('what is the relationship between learning and social').primary}
+                    </td>
+                  </tr>
+                  <tr>
                     <td style={{ padding: '0.5rem' }}>“Compare finance vs health”</td>
                     <td style={{ padding: '0.5rem', color: '#86EFAC' }}>
                       → {routeFormatFromQuery('Compare finance vs health').primary}

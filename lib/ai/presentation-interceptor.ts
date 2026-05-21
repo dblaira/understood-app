@@ -65,10 +65,10 @@ export function buildPresentationSystemConstraint(
   return `
 
 SYSTEM CONSTRAINT (presentation interceptor — mandatory):
-Parse every logical sequence into pre-structured multi-column tables, matrices, or visual node trees — via JSON display fields the app renders. Users never see markdown or prose essays.
+Parse personal-data pattern discovery into visible relationship maps via JSON display fields the app renders. Users never see markdown, prose essays, outline-shaped answers, or raw metric dumps.
 
 FORBIDDEN: markdown, paragraph essays, sequential "quick takeaways", visible text outside the JSON block.
-REQUIRED: display.table and/or display.matrix and/or display.tree in the JSON block (see response format).
+REQUIRED: use display.tree as a visual mind map for relationships, comparisons, correlations, and pattern recognition. Use display.table only for exact lookup. Percentages are useful only when they show hierarchy, rank, share, or strength of pattern; raw counts are not an insight by themselves.
 
 Requires format:
 ${requireLines.join('\n')}

@@ -19,10 +19,22 @@ export interface SearchChatTree {
   nodes: SearchChatTreeNode[]
 }
 
+export interface SearchChatMindMapNode {
+  label: string
+  weight?: number
+  children?: SearchChatMindMapNode[]
+}
+
+export interface SearchChatMindMap {
+  central: string
+  nodes: SearchChatMindMapNode[]
+}
+
 export interface SearchChatDisplay {
   lead: string
   table?: SearchChatTable | null
   matrix?: SearchChatMatrix | null
+  mind_map?: SearchChatMindMap | null
   tree?: SearchChatTree | null
   follow_up?: string | null
 }

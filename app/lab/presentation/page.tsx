@@ -16,6 +16,60 @@ const DEMO_DISPLAY: SearchChatDisplay = {
     ],
   },
 }
+
+const EVIDENCE_DISPLAY: SearchChatDisplay = {
+  lead: 'Learning energy clusters around social repetition.',
+  table: {
+    columns: ['Entry', 'Date', 'Learning Signature'],
+    rows: [
+      [
+        'Remember Club Visits Always Deliver Value',
+        'Jan 21, 2026',
+        'Amazing conversations create learning energy and social momentum',
+      ],
+      [
+        'The Psychedelic 2020s',
+        'Feb 17, 2026',
+        'AI as an individual empowerment tool',
+      ],
+      [
+        'Natural Language is the New Code',
+        'Jan 12, 2026',
+        'Language becomes the new technical literacy',
+      ],
+    ],
+  },
+}
+
+const MIND_MAP_DISPLAY: SearchChatDisplay = {
+  lead: 'Patterns orbit relationship energy.',
+  mind_map: {
+    central: 'Pattern recognition map',
+    nodes: [
+      {
+        label: 'Social learning',
+        children: [
+          { label: 'Conversation creates energy', weight: 72 },
+          { label: 'Repeated club visits deliver value', weight: 68 },
+        ],
+      },
+      {
+        label: 'AI leverage',
+        children: [
+          { label: 'Language becomes technical literacy', weight: 81 },
+          { label: 'Individual empowerment increases', weight: 64 },
+        ],
+      },
+      {
+        label: 'Hierarchy signal',
+        children: [
+          { label: 'Strongest patterns use percentages', weight: 88 },
+          { label: 'Raw counts stay hidden unless ranked' },
+        ],
+      },
+    ],
+  },
+}
 import Link from 'next/link'
 
 export const dynamic = 'force-dynamic'
@@ -39,7 +93,7 @@ export default function PresentationLabPage() {
         fontFamily: 'ui-monospace, Menlo, monospace',
       }}
     >
-      <div style={{ maxWidth: '720px', margin: '0 auto' }}>
+      <div style={{ width: 'min(1120px, calc(100vw - 4rem))', margin: '0 auto' }}>
         <p style={{ color: '#DC143C', fontSize: '0.75rem', marginBottom: '1rem' }}>
           DEV LAB — no login required
         </p>
@@ -66,6 +120,14 @@ export default function PresentationLabPage() {
 
         <div style={{ marginTop: '1.5rem', background: '#fff', color: '#111', padding: '1rem', borderRadius: '8px' }}>
           <AssistantStructuredMessage display={DEMO_DISPLAY} />
+        </div>
+
+        <div style={{ marginTop: '1.5rem', background: '#fff', color: '#111', padding: '1rem', borderRadius: '8px' }}>
+          <AssistantStructuredMessage display={EVIDENCE_DISPLAY} />
+        </div>
+
+        <div style={{ marginTop: '1.5rem', background: '#fff', color: '#111', padding: '1rem', borderRadius: '8px' }}>
+          <AssistantStructuredMessage display={MIND_MAP_DISPLAY} />
         </div>
 
         <p style={{ marginTop: '2rem', fontSize: '0.85rem', color: '#999' }}>

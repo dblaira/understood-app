@@ -1,17 +1,23 @@
 'use client'
 
 import type { SearchChatDisplay } from '@/types/search-chat-display'
+import { getTableContainerFit } from '@/lib/ai/table-container-fit'
 import { Fragment } from 'react'
-import { VisualNodeTree } from './visual-node-tree'
+import { MindMapDisplay, VisualNodeTree } from './visual-node-tree'
 
 function DisplayGridTable({
   columns,
   rows,
+  fit = 'inline-grid',
 }: {
   columns: string[]
   rows: string[][]
+  fit?: 'inline-grid' | 'priority-grid'
 }) {
-  const colTemplate = `repeat(${columns.length}, minmax(0, 1fr))`
+  const colTemplate =
+    fit === 'priority-grid' && columns.length === 3
+      ? 'minmax(0, 0.9fr) minmax(0, 0.65fr) minmax(0, 1.45fr)'
+      : `repeat(${columns.length}, minmax(0, 1fr))`
 
   return (
     <div
@@ -68,7 +74,102 @@ function DisplayGridTable({
   )
 }
 
+function DisplayStackedTableCards({
+  columns,
+  rows,
+}: {
+  columns: string[]
+  rows: string[][]
+}) {
+  return (
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))',
+        gap: '12px',
+        width: '100%',
+        minWidth: 0,
+      }}
+    >
+      {rows.map((row, rowIndex) => {
+        const title = row[0] || `Row ${rowIndex + 1}`
+        const details = columns.slice(1).map((column, columnIndex) => ({
+          label: column,
+          value: row[columnIndex + 1] || '',
+        }))
+
+        return (
+          <div
+            key={`${title}-${rowIndex}`}
+            style={{
+              display: 'grid',
+              alignContent: 'start',
+              gap: '10px',
+              padding: '0.9rem',
+              background: '#FFFFFF',
+              border: '1px solid #E5E7EB',
+              borderRadius: '8px',
+              boxShadow: '0 1px 2px rgba(0, 0, 0, 0.04)',
+            }}
+          >
+            <div
+              style={{
+                fontWeight: 700,
+                color: '#111827',
+                fontSize: '0.85rem',
+                lineHeight: 1.35,
+              }}
+            >
+              {title}
+            </div>
+
+            <div style={{ display: 'grid', gap: '6px' }}>
+              {details.map((detail) => (
+                <div
+                  key={detail.label}
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'minmax(72px, 0.35fr) minmax(0, 1fr)',
+                    gap: '8px',
+                    alignItems: 'start',
+                  }}
+                >
+                  <div
+                    style={{
+                      color: '#DC143C',
+                      fontSize: '0.62rem',
+                      fontWeight: 700,
+                      letterSpacing: '0.06em',
+                      lineHeight: 1.3,
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    {detail.label}
+                  </div>
+                  <div
+                    style={{
+                      color: '#4B5563',
+                      fontSize: '0.78rem',
+                      lineHeight: 1.4,
+                      minWidth: 0,
+                      overflowWrap: 'anywhere',
+                    }}
+                  >
+                    {detail.value}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 export function AssistantStructuredMessage({ display }: { display: SearchChatDisplay }) {
+  const tableFit = display.table ? getTableContainerFit(display.table) : null
+
   return (
     <div
       style={{
@@ -93,10 +194,18 @@ export function AssistantStructuredMessage({ display }: { display: SearchChatDis
       </p>
 
       {display.table && display.table.columns.length > 0 && (
-        <DisplayGridTable
-          columns={display.table.columns}
-          rows={display.table.rows}
-        />
+        tableFit === 'stacked-cards' ? (
+          <DisplayStackedTableCards
+            columns={display.table.columns}
+            rows={display.table.rows}
+          />
+        ) : (
+          <DisplayGridTable
+            columns={display.table.columns}
+            rows={display.table.rows}
+            fit={tableFit ?? 'inline-grid'}
+          />
+        )
       )}
 
       {display.matrix &&
@@ -168,7 +277,11 @@ export function AssistantStructuredMessage({ display }: { display: SearchChatDis
           </div>
         )}
 
-      {display.tree && display.tree.nodes.length > 0 && (
+      {display.mind_map && display.mind_map.nodes.length > 0 && (
+        <MindMapDisplay mindMap={display.mind_map} />
+      )}
+
+      {!display.mind_map && display.tree && display.tree.nodes.length > 0 && (
         <VisualNodeTree tree={display.tree} />
       )}
 

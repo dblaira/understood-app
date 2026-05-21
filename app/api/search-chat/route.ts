@@ -150,7 +150,7 @@ ${SEARCH_CHAT_DISPLAY_PROMPT}
 - If no entries match, say so honestly and suggest what to search for instead
 - Show at most 10 most relevant entries
 - When discussing time periods, use the entry dates to determine relevance
-- Put all visible structure in display.table / display.tree / display.matrix — the app renders it`
+- Put relationship and pattern answers in display.tree; the app renders it as a mind map. Use display.table only for exact lookup.`
 
     let assistantMessage: string
     let presentationTrace

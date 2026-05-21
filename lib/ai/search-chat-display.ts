@@ -55,21 +55,41 @@ export function validateSearchChatDisplay(
     Array.isArray(display.matrix.col_labels) &&
     display.matrix.col_labels.length >= 2
 
+  const hasMindMap =
+    display.mind_map &&
+    typeof display.mind_map.central === 'string' &&
+    display.mind_map.central.trim().length >= 1 &&
+    Array.isArray(display.mind_map.nodes) &&
+    display.mind_map.nodes.length >= 1
+
   const hasTree =
     display.tree &&
     typeof display.tree.root === 'string' &&
     Array.isArray(display.tree.nodes) &&
     display.tree.nodes.length >= 1
 
-  if (!hasTable && !hasMatrix && !hasTree) {
+  if (!hasTable && !hasMatrix && !hasMindMap && !hasTree) {
     violations.push(
-      'Display must include table (2+ columns), matrix, or tree — not prose.'
+      'Display must include mind_map, table (2+ columns), matrix, or tree — not prose.'
     )
   }
 
   const blob = JSON.stringify(display)
   if (/\*\*|^#{1,6}\s|\|[^|]+\|/m.test(blob)) {
     violations.push('Display must not contain markdown syntax.')
+  }
+
+  if (hasMindMap) {
+    for (const node of display.mind_map!.nodes) {
+      if (!node.label?.trim()) {
+        violations.push('Mind map nodes must have short labels.')
+        break
+      }
+      if (typeof node.weight === 'number' && (node.weight < 0 || node.weight > 100)) {
+        violations.push('Mind map weight must be a percentage from 0 to 100.')
+        break
+      }
+    }
   }
 
   if (hasTable) {
@@ -104,21 +124,28 @@ export function validateSearchChatResponse(text: string): PresentationValidation
 }
 
 export const SEARCH_CHAT_FORMAT_SELECTION_GUIDE = `
-## COGNITIVE FIT — pick ONE primary component (research-aligned)
+## COGNITIVE FIT — pick ONE primary component
 
-| User intent | Component | When |
-|-------------|-----------|------|
-| What/who/when/list/find | display.table | Exact categories, lookup (≤3 variables per row) |
-| Compare/vs/intersect/correlate | display.matrix | Two axes crossing (week × domain) |
-| How it works/flow/architecture | display.tree | Parent-child logic, dependencies |
-| Why/so what (little data) | lead only + tiny table | Punchline then structure |
+- Pattern / relationship / "mind map" / compare / correlate → display.mind_map.
+- What / who / when / list / find → display.table only when the user needs exact entries.
+- How it works / flow / architecture → display.tree.
+- Why / so what → punchline lead + display.mind_map when data supports it.
 
-FORBIDDEN: markdown, prose essays, ASCII |---| tables, spatial chart descriptions.
-Numbers live in cells — never buried in sentences.
+FORBIDDEN: markdown, prose essays, ASCII |---| tables, outline-shaped answers, raw metric dumps.
+Percentages are useful only when they show hierarchy, rank, share, or strength of pattern.
+Do not surface raw counts as the insight. Use counts only as hidden evidence or when paired with percentage hierarchy.
+
+CONTAINER FIT:
+- Cognitive fit chooses relationship map or table.
+- Container fit chooses how the UI renders it.
+- 1–2 column tables render inline.
+- 3 short columns render as a priority grid.
+- 3+ columns with long evidence, rationale, learning signature, or notes render as stacked table-cards.
+- Keep evidence rows table-shaped; never compensate with prose.
 `
 
 export const SEARCH_CHAT_DISPLAY_PROMPT = `
-## VISIBLE ANSWER (JSON only — UI renders table / matrix / visual node tree)
+## VISIBLE ANSWER (JSON only — UI renders table, tree, or real visual mind map)
 
 No prose outside JSON. Follow FORMAT ROUTE injected below.
 
@@ -128,6 +155,7 @@ No prose outside JSON. Follow FORMAT ROUTE injected below.
     "lead": "Punchline max 12 words",
     "table": null,
     "matrix": null,
+    "mind_map": null,
     "tree": null,
     "follow_up": "Optional short question"
   },
@@ -139,8 +167,11 @@ No prose outside JSON. Follow FORMAT ROUTE injected below.
 Component schemas:
 - table: { "columns": ["A","B"], "rows": [["x","y"]] }
 - matrix: { "row_labels": ["R1"], "col_labels": ["C1","C2"], "cells": [["a","b"]] }
-- tree: { "root": "System", "nodes": [{ "label": "Part", "children": [{ "label": "Child" }] }] }
+- mind_map: { "central": "Pattern", "nodes": [{ "label": "Life area", "weight": 72, "children": [{ "label": "Signal", "weight": 64 }] }] }
+- tree: { "root": "Pattern", "nodes": [{ "label": "Life area", "children": [{ "label": "Signal" }] }] }
 
 Pick ONE primary (others null). Cells = short phrases with · not sentences.
+For pattern discovery, use display.mind_map: central = pattern; first-level nodes = related areas; children = signals, links, or hierarchy percentages.
+For evidence tables, prefer columns like Entry / Date / Signal; the UI will stack long rows into readable table-cards when needed.
 ${SEARCH_CHAT_FORMAT_SELECTION_GUIDE}
 `

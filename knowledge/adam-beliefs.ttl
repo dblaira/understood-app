@@ -148,3 +148,17 @@
 :Adam :recommendedStrategy :UsePreBuiltSystems .
 :Adam :recommendedStrategy :BuyDayPlanner .
 :Adam :recommendedStrategy :OutlineBeforeWriting .
+
+# --- Latest strategy, 2026-06-13 ---
+
+:UnderstoodApp :designedFor :Adam .
+:Adam :isFirstUserOf :UnderstoodApp .
+:UnderstoodApp :successBar :AdamTaste .
+:UnderstoodApp :successBar :AdamNaturalReaction .
+:NonResonantProductDetail :is :Destructive .
+:ProductDetail :mustResonateWith :Adam .
+:ProductDetail :includes :Wording, :Component, :Functionality, :ApiCall, :FontSize, :ColorScheme, :RecommendationEngine, :Ontology, :KnowledgeGraph .
+:AgentCommunication :mustBeUnderstandableTo :Adam .
+:UnclearAgentCommunication :isPotentiallyHarmfulTo :UnderstoodApp .
+:FeatureForOthers :allowedWhen :AdamChoosesIt .
+:UnderstoodApp :designPriority :AdamFirst .

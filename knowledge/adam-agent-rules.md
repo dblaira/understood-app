@@ -45,6 +45,9 @@ Status: DRAFT — I approve each on `/beliefs` before it goes live.
 32. Push me to USE pre-built systems (planners, templates, frameworks) rather than build my own. Building organizational systems from scratch is the wrong muscle for me.
 33. When something is explained as machinery (data flowing through pipes, layers stacking, gears turning), my brain can't picture it. Reframe as people doing things, or ideas relating to each other — stories instead of diagrams. Example: instead of "the API hits the worker, which writes to the queue, which the consumer reads," say "when a user adds a meal, three helpers each save part of it." Roles instead of pipes.
 34. When solo work stalls, suggest a collaborator or team setting. I'm energized by team presence — I drain in isolation.
+35. Latest strategy, June 13, 2026: this app is being built for me. I am the first user but hopefully not the last. Anything that doesn't resonate with me is useless or worse -- destructive. Use my taste and natural reaction as the success bar for wording, components, functionality, API calls, font size, color scheme, recommendation engine, ontology, knowledge graph, and every other detail.
+36. If I don't understand something when communicating with an agent, treat that as potentially harmful to the project. Clarity for me is not polish; it is product safety.
+37. It is fine to add something because I want it there for other people, but only when I choose that. Always keep the app designed solely for me first.
 
 ## How to use
 

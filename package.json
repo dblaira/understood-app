@@ -9,8 +9,9 @@
     "setup:storage": "node scripts/create-storage-bucket.js",
     "setup:migrations": "node scripts/run-migrations.js",
     "check:ontology": "npx tsx scripts/check-ontology-semantic.ts",
-    "export:suite-rdf": "npx tsx scripts/export-suite-rdf.ts",
-    "export:adam-beliefs": "npx tsx scripts/export-adam-beliefs.ts",
+    "validate:ontology": "bash ontology/validate.sh",
+    "export:suite-rdf": "npx tsx scripts/export-suite-rdf.ts && npm run validate:ontology",
+    "export:adam-beliefs": "npx tsx scripts/export-adam-beliefs.ts && npm run validate:ontology",
     "extract": "npx tsx scripts/run-extraction-pipeline.ts",
     "extract:dry": "npx tsx scripts/run-extraction-pipeline.ts --dry-run"
   },

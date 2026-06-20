@@ -1,0 +1,6 @@
+PREFIX understood: <https://understood.app/ontology#>
+
+SELECT (COUNT(?connection) AS ?count)
+WHERE {
+  ?connection a understood:Connection .
+}

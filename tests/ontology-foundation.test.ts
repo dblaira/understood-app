@@ -22,6 +22,12 @@ import {
 import { buildAxiomEvidenceUpdate, summarizeAxiomEvidence } from '../lib/ontology/evidence'
 import { projectAxiomsToKnowledgeGraph } from '../lib/ontology/knowledge-graph'
 import { exportAxiomsToTurtle } from '../lib/ontology/rdf-export'
+import {
+  buildTripleRowsFromSuiteBundle,
+  exportLifeDomainsToTurtle,
+  exportSuiteBundle,
+  SUITE_GRAPH_PERSONAL,
+} from '../lib/ontology/suite-export'
 import { buildOntologyShaclShapes } from '../lib/ontology/shacl-shapes'
 import { buildOntologySemanticReport } from '../lib/ontology/semantic-report'
 import { validateOntologyAxiomTurtle } from '../lib/ontology/semantic-validation'
@@ -1020,6 +1026,8 @@ describe('RDF export', () => {
     assert.match(turtle, /understood:confidence "0.67"\^\^xsd:decimal ;/)
     assert.match(turtle, /understood:evidenceCount 2 ;/)
     assert.match(turtle, /understood:provenanceSource "human_confirmed" \./)
+    assert.match(turtle, /<https:\/\/understood\.app\/ontology\/axiom\/axiom-1> understood:supportedBy <https:\/\/understood\.app\/entry\/entry-1> \./)
+    assert.match(turtle, /<https:\/\/understood\.app\/ontology\/axiom\/axiom-1> understood:supportedBy <https:\/\/understood\.app\/entry\/entry-2> \./)
     assert.doesNotMatch(turtle, /Demo Pattern/)
     assert.doesNotMatch(turtle, /Candidate Pattern/)
   })
@@ -1064,6 +1072,83 @@ describe('RDF export', () => {
     assert.match(turtle, /understood:semanticKind "causation" ;/)
     assert.match(turtle, /understood:evidenceExpectation "Requires stronger evidence than support/)
     assert.match(turtle, /understood:sourceReferenceIds "cco:extended-relation-ontology,ro:causal-relations" \./)
+  })
+})
+
+describe('suite RDF export', () => {
+  it('bundles ontology header, life domains, axioms, and connections', () => {
+    const bundle = exportSuiteBundle({
+      axioms: [
+        {
+          id: 'axiom-1',
+          antecedent: 'High Learning',
+          consequent: 'Higher Affect',
+          confidence: 0.67,
+          status: 'confirmed',
+          scope: 'personal',
+          relationshipType: 'predicts',
+          evidenceEntryIds: ['entry-1'],
+          evidenceCount: 1,
+          provenance: { source: 'human_confirmed' },
+        },
+      ],
+      connections: [
+        {
+          id: 'conn-1',
+          headline: 'Learning is the master key',
+          connectionType: 'identity_anchor',
+          lifeDomains: ['Learning'],
+        },
+      ],
+      metadata: { exportedAt: '2026-06-18T00:00:00.000Z' },
+    })
+
+    assert.match(bundle, /understood:Axiom a owl:Class/)
+    assert.match(bundle, /# suiteGraph: https:\/\/understood\.app\/graph\/personal/)
+    assert.match(bundle, /<https:\/\/understood\.app\/ontology\/domain\/learning>/)
+    assert.match(bundle, /<https:\/\/understood\.app\/ontology\/connection\/conn-1>/)
+    assert.match(bundle, /understood:supportedBy <https:\/\/understood\.app\/entry\/entry-1>/)
+  })
+
+  it('exports all 13 life domains with SKOS narrower children', () => {
+    const turtle = exportLifeDomainsToTurtle()
+
+    for (const domain of LIFE_DOMAINS) {
+      assert.match(turtle, new RegExp(`/domain/${domain.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`))
+    }
+
+    assert.match(turtle, /skos:narrower <https:\/\/understood\.app\/ontology\/concept\/cardio>/)
+    assert.doesNotMatch(turtle, /prefLabel "[^"]+"\n  skos:narrower/)
+  })
+
+  it('projects suite bundle rows into rdf_triples shape', () => {
+    const rows = buildTripleRowsFromSuiteBundle({
+      axioms: [
+        {
+          id: 'axiom-1',
+          antecedent: 'Low sleep',
+          consequent: 'Lower patience',
+          confidence: 0.7,
+          status: 'confirmed',
+          scope: 'personal',
+          relationshipType: 'predicts',
+          evidenceEntryIds: ['entry-9'],
+          evidenceCount: 1,
+          provenance: { source: 'self_declared' },
+        },
+      ],
+    })
+
+    assert.ok(rows.length > 0)
+    assert.equal(rows[0]?.graphIri, SUITE_GRAPH_PERSONAL)
+    assert.ok(
+      rows.some(
+        (row) =>
+          row.subject.includes('/axiom/axiom-1') &&
+          row.predicate.endsWith('supportedBy') &&
+          row.object === 'https://understood.app/entry/entry-9'
+      )
+    )
   })
 })
 

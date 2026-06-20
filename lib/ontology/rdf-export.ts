@@ -3,6 +3,8 @@ import { getRelationSemanticPolicy } from '@/lib/ontology/mid-level-reference'
 import { isUnsafePlaceholderRule } from '@/lib/ontology/rule-quality'
 
 const BASE_IRI = 'https://understood.app/ontology'
+export const ENTRY_BASE_IRI = 'https://understood.app/entry'
+export const SUITE_GRAPH_PERSONAL = 'https://understood.app/graph/personal'
 export const ONTOLOGY_VOCAB_VERSION = 'understood-ontology-v1'
 
 export interface RdfExportableAxiom {
@@ -45,10 +47,24 @@ export function exportAxiomsToTurtle(
       conceptTurtle(axiom.antecedent),
       conceptTurtle(axiom.consequent),
       axiomTurtle(axiom),
+      ...evidenceTriples(axiom),
     ]),
   ]
 
   return `${sections.filter((section) => section != null).join('\n\n')}\n`
+}
+
+function evidenceTriples(axiom: RdfExportableAxiom): string[] {
+  const axiomIri = iri('axiom', axiom.id)
+  const uniqueEntryIds = [...new Set(axiom.evidenceEntryIds.filter(Boolean))]
+
+  return uniqueEntryIds.map((entryId) => {
+    return `${axiomIri} understood:supportedBy ${entryIri(entryId)} .`
+  })
+}
+
+function entryIri(entryId: string): string {
+  return `<${ENTRY_BASE_IRI}/${encodeURIComponent(entryId)}>`
 }
 
 function axiomTurtle(axiom: RdfExportableAxiom): string {

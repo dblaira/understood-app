@@ -1,0 +1,882 @@
+[
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/domain/exercise",
+    "predicate": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+    "object": "https://understood.app/ontology#LifeDomain",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/domain/exercise",
+    "predicate": "https://understood.app/ontology#label",
+    "object": "Exercise",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/domain/exercise",
+    "predicate": "http://www.w3.org/2004/02/skos/core#narrower",
+    "object": "https://understood.app/ontology/concept/cardio",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/domain/exercise",
+    "predicate": "http://www.w3.org/2004/02/skos/core#narrower",
+    "object": "https://understood.app/ontology/concept/strength",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/domain/exercise",
+    "predicate": "http://www.w3.org/2004/02/skos/core#narrower",
+    "object": "https://understood.app/ontology/concept/mobility",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/domain/sleep",
+    "predicate": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+    "object": "https://understood.app/ontology#LifeDomain",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/domain/sleep",
+    "predicate": "https://understood.app/ontology#label",
+    "object": "Sleep",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/domain/sleep",
+    "predicate": "http://www.w3.org/2004/02/skos/core#narrower",
+    "object": "https://understood.app/ontology/concept/duration",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/domain/sleep",
+    "predicate": "http://www.w3.org/2004/02/skos/core#narrower",
+    "object": "https://understood.app/ontology/concept/quality",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/domain/sleep",
+    "predicate": "http://www.w3.org/2004/02/skos/core#narrower",
+    "object": "https://understood.app/ontology/concept/recovery",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/domain/nutrition",
+    "predicate": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+    "object": "https://understood.app/ontology#LifeDomain",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/domain/nutrition",
+    "predicate": "https://understood.app/ontology#label",
+    "object": "Nutrition",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/domain/nutrition",
+    "predicate": "http://www.w3.org/2004/02/skos/core#narrower",
+    "object": "https://understood.app/ontology/concept/meals",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/domain/nutrition",
+    "predicate": "http://www.w3.org/2004/02/skos/core#narrower",
+    "object": "https://understood.app/ontology/concept/hydration",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/domain/nutrition",
+    "predicate": "http://www.w3.org/2004/02/skos/core#narrower",
+    "object": "https://understood.app/ontology/concept/supplements",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/domain/ambition",
+    "predicate": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+    "object": "https://understood.app/ontology#LifeDomain",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/domain/ambition",
+    "predicate": "https://understood.app/ontology#label",
+    "object": "Ambition",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/domain/ambition",
+    "predicate": "http://www.w3.org/2004/02/skos/core#narrower",
+    "object": "https://understood.app/ontology/concept/goals",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/domain/ambition",
+    "predicate": "http://www.w3.org/2004/02/skos/core#narrower",
+    "object": "https://understood.app/ontology/concept/standards",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/domain/ambition",
+    "predicate": "http://www.w3.org/2004/02/skos/core#narrower",
+    "object": "https://understood.app/ontology/concept/momentum",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/domain/health",
+    "predicate": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+    "object": "https://understood.app/ontology#LifeDomain",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/domain/health",
+    "predicate": "https://understood.app/ontology#label",
+    "object": "Health",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/domain/health",
+    "predicate": "http://www.w3.org/2004/02/skos/core#narrower",
+    "object": "https://understood.app/ontology/concept/symptoms",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/domain/health",
+    "predicate": "http://www.w3.org/2004/02/skos/core#narrower",
+    "object": "https://understood.app/ontology/concept/care",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/domain/health",
+    "predicate": "http://www.w3.org/2004/02/skos/core#narrower",
+    "object": "https://understood.app/ontology/concept/constraints",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/domain/work",
+    "predicate": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+    "object": "https://understood.app/ontology#LifeDomain",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/domain/work",
+    "predicate": "https://understood.app/ontology#label",
+    "object": "Work",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/domain/work",
+    "predicate": "http://www.w3.org/2004/02/skos/core#narrower",
+    "object": "https://understood.app/ontology/concept/output",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/domain/work",
+    "predicate": "http://www.w3.org/2004/02/skos/core#narrower",
+    "object": "https://understood.app/ontology/concept/meetings",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/domain/work",
+    "predicate": "http://www.w3.org/2004/02/skos/core#narrower",
+    "object": "https://understood.app/ontology/concept/decisions",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/domain/social",
+    "predicate": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+    "object": "https://understood.app/ontology#LifeDomain",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/domain/social",
+    "predicate": "https://understood.app/ontology#label",
+    "object": "Social",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/domain/social",
+    "predicate": "http://www.w3.org/2004/02/skos/core#narrower",
+    "object": "https://understood.app/ontology/concept/family",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/domain/social",
+    "predicate": "http://www.w3.org/2004/02/skos/core#narrower",
+    "object": "https://understood.app/ontology/concept/friends",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/domain/social",
+    "predicate": "http://www.w3.org/2004/02/skos/core#narrower",
+    "object": "https://understood.app/ontology/concept/community",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/domain/learning",
+    "predicate": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+    "object": "https://understood.app/ontology#LifeDomain",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/domain/learning",
+    "predicate": "https://understood.app/ontology#label",
+    "object": "Learning",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/domain/learning",
+    "predicate": "http://www.w3.org/2004/02/skos/core#narrower",
+    "object": "https://understood.app/ontology/concept/reading",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/domain/learning",
+    "predicate": "http://www.w3.org/2004/02/skos/core#narrower",
+    "object": "https://understood.app/ontology/concept/practice",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/domain/learning",
+    "predicate": "http://www.w3.org/2004/02/skos/core#narrower",
+    "object": "https://understood.app/ontology/concept/research",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/domain/purchase",
+    "predicate": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+    "object": "https://understood.app/ontology#LifeDomain",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/domain/purchase",
+    "predicate": "https://understood.app/ontology#label",
+    "object": "Purchase",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/domain/purchase",
+    "predicate": "http://www.w3.org/2004/02/skos/core#narrower",
+    "object": "https://understood.app/ontology/concept/needs",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/domain/purchase",
+    "predicate": "http://www.w3.org/2004/02/skos/core#narrower",
+    "object": "https://understood.app/ontology/concept/wants",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/domain/purchase",
+    "predicate": "http://www.w3.org/2004/02/skos/core#narrower",
+    "object": "https://understood.app/ontology/concept/subscriptions",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/domain/belief",
+    "predicate": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+    "object": "https://understood.app/ontology#LifeDomain",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/domain/belief",
+    "predicate": "https://understood.app/ontology#label",
+    "object": "Belief",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/domain/belief",
+    "predicate": "http://www.w3.org/2004/02/skos/core#narrower",
+    "object": "https://understood.app/ontology/concept/principles",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/domain/belief",
+    "predicate": "http://www.w3.org/2004/02/skos/core#narrower",
+    "object": "https://understood.app/ontology/concept/identity",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/domain/belief",
+    "predicate": "http://www.w3.org/2004/02/skos/core#narrower",
+    "object": "https://understood.app/ontology/concept/worldview",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/domain/affect",
+    "predicate": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+    "object": "https://understood.app/ontology#LifeDomain",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/domain/affect",
+    "predicate": "https://understood.app/ontology#label",
+    "object": "Affect",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/domain/affect",
+    "predicate": "http://www.w3.org/2004/02/skos/core#narrower",
+    "object": "https://understood.app/ontology/concept/mood",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/domain/affect",
+    "predicate": "http://www.w3.org/2004/02/skos/core#narrower",
+    "object": "https://understood.app/ontology/concept/stress",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/domain/affect",
+    "predicate": "http://www.w3.org/2004/02/skos/core#narrower",
+    "object": "https://understood.app/ontology/concept/energy",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/domain/insight",
+    "predicate": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+    "object": "https://understood.app/ontology#LifeDomain",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/domain/insight",
+    "predicate": "https://understood.app/ontology#label",
+    "object": "Insight",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/domain/insight",
+    "predicate": "http://www.w3.org/2004/02/skos/core#narrower",
+    "object": "https://understood.app/ontology/concept/realization",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/domain/insight",
+    "predicate": "http://www.w3.org/2004/02/skos/core#narrower",
+    "object": "https://understood.app/ontology/concept/pattern",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/domain/insight",
+    "predicate": "http://www.w3.org/2004/02/skos/core#narrower",
+    "object": "https://understood.app/ontology/concept/decision",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/domain/entertainment",
+    "predicate": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+    "object": "https://understood.app/ontology#LifeDomain",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/domain/entertainment",
+    "predicate": "https://understood.app/ontology#label",
+    "object": "Entertainment",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/domain/entertainment",
+    "predicate": "http://www.w3.org/2004/02/skos/core#narrower",
+    "object": "https://understood.app/ontology/concept/media",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/domain/entertainment",
+    "predicate": "http://www.w3.org/2004/02/skos/core#narrower",
+    "object": "https://understood.app/ontology/concept/play",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/domain/entertainment",
+    "predicate": "http://www.w3.org/2004/02/skos/core#narrower",
+    "object": "https://understood.app/ontology/concept/novelty",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/concept/high-learning",
+    "predicate": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+    "object": "https://understood.app/ontology#Concept",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/concept/high-learning",
+    "predicate": "https://understood.app/ontology#label",
+    "object": "High Learning",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/concept/higher-affect",
+    "predicate": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+    "object": "https://understood.app/ontology#Concept",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/concept/higher-affect",
+    "predicate": "https://understood.app/ontology#label",
+    "object": "Higher Affect",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/axiom/axiom-learning-affect",
+    "predicate": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+    "object": "https://understood.app/ontology#Axiom",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/axiom/axiom-learning-affect",
+    "predicate": "https://understood.app/ontology#axiomId",
+    "object": "axiom-learning-affect",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/axiom/axiom-learning-affect",
+    "predicate": "https://understood.app/ontology#antecedent",
+    "object": "https://understood.app/ontology/concept/high-learning",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/axiom/axiom-learning-affect",
+    "predicate": "https://understood.app/ontology#consequent",
+    "object": "https://understood.app/ontology/concept/higher-affect",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/axiom/axiom-learning-affect",
+    "predicate": "https://understood.app/ontology#relationshipPolicy",
+    "object": "https://understood.app/ontology/relation/predicts",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/axiom/axiom-learning-affect",
+    "predicate": "https://understood.app/ontology#relationshipType",
+    "object": "predicts",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/axiom/axiom-learning-affect",
+    "predicate": "https://understood.app/ontology#confidence",
+    "object": "0.67",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/axiom/axiom-learning-affect",
+    "predicate": "https://understood.app/ontology#evidenceCount",
+    "object": "2",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/axiom/axiom-learning-affect",
+    "predicate": "https://understood.app/ontology#status",
+    "object": "confirmed",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/axiom/axiom-learning-affect",
+    "predicate": "https://understood.app/ontology#scope",
+    "object": "personal",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/axiom/axiom-learning-affect",
+    "predicate": "https://understood.app/ontology#provenanceSource",
+    "object": "human_confirmed",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/relation/predicts",
+    "predicate": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+    "object": "https://understood.app/ontology#RelationPolicy",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/relation/predicts",
+    "predicate": "https://understood.app/ontology#relationshipType",
+    "object": "predicts",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/relation/predicts",
+    "predicate": "https://understood.app/ontology#relationLabel",
+    "object": "Predicts",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/relation/predicts",
+    "predicate": "https://understood.app/ontology#semanticKind",
+    "object": "prediction",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/relation/predicts",
+    "predicate": "https://understood.app/ontology#evidenceExpectation",
+    "object": "Evidence should show the antecedent tends to precede the consequent.",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/relation/predicts",
+    "predicate": "https://understood.app/ontology#assistantRule",
+    "object": "Describe as expected or likely pattern, not a guaranteed outcome.",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/relation/predicts",
+    "predicate": "https://understood.app/ontology#sourceReferenceIds",
+    "object": "cco:event-ontology,cco:time-ontology",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/axiom/axiom-learning-affect",
+    "predicate": "https://understood.app/ontology#supportedBy",
+    "object": "https://understood.app/entry/entry-1",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/axiom/axiom-learning-affect",
+    "predicate": "https://understood.app/ontology#supportedBy",
+    "object": "https://understood.app/entry/entry-2",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/concept/sleep-under-6-hours",
+    "predicate": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+    "object": "https://understood.app/ontology#Concept",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/concept/sleep-under-6-hours",
+    "predicate": "https://understood.app/ontology#label",
+    "object": "Sleep under 6 hours",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/concept/lower-work-patience",
+    "predicate": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+    "object": "https://understood.app/ontology#Concept",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/concept/lower-work-patience",
+    "predicate": "https://understood.app/ontology#label",
+    "object": "Lower work patience",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/axiom/axiom-sleep-patience",
+    "predicate": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+    "object": "https://understood.app/ontology#Axiom",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/axiom/axiom-sleep-patience",
+    "predicate": "https://understood.app/ontology#axiomId",
+    "object": "axiom-sleep-patience",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/axiom/axiom-sleep-patience",
+    "predicate": "https://understood.app/ontology#antecedent",
+    "object": "https://understood.app/ontology/concept/sleep-under-6-hours",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/axiom/axiom-sleep-patience",
+    "predicate": "https://understood.app/ontology#consequent",
+    "object": "https://understood.app/ontology/concept/lower-work-patience",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/axiom/axiom-sleep-patience",
+    "predicate": "https://understood.app/ontology#relationshipPolicy",
+    "object": "https://understood.app/ontology/relation/predicts",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/axiom/axiom-sleep-patience",
+    "predicate": "https://understood.app/ontology#relationshipType",
+    "object": "predicts",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/axiom/axiom-sleep-patience",
+    "predicate": "https://understood.app/ontology#confidence",
+    "object": "0.72",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/axiom/axiom-sleep-patience",
+    "predicate": "https://understood.app/ontology#evidenceCount",
+    "object": "1",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/axiom/axiom-sleep-patience",
+    "predicate": "https://understood.app/ontology#status",
+    "object": "confirmed",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/axiom/axiom-sleep-patience",
+    "predicate": "https://understood.app/ontology#scope",
+    "object": "personal",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/axiom/axiom-sleep-patience",
+    "predicate": "https://understood.app/ontology#provenanceSource",
+    "object": "self_declared",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/axiom/axiom-sleep-patience",
+    "predicate": "https://understood.app/ontology#supportedBy",
+    "object": "https://understood.app/entry/entry-3",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-learning-master-key",
+    "predicate": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+    "object": "https://understood.app/ontology#Connection",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-learning-master-key",
+    "predicate": "https://understood.app/ontology#label",
+    "object": "Learning is the master key",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-learning-master-key",
+    "predicate": "https://understood.app/ontology#connectionType",
+    "object": "identity_anchor",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-learning-master-key",
+    "predicate": "https://understood.app/ontology#inLifeDomain",
+    "object": "https://understood.app/ontology/domain/learning",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-learning-master-key",
+    "predicate": "https://understood.app/ontology#inLifeDomain",
+    "object": "https://understood.app/ontology/domain/belief",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  }
+]

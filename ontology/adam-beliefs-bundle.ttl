@@ -90,7 +90,7 @@ understood:connectionType a owl:DatatypeProperty ; rdfs:domain understood:Connec
 
 # suiteGraph: https://understood.app/graph/personal
 
-# exportedAt: 2026-06-19T17:56:42.862Z
+# exportedAt: 2026-06-20T19:41:47.502Z
 
 @prefix understood: <https://understood.app/ontology#> .
 

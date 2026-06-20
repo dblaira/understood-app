@@ -1,0 +1,594 @@
+[
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-001",
+    "predicate": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+    "object": "https://understood.app/ontology#Connection",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-001",
+    "predicate": "https://understood.app/ontology#label",
+    "object": "My assignment is to create desire",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-001",
+    "predicate": "https://understood.app/ontology#connectionType",
+    "object": "process_anchor",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-001",
+    "predicate": "https://understood.app/ontology#inLifeDomain",
+    "object": "https://understood.app/ontology/domain/belief",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-001",
+    "predicate": "https://understood.app/ontology#inLifeDomain",
+    "object": "https://understood.app/ontology/domain/learning",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-002",
+    "predicate": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+    "object": "https://understood.app/ontology#Connection",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-002",
+    "predicate": "https://understood.app/ontology#label",
+    "object": "Creating space reduces cognitive load",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-002",
+    "predicate": "https://understood.app/ontology#connectionType",
+    "object": "validated_principle",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-002",
+    "predicate": "https://understood.app/ontology#inLifeDomain",
+    "object": "https://understood.app/ontology/domain/belief",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-003",
+    "predicate": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+    "object": "https://understood.app/ontology#Connection",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-003",
+    "predicate": "https://understood.app/ontology#label",
+    "object": "What is context without conviction? Regret.",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-003",
+    "predicate": "https://understood.app/ontology#connectionType",
+    "object": "process_anchor",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-003",
+    "predicate": "https://understood.app/ontology#inLifeDomain",
+    "object": "https://understood.app/ontology/domain/belief",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-004",
+    "predicate": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+    "object": "https://understood.app/ontology#Connection",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-004",
+    "predicate": "https://understood.app/ontology#label",
+    "object": "Delegation is three sentences",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-004",
+    "predicate": "https://understood.app/ontology#connectionType",
+    "object": "process_anchor",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-004",
+    "predicate": "https://understood.app/ontology#inLifeDomain",
+    "object": "https://understood.app/ontology/domain/belief",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-005",
+    "predicate": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+    "object": "https://understood.app/ontology#Connection",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-005",
+    "predicate": "https://understood.app/ontology#label",
+    "object": "Products fight potential slipping away",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-005",
+    "predicate": "https://understood.app/ontology#connectionType",
+    "object": "validated_principle",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-005",
+    "predicate": "https://understood.app/ontology#inLifeDomain",
+    "object": "https://understood.app/ontology/domain/learning",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-006",
+    "predicate": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+    "object": "https://understood.app/ontology#Connection",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-006",
+    "predicate": "https://understood.app/ontology#label",
+    "object": "Use compute over cleverness",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-006",
+    "predicate": "https://understood.app/ontology#connectionType",
+    "object": "validated_principle",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-006",
+    "predicate": "https://understood.app/ontology#inLifeDomain",
+    "object": "https://understood.app/ontology/domain/belief",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-007",
+    "predicate": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+    "object": "https://understood.app/ontology#Connection",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-007",
+    "predicate": "https://understood.app/ontology#label",
+    "object": "Ten minutes exporting judgment compounds",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-007",
+    "predicate": "https://understood.app/ontology#connectionType",
+    "object": "validated_principle",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-007",
+    "predicate": "https://understood.app/ontology#inLifeDomain",
+    "object": "https://understood.app/ontology/domain/belief",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-008",
+    "predicate": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+    "object": "https://understood.app/ontology#Connection",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-008",
+    "predicate": "https://understood.app/ontology#label",
+    "object": "Articulating something well changes relationship to it",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-008",
+    "predicate": "https://understood.app/ontology#connectionType",
+    "object": "validated_principle",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-008",
+    "predicate": "https://understood.app/ontology#inLifeDomain",
+    "object": "https://understood.app/ontology/domain/belief",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-009",
+    "predicate": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+    "object": "https://understood.app/ontology#Connection",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-009",
+    "predicate": "https://understood.app/ontology#label",
+    "object": "Anticipatory anxiety lies",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-009",
+    "predicate": "https://understood.app/ontology#connectionType",
+    "object": "validated_principle",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-009",
+    "predicate": "https://understood.app/ontology#inLifeDomain",
+    "object": "https://understood.app/ontology/domain/belief",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-010",
+    "predicate": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+    "object": "https://understood.app/ontology#Connection",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-010",
+    "predicate": "https://understood.app/ontology#label",
+    "object": "Capture first, structure later",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-010",
+    "predicate": "https://understood.app/ontology#connectionType",
+    "object": "validated_principle",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-010",
+    "predicate": "https://understood.app/ontology#inLifeDomain",
+    "object": "https://understood.app/ontology/domain/belief",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-011",
+    "predicate": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+    "object": "https://understood.app/ontology#Connection",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-011",
+    "predicate": "https://understood.app/ontology#label",
+    "object": "You do not outwork the problem",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-011",
+    "predicate": "https://understood.app/ontology#connectionType",
+    "object": "validated_principle",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-011",
+    "predicate": "https://understood.app/ontology#inLifeDomain",
+    "object": "https://understood.app/ontology/domain/belief",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-012",
+    "predicate": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+    "object": "https://understood.app/ontology#Connection",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-012",
+    "predicate": "https://understood.app/ontology#label",
+    "object": "Does this capture potential that would slip away?",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-012",
+    "predicate": "https://understood.app/ontology#connectionType",
+    "object": "pattern_interrupt",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-012",
+    "predicate": "https://understood.app/ontology#inLifeDomain",
+    "object": "https://understood.app/ontology/domain/belief",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-012",
+    "predicate": "https://understood.app/ontology#inLifeDomain",
+    "object": "https://understood.app/ontology/domain/learning",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-013",
+    "predicate": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+    "object": "https://understood.app/ontology#Connection",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-013",
+    "predicate": "https://understood.app/ontology#label",
+    "object": "Am I building a system or doing a task?",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-013",
+    "predicate": "https://understood.app/ontology#connectionType",
+    "object": "pattern_interrupt",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-013",
+    "predicate": "https://understood.app/ontology#inLifeDomain",
+    "object": "https://understood.app/ontology/domain/belief",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-014",
+    "predicate": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+    "object": "https://understood.app/ontology#Connection",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-014",
+    "predicate": "https://understood.app/ontology#label",
+    "object": "Insights emerge through engagement",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-014",
+    "predicate": "https://understood.app/ontology#connectionType",
+    "object": "identity_anchor",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-014",
+    "predicate": "https://understood.app/ontology#inLifeDomain",
+    "object": "https://understood.app/ontology/domain/belief",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-015",
+    "predicate": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+    "object": "https://understood.app/ontology#Connection",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-015",
+    "predicate": "https://understood.app/ontology#label",
+    "object": "Energy moves forward, not backward",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-015",
+    "predicate": "https://understood.app/ontology#connectionType",
+    "object": "identity_anchor",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-015",
+    "predicate": "https://understood.app/ontology#inLifeDomain",
+    "object": "https://understood.app/ontology/domain/belief",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-016",
+    "predicate": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+    "object": "https://understood.app/ontology#Connection",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-016",
+    "predicate": "https://understood.app/ontology#label",
+    "object": "Judgment strong, vocabulary gap",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-016",
+    "predicate": "https://understood.app/ontology#connectionType",
+    "object": "identity_anchor",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-016",
+    "predicate": "https://understood.app/ontology#inLifeDomain",
+    "object": "https://understood.app/ontology/domain/belief",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-017",
+    "predicate": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+    "object": "https://understood.app/ontology#Connection",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-017",
+    "predicate": "https://understood.app/ontology#label",
+    "object": "Work on what I can",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-017",
+    "predicate": "https://understood.app/ontology#connectionType",
+    "object": "connection",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-017",
+    "predicate": "https://understood.app/ontology#inLifeDomain",
+    "object": "https://understood.app/ontology/domain/belief",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-018",
+    "predicate": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+    "object": "https://understood.app/ontology#Connection",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-018",
+    "predicate": "https://understood.app/ontology#label",
+    "object": "Momentum is the metric that matters",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-018",
+    "predicate": "https://understood.app/ontology#connectionType",
+    "object": "connection",
+    "objectIsIri": false,
+    "sourceApp": "understood"
+  },
+  {
+    "graphIri": "https://understood.app/graph/personal",
+    "subject": "https://understood.app/ontology/connection/conn-018",
+    "predicate": "https://understood.app/ontology#inLifeDomain",
+    "object": "https://understood.app/ontology/domain/belief",
+    "objectIsIri": true,
+    "sourceApp": "understood"
+  }
+]

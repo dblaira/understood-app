@@ -3,12 +3,14 @@ import { join } from 'node:path'
 
 import { CONNECTION_ONTOLOGY_INTAKE_ITEMS } from '../lib/ontology/connections-intake'
 import {
+  buildTripleRowsFromSuiteBundle,
   exportConnectionsToTurtle,
   exportSuiteBundle,
   type RdfExportableConnection,
 } from '../lib/ontology/suite-export'
 
 const outputDir = join(process.cwd(), 'ontology')
+const fixturesDir = join(process.cwd(), 'fixtures', 'ontology')
 const exportedAt = new Date().toISOString()
 
 function intakeItemToConnection(
@@ -59,9 +61,20 @@ const connectionsOnly = [
 ].join('\n')
 
 mkdirSync(outputDir, { recursive: true })
+mkdirSync(fixturesDir, { recursive: true })
 writeFileSync(join(outputDir, 'adam-beliefs.ttl'), connectionsOnly, 'utf8')
 writeFileSync(join(outputDir, 'adam-beliefs-bundle.ttl'), bundle, 'utf8')
 
+const tripleRows = buildTripleRowsFromSuiteBundle({
+  axioms: [],
+  connections,
+  metadata: { exportedAt },
+}).filter((row) => row.subject.includes('/ontology/connection/'))
+
+const triplesJson = `${JSON.stringify(tripleRows, null, 2)}\n`
+writeFileSync(join(fixturesDir, 'adam-beliefs-triples.json'), triplesJson, 'utf8')
+writeFileSync(join(outputDir, 'adam-beliefs-triples.json'), triplesJson, 'utf8')
+
 console.log(
-  `Adam beliefs export complete: ${connections.length} connections → ontology/adam-beliefs.ttl`
+  `Adam beliefs export complete: ${connections.length} connections → ontology/adam-beliefs.ttl (${tripleRows.length} triple rows)`
 )

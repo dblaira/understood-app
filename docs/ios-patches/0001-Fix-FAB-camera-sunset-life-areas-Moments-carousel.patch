@@ -1,0 +1,1067 @@
+From 99acc9e4a1b8e2abcb8b22b6942b0bc273365909 Mon Sep 17 00:00:00 2001
+From: Cursor Agent <cursoragent@cursor.com>
+Date: Sun, 21 Jun 2026 03:58:58 +0000
+Subject: [PATCH] Fix FAB camera, sunset life areas, Moments carousel
+
+- Camera: request permission, present via sheet (not nested fullScreenCover)
+- Replace life-area nav/filters with 8-step Adam Pattern (metadata.pattern_step)
+- Homepage: MOMENTS strip shows image entries only; no empty placeholders
+- Capture and edit flows use Pattern picker; category defaults to Insight silently
+---
+ Understood/ActionsView.swift                  |  24 +--
+ Understood/AdamPattern.swift                  |  43 ++++++
+ Understood/CameraImagePicker.swift            |  25 ++++
+ Understood/CaptureView.swift                  | 111 +++++++++-----
+ Understood/ContentView.swift                  | 137 +++++++++---------
+ Understood/Entry.swift                        |  16 +-
+ Understood/EntryDetailView.swift              |  92 ++++++++----
+ Understood/Info.plist                         |   2 +
+ Understood/MainTabView.swift                  |   8 +-
+ .../Navigation/AppNavigationState.swift       |  11 +-
+ .../Navigation/FullScreenMenuView.swift       |  14 +-
+ Understood/Navigation/SettingsView.swift      |   2 +-
+ Understood/Views/BeliefLibraryView.swift      |  12 +-
+ 13 files changed, 326 insertions(+), 171 deletions(-)
+ create mode 100644 Understood/AdamPattern.swift
+
+diff --git a/Understood/ActionsView.swift b/Understood/ActionsView.swift
+index c5ff347..61e077b 100644
+--- a/Understood/ActionsView.swift
++++ b/Understood/ActionsView.swift
+@@ -9,7 +9,7 @@ import SwiftUI
+ 
+ struct ActionsView: View {
+     let supabase = SupabaseService.shared
+-    var lifeAreaFilter: String = "all"
++    var patternFilter: String = "all"
+ 
+     @State private var allActions: [Entry] = []
+     @State private var isLoading = true
+@@ -20,8 +20,8 @@ struct ActionsView: View {
+     // MARK: - Grouped Actions
+ 
+     private var filteredActions: [Entry] {
+-        guard lifeAreaFilter != "all" else { return allActions }
+-        return allActions.filter { $0.category.lowercased() == lifeAreaFilter.lowercased() }
++        guard patternFilter != "all" else { return allActions }
++        return allActions.filter { AdamPattern.matchesFilter(patternFilter, patternStep: $0.patternStep) }
+     }
+ 
+     private var groupedActions: ActionGroups {
+@@ -428,13 +428,15 @@ struct ActionCardView: View {
+ 
+                     // Bottom row: category + due date
+                     HStack(spacing: 8) {
+-                        Text(entry.category.uppercased())
+-                            .font(Typography.chipLabel)
+-                            .foregroundStyle(.textMetadata)
+-                            .padding(.horizontal, 8)
+-                            .padding(.vertical, 3)
+-                            .background(Color.surfaceChip)
+-                            .cornerRadius(4)
++                        if let label = entry.patternDisplayLabel {
++                            Text(label)
++                                .font(Typography.chipLabel)
++                                .foregroundStyle(.textMetadata)
++                                .padding(.horizontal, 8)
++                                .padding(.vertical, 3)
++                                .background(Color.surfaceChip)
++                                .cornerRadius(4)
++                        }
+ 
+                         DueDateLabel(entry: entry)
+ 
+@@ -487,6 +489,6 @@ struct RoundedCornerShape: Shape {
+ 
+ #Preview {
+     NavigationStack {
+-        ActionsView(lifeAreaFilter: "all")
++        ActionsView(patternFilter: "all")
+     }
+ }
+diff --git a/Understood/AdamPattern.swift b/Understood/AdamPattern.swift
+new file mode 100644
+index 0000000..4905be8
+--- /dev/null
++++ b/Understood/AdamPattern.swift
+@@ -0,0 +1,43 @@
++//
++//  AdamPattern.swift
++//  Understood
++//
++//  The 8-Step Success Architecture — replaces life-area navigation on iOS.
++//
++
++import Foundation
++
++enum AdamPattern {
++    static let steps: [String] = [
++        "Context",
++        "Circle",
++        "Close the Gap",
++        "Choose Success",
++        "Code the Pattern",
++        "Create Kill Switch",
++        "Clear Sign of Success",
++        "Compound",
++    ]
++
++    /// Menu / filter options: all + each step (id is lowercased step name)
++    static let filterOptions: [(id: String, label: String)] = {
++        var options = [(id: "all", label: "All")]
++        options.append(contentsOf: steps.map { (id: $0.lowercased(), label: $0) })
++        return options
++    }()
++
++    static let legacyLifeAreas: Set<String> = [
++        "business", "finance", "health", "fitness", "spiritual",
++        "fun", "social", "romance", "all",
++    ]
++
++    static func matchesFilter(_ filter: String, patternStep: String?) -> Bool {
++        guard filter != "all" else { return true }
++        guard let patternStep else { return false }
++        return patternStep.lowercased() == filter
++    }
++
++    static func isValidStep(_ value: String) -> Bool {
++        steps.contains(where: { $0.caseInsensitiveCompare(value) == .orderedSame })
++    }
++}
+diff --git a/Understood/CameraImagePicker.swift b/Understood/CameraImagePicker.swift
+index a49d6a8..bc91ed4 100644
+--- a/Understood/CameraImagePicker.swift
++++ b/Understood/CameraImagePicker.swift
+@@ -5,9 +5,34 @@
+ //  Native camera bridge for SwiftUI capture and entry editing flows.
+ //
+ 
++import AVFoundation
+ import SwiftUI
+ import UIKit
+ 
++enum CameraAccess {
++    static func requestIfNeeded() async -> Result<Void, String> {
++        let status = AVCaptureDevice.authorizationStatus(for: .video)
++
++        switch status {
++        case .authorized:
++            return .success(())
++        case .notDetermined:
++            let granted = await AVCaptureDevice.requestAccess(for: .video)
++            return granted
++                ? .success(())
++                : .failure("Camera access is needed to attach photos. Enable it in Settings → Understood.")
++        case .denied, .restricted:
++            return .failure("Camera access is off. Enable it in Settings → Understood → Camera.")
++        @unknown default:
++            return .failure("Camera is not available right now.")
++        }
++    }
++
++    static var isAvailable: Bool {
++        UIImagePickerController.isSourceTypeAvailable(.camera)
++    }
++}
++
+ struct CameraImagePicker: UIViewControllerRepresentable {
+     let onComplete: (UIImage?) -> Void
+ 
+diff --git a/Understood/CaptureView.swift b/Understood/CaptureView.swift
+index 6bcad3b..6ea5727 100644
+--- a/Understood/CaptureView.swift
++++ b/Understood/CaptureView.swift
+@@ -25,7 +25,7 @@ struct CaptureView: View {
+ 
+     // Form state
+     @State private var content = ""
+-    @State private var selectedCategory = "Business"
++    @State private var selectedPatternStep: String? = nil
+     @FocusState private var isContentFocused: Bool
+ 
+     // Photo state
+@@ -43,14 +43,15 @@ struct CaptureView: View {
+     @State private var autosaveTask: Task<Void, Never>?
+     @State private var isAutosaving = false
+     @State private var lastAutosavedContent = ""
+-    @State private var lastAutosavedCategory = ""
++    @State private var lastAutosavedPatternStep: String? = nil
+     @State private var hasLocalDraft = false
+     @State private var saveFeedbackVisible = false
+ 
+-    let categories = ["Business", "Finance", "Health", "Spiritual", "Fun", "Social", "Romance"]
+-
+     var onSaved: (() -> Void)?
+ 
++    /// Silent backend category while life areas are sunset on iOS
++    private let defaultCategory = "Insight"
++
+     private var trimmedContent: String {
+         content.trimmingCharacters(in: .whitespacesAndNewlines)
+     }
+@@ -72,28 +73,54 @@ struct CaptureView: View {
+ 
+                 VStack(spacing: 0) {
+ 
+-                    // MARK: - Category Selector
++                    // MARK: - Pattern Selector
++
++                    HStack {
++                        Menu {
++                            Button {
++                                selectedPatternStep = nil
++                                Haptics.selection()
++                            } label: {
++                                if selectedPatternStep == nil {
++                                    Label("None", systemImage: "checkmark")
++                                } else {
++                                    Text("None")
++                                }
++                            }
+ 
+-                    ScrollView(.horizontal, showsIndicators: false) {
+-                        HStack(spacing: 10) {
+-                            ForEach(categories, id: \.self) { category in
++                            ForEach(AdamPattern.steps, id: \.self) { step in
+                                 Button {
+-                                    selectedCategory = category
++                                    selectedPatternStep = step
+                                     Haptics.selection()
+                                 } label: {
+-                                    Text(category)
+-                                        .font(Typography.uiMedium)
+-                                        .padding(.horizontal, 16)
+-                                        .padding(.vertical, 8)
+-                                        .background(selectedCategory == category ? Color.black : Color.surfaceSubtle)
+-                                        .foregroundStyle(selectedCategory == category ? Color.white : Color.textPrimary)
+-                                        .cornerRadius(20)
++                                    if selectedPatternStep == step {
++                                        Label(step, systemImage: "checkmark")
++                                    } else {
++                                        Text(step)
++                                    }
+                                 }
+                             }
++                        } label: {
++                            HStack(spacing: 8) {
++                                Image(systemName: "list.number")
++                                    .font(.system(size: 15, weight: .semibold))
++                                Text(selectedPatternStep ?? "Pattern")
++                                    .font(Typography.uiMedium)
++                                    .fontWeight(.semibold)
++                                Image(systemName: "chevron.up.chevron.down")
++                                    .font(.system(size: 11, weight: .semibold))
++                            }
++                            .foregroundStyle(.understoodCrimson)
++                            .padding(.horizontal, 16)
++                            .padding(.vertical, 10)
++                            .background(Color.surfaceSubtle)
++                            .cornerRadius(20)
+                         }
+-                        .padding(.horizontal, 20)
+-                        .padding(.vertical, 12)
++
++                        Spacer()
+                     }
++                    .padding(.horizontal, 20)
++                    .padding(.vertical, 12)
+ 
+                     Divider()
+                         .foregroundStyle(.borderLight)
+@@ -246,22 +273,22 @@ struct CaptureView: View {
+                 }
+             }
+             .onAppear {
+-                if let prefillCategory {
+-                    selectedCategory = prefillCategory
++                if let prefillCategory, AdamPattern.isValidStep(prefillCategory) {
++                    selectedPatternStep = prefillCategory
+                 }
+                 restoreLocalDraftIfNeeded()
+             }
+             .onChange(of: content) { _, _ in
+                 scheduleAutosave()
+             }
+-            .onChange(of: selectedCategory) { _, _ in
++            .onChange(of: selectedPatternStep) { _, _ in
+                 scheduleAutosave()
+             }
+             .onDisappear {
+                 autosaveTask?.cancel()
+                 speechCapture.stopTranscription()
+             }
+-            .fullScreenCover(isPresented: $showCamera) {
++            .sheet(isPresented: $showCamera) {
+                 CameraImagePicker { image in
+                     guard let image, remainingImageSlots > 0 else { return }
+                     selectedImages.append(image)
+@@ -287,13 +314,13 @@ struct CaptureView: View {
+                 Spacer()
+ 
+                 Button {
+-                    showCamera = true
++                    Task { await openCamera() }
+                 } label: {
+                     bottomIcon(systemName: "camera.fill", label: "Camera", foreground: .textPrimary, iconSize: 27)
+                         .frame(width: 112)
+                 }
+                 .buttonStyle(.plain)
+-                .disabled(remainingImageSlots == 0 || !UIImagePickerController.isSourceTypeAvailable(.camera))
++                .disabled(remainingImageSlots == 0 || !CameraAccess.isAvailable)
+             }
+ 
+             Button {
+@@ -408,7 +435,7 @@ struct CaptureView: View {
+     }
+ 
+     private var hasPendingSaveChanges: Bool {
+-        content != lastAutosavedContent || selectedCategory != lastAutosavedCategory
++        content != lastAutosavedContent || selectedPatternStep != lastAutosavedPatternStep
+     }
+ 
+     private var placeholderText: String {
+@@ -419,6 +446,17 @@ struct CaptureView: View {
+         }
+     }
+ 
++    private func openCamera() async {
++        guard remainingImageSlots > 0 else { return }
++
++        switch await CameraAccess.requestIfNeeded() {
++        case .success:
++            showCamera = true
++        case .failure(let message):
++            photoLoadError = message
++        }
++    }
++
+     // MARK: - Photo Loading
+ 
+     private func loadSelectedPhotos(_ items: [PhotosPickerItem]) async {
+@@ -475,7 +513,7 @@ struct CaptureView: View {
+             // 1. Save to Supabase (text only, get entry ID)
+             let entry = try await supabase.createEntry(
+                 content: content,
+-                category: selectedCategory,
++                category: defaultCategory,
+                 entryType: entryType,
+                 sourceEntryId: sourceEntryId,
+                 metadata: metadata
+@@ -547,7 +585,7 @@ struct CaptureView: View {
+ 
+     private func autoSaveEntry() async {
+         guard !trimmedContent.isEmpty, !isSaving, !isAutosaving else { return }
+-        guard content != lastAutosavedContent || selectedCategory != lastAutosavedCategory else { return }
++        guard content != lastAutosavedContent || selectedPatternStep != lastAutosavedPatternStep else { return }
+ 
+         isAutosaving = true
+         defer { isAutosaving = false }
+@@ -558,7 +596,7 @@ struct CaptureView: View {
+             } else {
+                 let entry = try await supabase.createEntry(
+                     content: content,
+-                    category: selectedCategory,
++                    category: defaultCategory,
+                     entryType: entryType,
+                     sourceEntryId: sourceEntryId,
+                     metadata: captureMetadata()
+@@ -574,11 +612,11 @@ struct CaptureView: View {
+     }
+ 
+     private func updateAutosavedEntryIfNeeded(_ entryId: String) async throws {
+-        guard content != lastAutosavedContent || selectedCategory != lastAutosavedCategory else { return }
++        guard content != lastAutosavedContent || selectedPatternStep != lastAutosavedPatternStep else { return }
+ 
++        try await supabase.updateEntryMetadata(id: entryId, metadata: captureMetadata())
+         try await supabase.updateEntry(id: entryId, fields: [
+-            "content": content,
+-            "category": selectedCategory
++            "content": content
+         ])
+         markAutosaved()
+         onSaved?()
+@@ -586,7 +624,7 @@ struct CaptureView: View {
+ 
+     private func markAutosaved() {
+         lastAutosavedContent = content
+-        lastAutosavedCategory = selectedCategory
++        lastAutosavedPatternStep = selectedPatternStep
+         clearLocalDraft()
+     }
+ 
+@@ -601,7 +639,7 @@ struct CaptureView: View {
+             return
+         }
+ 
+-        let draft = CaptureLocalDraft(content: content, category: selectedCategory)
++        let draft = CaptureLocalDraft(content: content, patternStep: selectedPatternStep)
+         if let data = try? JSONEncoder().encode(draft) {
+             UserDefaults.standard.set(data, forKey: localDraftKey)
+             hasLocalDraft = true
+@@ -616,7 +654,7 @@ struct CaptureView: View {
+         }
+ 
+         content = draft.content
+-        selectedCategory = draft.category
++        selectedPatternStep = draft.patternStep
+         hasLocalDraft = !draft.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+     }
+ 
+@@ -645,7 +683,8 @@ struct CaptureView: View {
+             timestamp: ISO8601DateFormatter().string(from: now),
+             dayOfWeek: dayOfWeek,
+             timeOfDay: timeOfDay,
+-            device: "mobile"
++            device: "mobile",
++            patternStep: selectedPatternStep
+         )
+     }
+ 
+@@ -695,7 +734,7 @@ struct CaptureView: View {
+ 
+ private struct CaptureLocalDraft: Codable {
+     let content: String
+-    let category: String
++    let patternStep: String?
+ }
+ 
+ @MainActor
+diff --git a/Understood/ContentView.swift b/Understood/ContentView.swift
+index 0933cb4..a70b42b 100644
+--- a/Understood/ContentView.swift
++++ b/Understood/ContentView.swift
+@@ -33,25 +33,26 @@ struct ContentView: View {
+     @State private var featuredEntry: Entry?
+     @State private var pinnedEntries: [Entry] = []
+ 
+-    var lifeAreaFilter: String = "all"
++    var patternFilter: String = "all"
+ 
+     private var stories: [Entry] {
+         let filtered = entries.filter { $0.isStory }
+-        guard lifeAreaFilter != "all" else { return filtered }
+-        return filtered.filter { $0.category.lowercased() == lifeAreaFilter.lowercased() }
++        guard patternFilter != "all" else { return filtered }
++        return filtered.filter { AdamPattern.matchesFilter(patternFilter, patternStep: $0.patternStep) }
+     }
+ 
+     private var heroStory: Entry? {
+         featuredEntry ?? stories.first
+     }
+ 
+-    private var carouselStories: [Entry] {
+-        Array(stories.prefix(10))
++    /// Image entries only — no empty placeholder boxes in the carousel
++    private var momentStories: [Entry] {
++        Array(stories.filter(\.hasImages).prefix(10))
+     }
+ 
+     private var remainingStories: [Entry] {
+-        let carouselIDs = Set(carouselStories.map(\.id))
+-        return Array(stories.filter { !carouselIDs.contains($0.id) }.prefix(20))
++        let momentIDs = Set(momentStories.map(\.id))
++        return Array(stories.filter { !momentIDs.contains($0.id) }.prefix(20))
+     }
+ 
+     private var pinnedStories: [Entry] {
+@@ -107,15 +108,15 @@ struct ContentView: View {
+ 
+                         // MARK: - Light Zone
+                         VStack(spacing: 0) {
+-                            // Story Carousel (first light content — matches IMG_1177 hero + LATEST STORIES peek)
+-                            if !carouselStories.isEmpty {
++                            // Moments strip — image entries only; hidden when none exist
++                            if !momentStories.isEmpty {
+                                 VStack(alignment: .leading, spacing: 12) {
+-                                    SectionHeaderView(title: "LATEST STORIES")
++                                    SectionHeaderView(title: "MOMENTS")
+                                         .padding(.horizontal, 20)
+ 
+                                     ScrollView(.horizontal, showsIndicators: false) {
+                                         HStack(spacing: 16) {
+-                                            ForEach(carouselStories) { entry in
++                                            ForEach(momentStories) { entry in
+                                                 NavigationLink(destination: EntryDetailView(
+                                                     entry: entry,
+                                                     onDeleted: { Task { await loadEntries() } },
+@@ -160,7 +161,7 @@ struct ContentView: View {
+                                     }
+                                 }
+ 
+-                                if lifeAreaFilter == "all" {
++                                if patternFilter == "all" {
+                                     pinnedSection(title: "PINNED STORIES", entries: pinnedStories)
+                                     pinnedSection(title: "PINNED NOTES", entries: pinnedNotes)
+                                     pinnedSection(title: "PINNED ACTIONS", entries: pinnedActions)
+@@ -252,11 +253,13 @@ struct HeroStoryView: View {
+             + StoriesLandingMetrics.heroContentOffsetBelowSafeArea
+ 
+         VStack(alignment: .leading, spacing: 10) {
+-            Text(entry.category.uppercased())
+-                .font(Typography.categoryLabel)
+-                .tracking(1.5)
+-                .foregroundStyle(.understoodCrimson)
+-                .layoutPriority(1)
++            if let label = entry.patternDisplayLabel {
++                Text(label)
++                    .font(Typography.categoryLabel)
++                    .tracking(1.5)
++                    .foregroundStyle(.understoodCrimson)
++                    .layoutPriority(1)
++            }
+ 
+             Text(entry.displayHeadline)
+                 .font(.custom("PlayfairDisplay-Regular", size: 40))
+@@ -304,52 +307,50 @@ struct StoryCarouselCard: View {
+ 
+     var body: some View {
+         VStack(alignment: .leading, spacing: 8) {
+-            ZStack(alignment: .bottomTrailing) {
+-                if let poster = entry.posterWithFocalPoint {
++            if let poster = entry.posterWithFocalPoint {
++                ZStack(alignment: .bottomTrailing) {
+                     AsyncImage(url: URL(string: poster.url)) { phase in
+                         switch phase {
+                         case .success(let image):
+                             image
+                                 .resizable()
+                                 .scaledToFill()
+-                        case .failure:
+-                            imageFallback(systemName: "photo")
+-                        case .empty:
+-                            imageFallback(systemName: "photo")
++                        case .failure, .empty:
++                            Color.surfaceSubtle
+                                 .overlay(ProgressView())
+                         @unknown default:
+-                            imageFallback(systemName: "photo")
++                            Color.surfaceSubtle
+                         }
+                     }
+                     .id(poster.url)
+-                } else {
+-                    imageFallback(systemName: "book.pages")
+-                }
+-
+-                let imageCount = entry.allImages.count
+-                if imageCount > 1 {
+-                    HStack(spacing: 3) {
+-                        Image(systemName: "photo.on.rectangle")
+-                            .font(.system(size: 10))
+-                        Text("\(imageCount)")
+-                            .font(Typography.chipLabel)
++                    .frame(width: 200, height: 160)
++                    .clipped()
++                    .cornerRadius(8)
++
++                    let imageCount = entry.allImages.count
++                    if imageCount > 1 {
++                        HStack(spacing: 3) {
++                            Image(systemName: "photo.on.rectangle")
++                                .font(.system(size: 10))
++                            Text("\(imageCount)")
++                                .font(Typography.chipLabel)
++                        }
++                        .foregroundStyle(.white)
++                        .padding(.horizontal, 8)
++                        .padding(.vertical, 4)
++                        .background(Color.black.opacity(0.6))
++                        .cornerRadius(6)
++                        .padding(8)
+                     }
+-                    .foregroundStyle(.white)
+-                    .padding(.horizontal, 8)
+-                    .padding(.vertical, 4)
+-                    .background(Color.black.opacity(0.6))
+-                    .cornerRadius(6)
+-                    .padding(8)
+                 }
+             }
+-            .frame(width: 200, height: 160)
+-            .clipped()
+-            .cornerRadius(8)
+ 
+-            Text(entry.category.uppercased())
+-                .font(Typography.categoryLabel)
+-                .tracking(1.5)
+-                .foregroundStyle(.understoodCrimson)
++            if let label = entry.patternDisplayLabel {
++                Text(label)
++                    .font(Typography.categoryLabel)
++                    .tracking(1.5)
++                    .foregroundStyle(.understoodCrimson)
++            }
+ 
+             Text(entry.displayHeadline)
+                 .font(Typography.cardHeadline)
+@@ -363,16 +364,6 @@ struct StoryCarouselCard: View {
+         }
+         .frame(width: 200)
+     }
+-
+-    private func imageFallback(systemName: String) -> some View {
+-        Rectangle()
+-            .fill(Color.surfaceSubtle)
+-            .overlay {
+-                Image(systemName: systemName)
+-                    .font(.system(size: 24))
+-                    .foregroundStyle(.textMuted)
+-            }
+-    }
+ }
+ 
+ // MARK: - Pinned Entry Row
+@@ -393,9 +384,11 @@ struct PinnedEntryRow: View {
+                     .lineLimit(1)
+ 
+                 HStack(spacing: 8) {
+-                    Text(entry.category.uppercased())
+-                        .font(Typography.chipLabel)
+-                        .foregroundStyle(.understoodCrimson)
++                    if let label = entry.patternDisplayLabel {
++                        Text(label)
++                            .font(Typography.chipLabel)
++                            .foregroundStyle(.understoodCrimson)
++                    }
+ 
+                     if let type = entry.entryType, type != "story" {
+                         Text(type.capitalized)
+@@ -570,10 +563,12 @@ struct ImageEntryRow: View {
+ 
+             VStack(alignment: .leading, spacing: 8) {
+                 HStack(spacing: 6) {
+-                    Text(entry.category.uppercased())
+-                        .font(Typography.categoryLabel)
+-                        .tracking(1.5)
+-                        .foregroundStyle(.understoodCrimson)
++                    if let label = entry.patternDisplayLabel {
++                        Text(label)
++                            .font(Typography.categoryLabel)
++                            .tracking(1.5)
++                            .foregroundStyle(.understoodCrimson)
++                    }
+ 
+                     if entry.isPinned {
+                         Image(systemName: "pin.fill")
+@@ -614,10 +609,12 @@ struct TextEntryRow: View {
+     var body: some View {
+         VStack(alignment: .leading, spacing: 8) {
+             HStack(spacing: 6) {
+-                Text(entry.category.uppercased())
+-                    .font(Typography.categoryLabel)
+-                    .tracking(1.5)
+-                    .foregroundStyle(.understoodCrimson)
++                if let label = entry.patternDisplayLabel {
++                    Text(label)
++                        .font(Typography.categoryLabel)
++                        .tracking(1.5)
++                        .foregroundStyle(.understoodCrimson)
++                }
+ 
+                 if entry.isPinned {
+                     Image(systemName: "pin.fill")
+@@ -686,7 +683,7 @@ enum EntryDateFormatter {
+ 
+ #Preview {
+     NavigationStack {
+-        ContentView(lifeAreaFilter: "all")
++        ContentView(patternFilter: "all")
+             .environment(AppNavigationState())
+     }
+ }
+diff --git a/Understood/Entry.swift b/Understood/Entry.swift
+index c5db30a..80b7db4 100644
+--- a/Understood/Entry.swift
++++ b/Understood/Entry.swift
+@@ -97,6 +97,18 @@ struct Entry: Codable, Identifiable, Hashable {
+         posterImageUrl != nil
+     }
+ 
++    /// Adam Pattern step stored in entry metadata (iOS primary classifier)
++    var patternStep: String? {
++        metadata?.patternStep
++    }
++
++    /// Label for cards and hero — pattern step only; life areas are sunset on iOS
++    var patternDisplayLabel: String? {
++        guard let step = patternStep?.trimmingCharacters(in: .whitespacesAndNewlines),
++              !step.isEmpty else { return nil }
++        return step.uppercased()
++    }
++
+     // MARK: - Entry Type Helpers
+ 
+     var isPinned: Bool { pinnedAt != nil }
+@@ -205,7 +217,8 @@ struct EntryMetadata: Codable, Hashable {
+     var timeOfDay: String?
+     var device: String?
+     var location: LocationData?
+-    
++    var patternStep: String?
++
+     enum CodingKeys: String, CodingKey {
+         case activity
+         case energy
+@@ -216,6 +229,7 @@ struct EntryMetadata: Codable, Hashable {
+         case timeOfDay = "time_of_day"
+         case device
+         case location
++        case patternStep = "pattern_step"
+     }
+ }
+ 
+diff --git a/Understood/EntryDetailView.swift b/Understood/EntryDetailView.swift
+index 387f219..68ccc48 100644
+--- a/Understood/EntryDetailView.swift
++++ b/Understood/EntryDetailView.swift
+@@ -53,10 +53,12 @@ struct EntryDetailView: View {
+ 
+                 VStack(alignment: .leading, spacing: 12) {
+                     HStack {
+-                        Text(entry.category.uppercased())
+-                            .font(Typography.sectionHeader)
+-                            .tracking(1.5)
+-                            .foregroundStyle(.understoodCrimson)
++                        if let label = entry.patternDisplayLabel {
++                            Text(label)
++                                .font(Typography.sectionHeader)
++                                .tracking(1.5)
++                                .foregroundStyle(.understoodCrimson)
++                        }
+ 
+                         Spacer()
+ 
+@@ -353,7 +355,7 @@ struct EntryEditorView: View {
+     @State private var headline: String
+     @State private var subheading: String
+     @State private var content: String
+-    @State private var selectedCategory: String
++    @State private var selectedPatternStep: String?
+     @State private var selectedEntryType: String
+     @State private var hasDueDate: Bool
+     @State private var dueDate: Date
+@@ -367,7 +369,6 @@ struct EntryEditorView: View {
+     @State private var errorMessage: String?
+ 
+     private let supabase = SupabaseService.shared
+-    private let categories = ["Business", "Finance", "Health", "Spiritual", "Fun", "Social", "Romance"]
+     private let entryTypes: [(id: String, label: String)] = [
+         ("story", "Story"),
+         ("connection", "Connection")
+@@ -379,7 +380,7 @@ struct EntryEditorView: View {
+         _headline = State(initialValue: entry.headline)
+         _subheading = State(initialValue: entry.subheading ?? "")
+         _content = State(initialValue: entry.content)
+-        _selectedCategory = State(initialValue: entry.category)
++        _selectedPatternStep = State(initialValue: entry.patternStep)
+         _selectedEntryType = State(initialValue: entry.entryType == "connection" ? "connection" : "story")
+         _hasDueDate = State(initialValue: entry.parsedDueDate != nil)
+         _dueDate = State(initialValue: entry.parsedDueDate ?? Date())
+@@ -527,7 +528,7 @@ struct EntryEditorView: View {
+                                 .disabled(remainingSlots == 0)
+ 
+                                 Button {
+-                                    showCamera = true
++                                    Task { await openCamera() }
+                                 } label: {
+                                     Image(systemName: "camera.fill")
+                                         .font(.system(size: 18, weight: .semibold))
+@@ -537,7 +538,7 @@ struct EntryEditorView: View {
+                                         .cornerRadius(8)
+                                 }
+                                 .buttonStyle(.plain)
+-                                .disabled(remainingSlots == 0 || !UIImagePickerController.isSourceTypeAvailable(.camera))
++                                .disabled(remainingSlots == 0 || !CameraAccess.isAvailable)
+                             }
+ 
+                             if !selectedImages.isEmpty {
+@@ -572,29 +573,48 @@ struct EntryEditorView: View {
+                     }
+ 
+                     VStack(alignment: .leading, spacing: 12) {
+-                        Text("CATEGORY")
++                        Text("PATTERN")
+                             .font(Typography.sectionHeader)
+                             .tracking(1.5)
+                             .foregroundStyle(.textMuted)
+ 
+-                        ScrollView(.horizontal, showsIndicators: false) {
+-                            HStack(spacing: 8) {
+-                                ForEach(categories, id: \.self) { category in
+-                                    Button {
+-                                        selectedCategory = category
+-                                        Haptics.selection()
+-                                    } label: {
+-                                        Text(category)
+-                                            .font(Typography.uiMedium)
+-                                            .foregroundStyle(selectedCategory == category ? .white : .textPrimary)
+-                                            .padding(.horizontal, 12)
+-                                            .padding(.vertical, 8)
+-                                            .background(selectedCategory == category ? Color.black : Color.surfaceSubtle)
+-                                            .cornerRadius(8)
++                        Menu {
++                            Button {
++                                selectedPatternStep = nil
++                                Haptics.selection()
++                            } label: {
++                                if selectedPatternStep == nil {
++                                    Label("None", systemImage: "checkmark")
++                                } else {
++                                    Text("None")
++                                }
++                            }
++
++                            ForEach(AdamPattern.steps, id: \.self) { step in
++                                Button {
++                                    selectedPatternStep = step
++                                    Haptics.selection()
++                                } label: {
++                                    if selectedPatternStep == step {
++                                        Label(step, systemImage: "checkmark")
++                                    } else {
++                                        Text(step)
+                                     }
+-                                    .buttonStyle(.plain)
+                                 }
+                             }
++                        } label: {
++                            HStack {
++                                Image(systemName: "list.number")
++                                Text(selectedPatternStep ?? "None")
++                                    .font(Typography.uiMedium)
++                                Spacer()
++                                Image(systemName: "chevron.up.chevron.down")
++                                    .font(.system(size: 12, weight: .semibold))
++                            }
++                            .foregroundStyle(.understoodCrimson)
++                            .padding(14)
++                            .background(Color.surfaceSubtle)
++                            .cornerRadius(8)
+                         }
+                     }
+                 }
+@@ -642,7 +662,7 @@ struct EntryEditorView: View {
+                     .buttonStyle(.plain)
+                 }
+             }
+-            .fullScreenCover(isPresented: $showCamera) {
++            .sheet(isPresented: $showCamera) {
+                 CameraImagePicker { image in
+                     guard let image, remainingSlots > 0 else { return }
+                     selectedImages.append(image)
+@@ -654,6 +674,17 @@ struct EntryEditorView: View {
+         }
+     }
+ 
++    private func openCamera() async {
++        guard remainingSlots > 0 else { return }
++
++        switch await CameraAccess.requestIfNeeded() {
++        case .success:
++            showCamera = true
++        case .failure(let message):
++            errorMessage = message
++        }
++    }
++
+     private func loadSelectedPhotos(_ items: [PhotosPickerItem]) async {
+         await MainActor.run {
+             isLoadingPhotos = true
+@@ -718,7 +749,7 @@ struct EntryEditorView: View {
+                 headline: trimmedHeadline,
+                 subheading: trimmedSubheading,
+                 content: cleanedContent,
+-                category: selectedCategory,
++                category: entry.category,
+                 entryType: selectedEntryType,
+                 dueDate: dueDateValue,
+                 completedAt: completedAtValue,
+@@ -727,6 +758,10 @@ struct EntryEditorView: View {
+                 shouldClearCompletedAt: entry.completedAt != nil || !isEditingAction
+             )
+             try await supabase.updateEntry(id: entry.id, payload: payload)
++
++            var metadata = entry.metadata ?? EntryMetadata()
++            metadata.patternStep = selectedPatternStep
++            try await supabase.updateEntryMetadata(id: entry.id, metadata: metadata)
+             print("EntryEditorView: updated text fields for entry \(entry.id)")
+             try await supabase.updateEntryImages(entryId: entry.id, images: updatedImages)
+             print("EntryEditorView: saved \(updatedImages.count) image(s) for entry \(entry.id)")
+@@ -735,7 +770,8 @@ struct EntryEditorView: View {
+             updatedEntry.headline = trimmedHeadline
+             updatedEntry.subheading = trimmedSubheading
+             updatedEntry.content = cleanedContent
+-            updatedEntry.category = selectedCategory
++            updatedEntry.category = entry.category
++            updatedEntry.metadata = metadata
+             updatedEntry.entryType = selectedEntryType
+             updatedEntry.dueDate = dueDateValue
+             updatedEntry.completedAt = completedAtValue
+diff --git a/Understood/Info.plist b/Understood/Info.plist
+index 9c26761..eaf3cd2 100644
+--- a/Understood/Info.plist
++++ b/Understood/Info.plist
+@@ -4,6 +4,8 @@
+ <dict>
+ 	<key>NSCameraUsageDescription</key>
+ 	<string>Understood uses the camera to attach photos to entries and notes.</string>
++	<key>NSPhotoLibraryUsageDescription</key>
++	<string>Understood uses your photo library to attach images to entries.</string>
+ 	<key>NSMicrophoneUsageDescription</key>
+ 	<string>Understood uses the microphone to turn dictated thoughts into entry text.</string>
+ 	<key>NSSpeechRecognitionUsageDescription</key>
+diff --git a/Understood/MainTabView.swift b/Understood/MainTabView.swift
+index 372f363..fa3ee42 100644
+--- a/Understood/MainTabView.swift
++++ b/Understood/MainTabView.swift
+@@ -23,9 +23,9 @@ struct MainTabView: View {
+                     // Route to active section
+                     switch nav.currentSection {
+                     case "story":
+-                        ContentView(lifeAreaFilter: nav.currentFilter)
++                        ContentView(patternFilter: nav.currentFilter)
+                     case "connection":
+-                        BeliefLibraryView(lifeAreaFilter: nav.currentFilter)
++                        BeliefLibraryView(patternFilter: nav.currentFilter)
+                     case "extraction":
+                         ExtractionsView()
+                     case "timeline":
+@@ -41,9 +41,9 @@ struct MainTabView: View {
+                             subtitle: "Coming soon — category-styled note cards"
+                         )
+                     case "action":
+-                        ActionsView(lifeAreaFilter: nav.currentFilter)
++                        ActionsView(patternFilter: nav.currentFilter)
+                     default:
+-                        ContentView(lifeAreaFilter: nav.currentFilter)
++                        ContentView(patternFilter: nav.currentFilter)
+                     }
+                 }
+                 .navigationBarTitleDisplayMode(.inline)
+diff --git a/Understood/Navigation/AppNavigationState.swift b/Understood/Navigation/AppNavigationState.swift
+index 3fa7a68..a6aaeac 100644
+--- a/Understood/Navigation/AppNavigationState.swift
++++ b/Understood/Navigation/AppNavigationState.swift
+@@ -17,7 +17,7 @@ class AppNavigationState {
+     /// Legacy "note" and "action" routes remain in code, but are no longer user-facing.
+     var currentSection: String = "story"
+ 
+-    /// Life area filter: "all", "business", "finance", "health", "fitness", "spiritual", "fun", "social", "romance"
++    /// Pattern step filter: "all" or lowercased Adam Pattern step name
+     var currentFilter: String = "all"
+ 
+     /// Overlay states
+@@ -25,11 +25,8 @@ class AppNavigationState {
+     var showCapture: Bool = false
+     var showSettings: Bool = false
+ 
+-    /// All available life areas
+-    static let lifeAreas = [
+-        "all", "business", "finance", "health",
+-        "fitness", "spiritual", "fun", "social", "romance"
+-    ]
++    /// Adam Pattern filter options (replaces life areas)
++    static let patternFilters = AdamPattern.filterOptions
+ 
+     /// Primary sections shown in the app navigation.
+     static let sections: [(id: String, label: String, icon: String)] = [
+@@ -56,7 +53,7 @@ class AppNavigationState {
+         showCapture = false
+     }
+ 
+-    /// Set filter and dismiss the menu
++    /// Set pattern filter and dismiss the menu
+     func setFilter(_ filter: String) {
+         currentFilter = filter
+     }
+diff --git a/Understood/Navigation/FullScreenMenuView.swift b/Understood/Navigation/FullScreenMenuView.swift
+index f036be6..235d4aa 100644
+--- a/Understood/Navigation/FullScreenMenuView.swift
++++ b/Understood/Navigation/FullScreenMenuView.swift
+@@ -55,26 +55,26 @@ struct FullScreenMenuView: View {
+                     }
+                     .padding(.horizontal, 24)
+ 
+-                    // MARK: - Life Areas
++                    // MARK: - Adam Pattern Filters
+                     VStack(alignment: .leading, spacing: 16) {
+-                        Text("LIFE AREAS")
++                        Text("THE ADAM PATTERN")
+                             .font(Typography.sectionHeader)
+                             .tracking(2)
+                             .foregroundStyle(.white.opacity(0.4))
+ 
+                         FlowLayout(spacing: 10) {
+-                            ForEach(AppNavigationState.lifeAreas, id: \.self) { area in
++                            ForEach(AppNavigationState.patternFilters, id: \.id) { option in
+                                 Button {
+                                     Haptics.selection()
+-                                    nav.setFilter(area)
++                                    nav.setFilter(option.id)
+                                 } label: {
+-                                    Text(area == "all" ? "All" : area.capitalized)
++                                    Text(option.label)
+                                         .font(Typography.uiMedium)
+-                                        .foregroundStyle(nav.currentFilter == area ? .black : .white.opacity(0.7))
++                                        .foregroundStyle(nav.currentFilter == option.id ? .black : .white.opacity(0.7))
+                                         .padding(.horizontal, 16)
+                                         .padding(.vertical, 8)
+                                         .background(
+-                                            nav.currentFilter == area
++                                            nav.currentFilter == option.id
+                                                 ? Color.white
+                                                 : Color.white.opacity(0.08)
+                                         )
+diff --git a/Understood/Navigation/SettingsView.swift b/Understood/Navigation/SettingsView.swift
+index efcc0a8..e76ede2 100644
+--- a/Understood/Navigation/SettingsView.swift
++++ b/Understood/Navigation/SettingsView.swift
+@@ -37,7 +37,7 @@ struct SettingsView: View {
+                         settingsRow(
+                             icon: "square.and.pencil",
+                             title: "Editing",
+-                            subtitle: "Open any entry to revise the title, body, life area, and images."
++                            subtitle: "Open any entry to revise the title, body, pattern step, and images."
+                         )
+                     }
+ 
+diff --git a/Understood/Views/BeliefLibraryView.swift b/Understood/Views/BeliefLibraryView.swift
+index 0db54b8..a7d6c70 100644
+--- a/Understood/Views/BeliefLibraryView.swift
++++ b/Understood/Views/BeliefLibraryView.swift
+@@ -13,8 +13,8 @@ struct BeliefLibraryView: View {
+     @State private var isLoading = true
+     @State private var errorMessage: String?
+ 
+-    /// Life area filter passed from navigation state
+-    var lifeAreaFilter: String = "all"
++    /// Pattern step filter passed from navigation state
++    var patternFilter: String = "all"
+ 
+     /// The four belief types from the scoring engine
+     private let beliefTypes = [
+@@ -24,10 +24,10 @@ struct BeliefLibraryView: View {
+         ("process_anchor", "Process Anchors", "list.bullet.rectangle.fill")
+     ]
+ 
+-    /// Filtered beliefs based on life area
++    /// Filtered beliefs based on Adam Pattern step
+     private var filteredBeliefs: [Entry] {
+-        guard lifeAreaFilter != "all" else { return beliefs }
+-        return beliefs.filter { $0.category.lowercased() == lifeAreaFilter.lowercased() }
++        guard patternFilter != "all" else { return beliefs }
++        return beliefs.filter { AdamPattern.matchesFilter(patternFilter, patternStep: $0.patternStep) }
+     }
+ 
+     var body: some View {
+@@ -278,6 +278,6 @@ struct BeliefCard: View {
+ 
+ #Preview {
+     NavigationStack {
+-        BeliefLibraryView(lifeAreaFilter: "all")
++        BeliefLibraryView(patternFilter: "all")
+     }
+ }
+-- 
+2.43.0
+

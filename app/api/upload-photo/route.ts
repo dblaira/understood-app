@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { getUserFromRequest } from '@/lib/supabase/from-request'
 import { processEntryPhoto } from '@/lib/image/process-photo.server'
 import { MAX_IMAGES_PER_ENTRY, EntryImage } from '@/types'
 
@@ -8,10 +8,7 @@ export const runtime = 'nodejs'
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+    const { user, supabase } = await getUserFromRequest(request)
 
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

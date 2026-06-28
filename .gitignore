@@ -53,3 +53,6 @@ Feb_Metadata/
 
 # Claude Code local state
 .claude/
+
+# Agent brainstorm scratch (local only)
+.superpowers/

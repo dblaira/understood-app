@@ -113,3 +113,10 @@
   understood:connectionType "connection" ;
   understood:inLifeDomain <https://understood.app/ontology/domain/belief> ;
   .
+
+<https://understood.app/ontology/connection/conn-019> a understood:Connection ;
+  understood:label "Adam prefers reusable systems over one-time wins. When there's a choice, build what compounds." ;
+  understood:connectionType "validated_principle" ;
+  understood:inLifeDomain <https://understood.app/ontology/domain/belief> ;
+  understood:inLifeDomain <https://understood.app/ontology/domain/work> ;
+  .

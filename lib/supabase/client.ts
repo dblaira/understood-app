@@ -1,19 +1,19 @@
 import { createBrowserClient } from '@supabase/ssr'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+const supabasePublishableKey = process.env.SUPABASE_PUBLISHABLE_KEY
 
-if (!supabaseUrl || !supabaseAnonKey) {
+if (!supabaseUrl || !supabasePublishableKey) {
   const missingVars = []
   if (!supabaseUrl) missingVars.push('NEXT_PUBLIC_SUPABASE_URL')
-  if (!supabaseAnonKey) missingVars.push('NEXT_PUBLIC_SUPABASE_ANON_KEY')
+  if (!supabasePublishableKey) missingVars.push('SUPABASE_PUBLISHABLE_KEY')
   
   console.error('Missing Supabase environment variables:', missingVars.join(', '))
   console.error('Current env:', {
     hasUrl: !!supabaseUrl,
-    hasKey: !!supabaseAnonKey,
+    hasKey: !!supabasePublishableKey,
     urlLength: supabaseUrl?.length || 0,
-    keyLength: supabaseAnonKey?.length || 0,
+    keyLength: supabasePublishableKey?.length || 0,
   })
   
   throw new Error(
@@ -21,5 +21,5 @@ if (!supabaseUrl || !supabaseAnonKey) {
   )
 }
 
-export const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey)
+export const supabase = createBrowserClient(supabaseUrl, supabasePublishableKey)
 

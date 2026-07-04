@@ -5,7 +5,7 @@
 ### Possible Causes:
 1. **Environment variables not loaded**
    - Check that `.env.local` exists in project root
-   - Verify `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` are set
+   - Verify `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` are set
    - Restart dev server after adding/changing env vars
 
 2. **Supabase project not active**

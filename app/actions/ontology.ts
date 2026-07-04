@@ -346,7 +346,7 @@ export async function proposeBeliefDumpRules(beliefDump: string) {
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
+        model: 'claude-sonnet-5',
         max_tokens: 1200,
         system: 'You convert user belief dumps into plain-language personal AI rules. Return valid JSON only.',
         messages: [

@@ -13,7 +13,7 @@ export async function getUserFromRequest(request: NextRequest) {
     const token = authHeader.slice(7);
     const supabase = createBrowserClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      process.env.SUPABASE_PUBLISHABLE_KEY!,
       {
         global: {
           headers: { Authorization: `Bearer ${token}` },

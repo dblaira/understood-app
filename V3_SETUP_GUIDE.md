@@ -208,7 +208,7 @@ Ensure these are set in `.env.local`:
 ```env
 # Supabase
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
+SUPABASE_PUBLISHABLE_KEY=your_publishable_key
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key  # Optional, for scripts
 
 # Anthropic AI

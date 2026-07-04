@@ -105,7 +105,7 @@ async function main() {
   log('🔐 Checking environment variables...', 'blue')
   const envVars = [
     'NEXT_PUBLIC_SUPABASE_URL',
-    'NEXT_PUBLIC_SUPABASE_ANON_KEY',
+    'SUPABASE_PUBLISHABLE_KEY',
     'ANTHROPIC_API_KEY',
     'CRON_SECRET',
   ]
@@ -120,7 +120,7 @@ async function main() {
   
   // Check database
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_PUBLISHABLE_KEY
   
   if (!supabaseUrl || !supabaseKey) {
     log('\n❌ Cannot check database without Supabase credentials', 'red')

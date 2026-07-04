@@ -56,3 +56,4 @@ Feb_Metadata/
 
 # Agent brainstorm scratch (local only)
 .superpowers/
+.env*

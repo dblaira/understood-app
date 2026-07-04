@@ -76,7 +76,7 @@ async function callExtractionAPI(prompt: string): Promise<string> {
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
+        model: 'claude-sonnet-5',
         max_tokens: 4000,
         messages: [{ role: 'user', content: prompt }],
       }),

@@ -107,7 +107,7 @@ Analyze the image in the context of their note. Extract what THEY would find mea
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
+        model: 'claude-sonnet-5',
         max_tokens: 1500,
         system: VISION_SYSTEM_PROMPT,
         messages: [

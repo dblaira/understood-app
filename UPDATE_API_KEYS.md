@@ -24,12 +24,12 @@ Supabase now uses shorter keys:
 
    **Replace:**
    ```
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9... (old long JWT)
+   SUPABASE_PUBLISHABLE_KEY=<SUPABASE_PUBLISHABLE_KEY> (old long JWT)
    ```
 
    **With:**
    ```
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_NKL75dKkZ_n-KaNFd7nxrw_hN7rzW3W (new format)
+   SUPABASE_PUBLISHABLE_KEY=<SUPABASE_PUBLISHABLE_KEY> (new format)
    ```
 
    **Add/Update:**
@@ -49,7 +49,7 @@ After updating environment variables in Vercel, trigger a new deployment.
 
 - The new keys are **shorter** than the old JWT format - this is normal!
 - The **Secret key** (`sb_secret_...`) is what you need for `SUPABASE_SERVICE_ROLE_KEY`
-- The **Publishable key** (`sb_publishable_...`) is what you need for `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- The **Publishable key** (`sb_publishable_...`) is what you need for `SUPABASE_PUBLISHABLE_KEY`
 - Both keys should start with `sb_` prefix
 
 ## Verification

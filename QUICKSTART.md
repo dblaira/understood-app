@@ -50,7 +50,7 @@ The app will be available at [http://localhost:3000](http://localhost:3000)
 - Run `npm install` to ensure all dependencies are installed
 
 ### Authentication Issues
-- Check that `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` are correct
+- Check that `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` are correct
 - Verify your Supabase project is active
 
 ### API Errors

@@ -274,7 +274,7 @@ Every capture makes the system smarter. Every "this landed" or "not now" refines
 
    let supabase = SupabaseClient(
      supabaseURL: URL(string: "YOUR_SUPABASE_URL")!,
-     supabaseKey: "YOUR_ANON_KEY"
+     supabaseKey: "YOUR_SUPABASE_PUBLISHABLE_KEY"
    )
    ```
 

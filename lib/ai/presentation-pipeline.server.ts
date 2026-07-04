@@ -46,7 +46,7 @@ export async function runClaudeWithPresentationGuardrail(
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: options.model ?? 'claude-sonnet-4-6',
+        model: options.model ?? 'claude-sonnet-5',
         max_tokens: options.maxTokens ?? 1024,
         system,
         messages: options.messages,

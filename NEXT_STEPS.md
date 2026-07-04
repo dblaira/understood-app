@@ -79,7 +79,7 @@ Go to Vercel Dashboard → Your Project → Settings → Environment Variables
 
 Add these (same values as `.env.local`):
 - `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_PUBLISHABLE_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY` (optional, for admin operations)
 - `ANTHROPIC_API_KEY`
 - `CRON_SECRET`

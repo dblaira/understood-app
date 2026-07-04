@@ -209,7 +209,7 @@ export async function POST(request: Request) {
           supabase,
           userId: user.id,
           apiKey,
-          model: 'claude-opus-4-7',
+          model: 'claude-opus-4-8',
           maxTokens: 4000,
           messages: [{ role: 'user', content: prompt }],
           system:

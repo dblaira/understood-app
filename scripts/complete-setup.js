@@ -48,7 +48,7 @@ async function checkEnvFile() {
     } else {
       envContent = `# Supabase Configuration
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_PUBLISHABLE_KEY=your_supabase_publishable_key
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 
 # Anthropic AI
@@ -78,7 +78,7 @@ async function step1DatabaseMigrations() {
   log('=' .repeat(50), 'cyan')
   
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_PUBLISHABLE_KEY
   
   if (!supabaseUrl || !supabaseKey) {
     log('❌ Supabase credentials not found in .env.local', 'red')
@@ -191,7 +191,7 @@ async function step3VerifySetup() {
   log('\nChecking environment variables...', 'blue')
   const requiredVars = [
     'NEXT_PUBLIC_SUPABASE_URL',
-    'NEXT_PUBLIC_SUPABASE_ANON_KEY',
+    'SUPABASE_PUBLISHABLE_KEY',
     'ANTHROPIC_API_KEY',
     'CRON_SECRET',
   ]
@@ -209,7 +209,7 @@ async function step3VerifySetup() {
   
   // Check database
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_PUBLISHABLE_KEY
   const supabase = createClient(supabaseUrl, supabaseKey)
   
   log('\nChecking database tables...', 'blue')

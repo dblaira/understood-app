@@ -7,7 +7,7 @@
 ```env
 # Supabase Configuration
 NEXT_PUBLIC_SUPABASE_URL=https://wqdacfrzurhpsiuvzxwo.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key_here
+SUPABASE_PUBLISHABLE_KEY=your_supabase_publishable_key_here
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key_here
 
 # Anthropic Claude API
@@ -26,7 +26,7 @@ Add these in Vercel Dashboard → Project → Settings → Environment Variables
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://wqdacfrzurhpsiuvzxwo.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key_here
+SUPABASE_PUBLISHABLE_KEY=your_supabase_publishable_key_here
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key_here
 ANTHROPIC_API_KEY=your_actual_anthropic_api_key_here
 CRON_SECRET=your_actual_random_secret_here
@@ -70,7 +70,7 @@ Add `NEXT_PUBLIC_SITE_URL` to the example file for future reference.
 1. Go to Vercel Dashboard → Your Project → Settings → Environment Variables
 2. Add/Update these variables:
    - `NEXT_PUBLIC_SUPABASE_URL` (should already be there)
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY` (should already be there)
+   - `SUPABASE_PUBLISHABLE_KEY` (should already be there)
    - `SUPABASE_SERVICE_ROLE_KEY` (optional but recommended)
    - `ANTHROPIC_API_KEY` (must be set with actual key)
    - `CRON_SECRET` (must be set with actual secret)

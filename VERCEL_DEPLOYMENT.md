@@ -11,7 +11,7 @@ Add these environment variables in your Vercel project settings:
    - Example: `https://xxxxx.supabase.co`
    - Must be set for the app to work
 
-2. **NEXT_PUBLIC_SUPABASE_ANON_KEY**
+2. **SUPABASE_PUBLISHABLE_KEY**
    - Your Supabase anonymous/public key
    - Found in Supabase Dashboard > Settings > API
    - Must be set for the app to work
@@ -46,7 +46,7 @@ Add these environment variables in your Vercel project settings:
 ### Issue: Runtime Error - "Missing Supabase environment variables"
 
 **Solution**: 
-1. Check that `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` are set
+1. Check that `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` are set
 2. Make sure they're available for all environments (Production, Preview, Development)
 3. Redeploy after adding variables
 

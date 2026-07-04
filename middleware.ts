@@ -4,9 +4,9 @@ import { NextResponse, type NextRequest } from 'next/server'
 export async function middleware(request: NextRequest) {
   // Check for required environment variables
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  const supabasePublishableKey = process.env.SUPABASE_PUBLISHABLE_KEY
 
-  if (!supabaseUrl || !supabaseAnonKey) {
+  if (!supabaseUrl || !supabasePublishableKey) {
     console.error('Missing Supabase environment variables')
     // Allow request to continue but log error
     return NextResponse.next()
@@ -21,7 +21,7 @@ export async function middleware(request: NextRequest) {
   try {
     const supabase = createServerClient(
       supabaseUrl,
-      supabaseAnonKey,
+      supabasePublishableKey,
       {
         cookies: {
           getAll() {

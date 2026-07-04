@@ -14,7 +14,7 @@ Before installing, confirm your project has:
 - Supabase with `@supabase/supabase-js` and `@supabase/ssr` installed
 - TypeScript
 - The `@/` path alias in `tsconfig.json` (standard Next.js default)
-- Environment variables: `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- Environment variables: `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY`
 
 No additional npm packages are required.
 
@@ -223,7 +223,7 @@ export const HIDDEN_PATHS: string[] = [
 **Supabase error in console:**
 - Verify you ran both SQL files in Step 1
 - Verify the import path in `debug-logger.ts` matches your Supabase client
-- Check `.env.local` has `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- Check `.env.local` has `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY`
 
 ---
 

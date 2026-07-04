@@ -32,7 +32,7 @@ export async function claudeMessagesWithPresentation(options: {
 }): Promise<ClaudeWithPresentationResult> {
   const {
     apiKey,
-    model = 'claude-sonnet-4-6',
+    model = 'claude-sonnet-5',
     maxTokens = 1024,
     system,
     messages,

@@ -1,0 +1,13 @@
+---
+description: Next.js / React web stack — load Next and React skills
+globs: "**/*.{tsx,jsx,ts,js},next.config.*,app/**,src/app/**,components/**"
+alwaysApply: false
+---
+
+# Next.js / React stack
+
+When editing this web app:
+- Load and follow the **nextjs** skill (App Router, server components, caching, deploy)
+- After editing multiple TSX components, apply **react-best-practices**
+- Use **context7** for current library docs instead of inventing APIs
+- Prefer simple, working UI over clever abstractions Adam did not ask for

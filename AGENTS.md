@@ -11,3 +11,15 @@ This app is being built for me. I am the first user but hopefully not the last. 
 ## Operating Rule
 
 Do not optimize Understood for a hypothetical average user before Adam has reacted to it. Adam's understanding, taste, and natural response are the acceptance criteria. If Adam does not understand the agent's explanation, naming, or proposed implementation, treat that as a product risk, not a communication footnote.
+
+## Cursor Cloud: Mac access via Tailscale
+
+If secrets `TAILSCALE_AUTHKEY` and `TAILSCALE_SSH_KEY` are set, cloud agents join Adam's private Tailscale network on start.
+
+Then use:
+- `ssh studio` — Mac Studio (`blairstudio@100.102.153.54`) — primary build machine
+- `ssh mbp` — MacBook Pro (`adamblair@100.111.154.126`)
+- `ssh mbp2` — MacBook Pro 2 (`adamblair@100.88.144.50`)
+
+Use these for anything that must run on a Mac (Xcode, local files, Simulator). Prefer `studio` for builds.
+

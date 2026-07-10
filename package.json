@@ -9,6 +9,8 @@
     "setup:storage": "node scripts/create-storage-bucket.js",
     "setup:migrations": "node scripts/run-migrations.js",
     "check:ontology": "npx tsx scripts/check-ontology-semantic.ts",
+    "test:harness-candidate-export": "npx tsx --test tests/harness-candidate-export.test.ts",
+    "export:harness-candidate": "npx tsx scripts/export-understood-harness-candidate.ts",
     "validate:ontology": "bash ontology/validate.sh",
     "export:suite-rdf": "npx tsx scripts/export-suite-rdf.ts && npm run validate:ontology",
     "export:adam-beliefs": "npx tsx scripts/export-adam-beliefs.ts && npm run validate:ontology",

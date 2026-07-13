@@ -4,6 +4,14 @@ import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { CreateEntryInput, WeeklyTheme, Entry, EntryImage, MAX_IMAGES_PER_ENTRY, Version, VersionHighlight } from '@/types'
 import { ImageExtraction } from '@/types/multimodal'
+import { buildUnderstoodEntryCapture } from '@/lib/harness-capture.server'
+import {
+  createSupabaseHarnessCaptureSource,
+  deliverUnderstoodHarnessCapture,
+  failedCaptureHandoff,
+  harnessRemoteCaptureBridgeConfiguration,
+  type HarnessCaptureHandoffResult,
+} from '@/lib/harness-capture-runtime.server'
 
 export async function createEntry(input: CreateEntryInput) {
   const supabase = await createClient()
@@ -53,8 +61,31 @@ export async function createEntry(input: CreateEntryInput) {
     savedExtractedData: !!data.image_extracted_data,
   })
 
+  let harnessCapture: HarnessCaptureHandoffResult
+  try {
+    const capture = buildUnderstoodEntryCapture({
+      entryRecord: data as Record<string, unknown>,
+      createInput: { ...input },
+    })
+    try {
+      harnessCapture = await deliverUnderstoodHarnessCapture({
+        source: createSupabaseHarnessCaptureSource(supabase),
+        userId: user.id,
+        capture,
+        remoteBridge: harnessRemoteCaptureBridgeConfiguration(user.id),
+      })
+    } catch (captureError) {
+      harnessCapture = failedCaptureHandoff(capture, captureError)
+    }
+  } catch (captureError) {
+    harnessCapture = failedCaptureHandoff(null, captureError)
+  }
+  if (harnessCapture.status === 'failed') {
+    console.error('Understood entry was saved but its Harness capture handoff failed:', harnessCapture.detail)
+  }
+
   revalidatePath('/')
-  return { data }
+  return { data, harnessCapture }
 }
 
 export async function deleteEntry(id: string) {

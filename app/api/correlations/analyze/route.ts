@@ -154,11 +154,13 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json()
-    const dateFrom = body.dateFrom || '2024-06-01'
-    const dateTo = body.dateTo || '2026-03-01'
+    // No hidden fixed window: absent user filters, every extraction participates.
+    // The previous June 2024–March 1, 2026 defaults silently excluded 3,196 rows.
+    const requestedDateFrom = typeof body.dateFrom === 'string' ? body.dateFrom : undefined
+    const requestedDateTo = typeof body.dateTo === 'string' ? body.dateTo : undefined
 
     console.log('=== Correlation Analysis ===')
-    console.log(`Date range: ${dateFrom} to ${dateTo}`)
+    console.log(`Requested date range: ${requestedDateFrom || 'earliest'} to ${requestedDateTo || 'latest'}`)
 
     const all: Extraction[] = []
     let offset = 0
@@ -178,7 +180,9 @@ export async function POST(request: Request) {
 
     console.log(`Extractions fetched: ${all.length}`)
 
-    const matrix = buildWeeklyMatrix(all, dateFrom, dateTo)
+    const matrix = buildWeeklyMatrix(all, requestedDateFrom, requestedDateTo)
+    const dateFrom = matrix.dateRange.start
+    const dateTo = matrix.dateRange.end
     console.log(`Matrix: ${matrix.weeks.length} weeks, ${matrix.categories.length} categories, ${matrix.totalExtractions} extractions`)
 
     const correlations = computeAllCorrelations(matrix)

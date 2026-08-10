@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto'
 import { NextRequest, NextResponse } from 'next/server'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/server'
 import { runClaudeWithPresentationGuardrail } from '@/lib/ai/presentation-pipeline.server'
 import {
@@ -8,9 +9,30 @@ import {
   type ReasoningRequest,
 } from '@/lib/ai/reasoning-contract'
 
-export async function POST(request: NextRequest) {
+// The iPhone authenticates with `Authorization: Bearer <supabase access token>`
+// and sends no cookies; the web client authenticates with session cookies.
+async function resolveRequestAuth(request: NextRequest) {
+  const header = request.headers.get('authorization') ?? ''
+  const bearer = header.toLowerCase().startsWith('bearer ') ? header.slice(7).trim() : null
+  if (bearer) {
+    const supabase = createSupabaseClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_PUBLISHABLE_KEY!,
+      {
+        auth: { persistSession: false, autoRefreshToken: false },
+        global: { headers: { Authorization: `Bearer ${bearer}` } },
+      }
+    )
+    const { data: { user } } = await supabase.auth.getUser(bearer)
+    return { supabase, user }
+  }
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
+  return { supabase, user }
+}
+
+export async function POST(request: NextRequest) {
+  const { supabase, user } = await resolveRequestAuth(request)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await request.json() as ReasoningRequest
